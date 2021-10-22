@@ -325,6 +325,14 @@ export function getCommonThirdPartyList() {
   return request(options);
 }
 
+export function getBuildVersion() {
+  const options = {
+    method: "get",
+    url: "/settings/version/build.json",
+  };
+  return request(options);
+}
+
 export function getSecuritySettings(modules) {
   /*return request({
     method: "get",
