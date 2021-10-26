@@ -1,28 +1,11 @@
 import React from "react";
 import { withRouter } from "react-router";
-import styled from "styled-components";
 
 import RowContent from "@appserver/components/row-content";
 import Link from "@appserver/components/link";
 import Text from "@appserver/components/text";
 import Box from "@appserver/components/box";
-
-import commonIconsStyles from "@appserver/components/utils/common-icons-style";
-import SendClockIcon from "../../../../../../public/images/send.clock.react.svg";
-import CatalogSpamIcon from "../../../../../../public/images/catalog.spam.react.svg";
-
-const StyledSendClockIcon = styled(SendClockIcon)`
-  ${commonIconsStyles}
-  path {
-    fill: #3b72a7;
-  }
-`;
-const StyledCatalogSpamIcon = styled(CatalogSpamIcon)`
-  ${commonIconsStyles}
-  path {
-    fill: #3b72a7;
-  }
-`;
+import withBadges from "../../../../../HOCs/withBadges";
 
 const UserContent = ({
   item,
@@ -31,6 +14,7 @@ const UserContent = ({
   onEmailClick,
   onUserNameClick,
   groups,
+  badgesComponent,
 }) => {
   const { userName, displayName, title, mobilePhone, email, statusType } = item;
 
@@ -57,10 +41,7 @@ const UserContent = ({
       >
         {displayName}
       </Link>
-      <>
-        {statusType === "pending" && <StyledSendClockIcon size="small" />}
-        {statusType === "disabled" && <StyledCatalogSpamIcon size="small" />}
-      </>
+      <div className="people-badges">{badgesComponent}</div>
       {title ? (
         <Text
           containerMinWidth="120px"
@@ -108,4 +89,4 @@ const UserContent = ({
   );
 };
 
-export default withRouter(UserContent);
+export default withRouter(withBadges(UserContent));

@@ -8,6 +8,7 @@ import Link from "@appserver/components/link";
 import Text from "@appserver/components/text";
 import styled from "styled-components";
 import Checkbox from "@appserver/components/checkbox";
+import withBadges from "../../../../../HOCs/withBadges";
 
 const StyledPeopleRow = styled(TableRow)`
   .table-container_cell {
@@ -23,6 +24,13 @@ const StyledPeopleRow = styled(TableRow)`
       margin-left: 8px;
     }
   }
+
+  .people-badges {
+    height: 22px;
+    align-self: center;
+    white-space: nowrap;
+    margin-left: 8px;
+  }
 `;
 
 const PeopleTableRow = (props) => {
@@ -36,6 +44,7 @@ const PeopleTableRow = (props) => {
     onEmailClick,
     onUserNameClick,
     isAdmin,
+    badgesComponent,
   } = props;
   const { displayName, email, role, statusType, userName } = item;
 
@@ -74,6 +83,7 @@ const PeopleTableRow = (props) => {
         >
           {displayName}
         </Link>
+        <div className="people-badges">{badgesComponent}</div>
       </TableCell>
       <TableCell>{groups}</TableCell>
       <TableCell>
@@ -118,4 +128,6 @@ const PeopleTableRow = (props) => {
   );
 };
 
-export default withRouter(withContextOptions(withContent(PeopleTableRow)));
+export default withRouter(
+  withContextOptions(withContent(withBadges(PeopleTableRow)))
+);
