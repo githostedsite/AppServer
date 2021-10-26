@@ -104,42 +104,49 @@ class PeopleStore {
       setDeleteDialogVisible,
     } = this.dialogStore;
 
-    const headerMenu = [
-      {
+    const headerMenu = [];
+
+    hasUsersToMakeEmployees &&
+      headerMenu.push({
         label: t("ChangeToUser", {
           userCaption,
         }),
         disabled: !hasUsersToMakeEmployees,
         onClick: () => setEmployeeDialogVisible(true),
         iconUrl: "/static/images/change.to.employee.react.svg",
-      },
-      {
+      });
+    hasUsersToMakeGuests &&
+      headerMenu.push({
         label: t("ChangeToGuest", {
           guestCaption,
         }),
         disabled: !hasUsersToMakeGuests,
         onClick: () => setGuestDialogVisible(true),
         iconUrl: "/static/images/change.to.guest.react.svg",
-      },
-      {
+      });
+    hasUsersToActivate &&
+      headerMenu.push({
         label: t("LblSetActive"),
         disabled: !hasUsersToActivate,
         onClick: () => setActiveDialogVisible(true),
         iconUrl: "/static/images/enable.react.svg",
-      },
-      {
+      });
+    hasUsersToDisable &&
+      headerMenu.push({
         label: t("LblSetDisabled"),
         disabled: !hasUsersToDisable,
         onClick: () => setDisableDialogVisible(true),
         iconUrl: "/static/images/disable.react.svg",
-      },
-      {
+      });
+    hasUsersToInvite &&
+      headerMenu.push({
         label: t("LblInviteAgain"),
         disabled: !hasUsersToInvite,
         onClick: () => setSendInviteDialogVisible(true),
         iconUrl: "/static/images/invite.again.react.svg",
-      },
-      {
+      });
+    hasAnybodySelected &&
+      headerMenu.push({
         label: t("LblSendEmail"),
         disabled: !hasAnybodySelected,
         onClick: () => {
@@ -150,14 +157,14 @@ class PeopleStore {
           window.open(`mailto: ${str}`, "_self");
         },
         iconUrl: "/static/images/send.react.svg",
-      },
-      {
+      });
+    hasUsersToRemove &&
+      headerMenu.push({
         label: t("Common:Delete"),
         disabled: !hasUsersToRemove,
         onClick: () => setDeleteDialogVisible(true),
         iconUrl: "/static/images/delete.react.svg",
-      },
-    ];
+      });
 
     return headerMenu;
   };
