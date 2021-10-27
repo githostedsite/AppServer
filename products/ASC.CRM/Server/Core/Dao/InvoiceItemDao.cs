@@ -34,6 +34,7 @@ using ASC.Common.Caching;
 using ASC.Common.Logging;
 using ASC.Core;
 using ASC.Core.Common.EF;
+using ASC.Core.Common.EF.Context;
 using ASC.CRM.Core.EF;
 using ASC.CRM.Core.Entities;
 using ASC.CRM.Core.Enums;
@@ -53,6 +54,7 @@ namespace ASC.CRM.Core.Dao
 
         public InvoiceItemDao(
                 DbContextManager<CrmDbContext> dbContextManager,
+                DbContextManager<TenantDbContext> dbContextManager1,
                 TenantManager tenantManager,
                 SecurityContext securityContext,
                 CrmSecurity crmSecurity,
@@ -60,6 +62,7 @@ namespace ASC.CRM.Core.Dao
                 ICache ascCache,
                 IMapper mapper
             ) : base(dbContextManager,
+                 dbContextManager1,
                  tenantManager,
                  securityContext,
                  logger,
@@ -232,7 +235,7 @@ namespace ASC.CRM.Core.Dao
 
             if (result > 0)
             {
-                _cache.Insert(cacheKey, result, TimeSpan.FromSeconds(30));
+                _cache.Insert(cacheKey, result.ToString(), TimeSpan.FromSeconds(30));
             }
             return result;
         }

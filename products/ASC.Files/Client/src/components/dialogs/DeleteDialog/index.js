@@ -41,6 +41,19 @@ class DeleteDialogComponent extends React.Component {
     this.state = { foldersList, filesList, selection };
   }
 
+  componentDidMount() {
+    document.addEventListener("keyup", this.onKeyUp, false);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener("keyup", this.onKeyUp, false);
+  }
+
+  onKeyUp = (e) => {
+    if (e.keyCode === 27) this.onClose();
+    if (e.keyCode === 13 || e.which === 13) this.onDelete();
+  };
+
   onDelete = () => {
     this.onClose();
     const { t, deleteAction } = this.props;
@@ -54,7 +67,7 @@ class DeleteDialogComponent extends React.Component {
 
     if (!selection.length) return;
 
-    deleteAction(translations, selection).catch((err) => toastr.error(err));
+    deleteAction(translations, selection);
   };
 
   onUnsubscribe = () => {
@@ -94,6 +107,7 @@ class DeleteDialogComponent extends React.Component {
   };
 
   onClose = () => {
+    this.props.setBufferSelection(null);
     this.props.setRemoveMediaItem(null);
     this.props.setDeleteDialogVisible(false);
   };
@@ -106,34 +120,40 @@ class DeleteDialogComponent extends React.Component {
       isLoading,
       unsubscribe,
       isPrivacyFolder,
+      isRecycleBinFolder,
+      personal,
     } = this.props;
     const { filesList, foldersList, selection } = this.state;
 
     const checkedSelections = selection.filter((x) => x.checked === true);
 
-    const title = isPrivacyFolder
-      ? t("ConfirmRemove")
-      : unsubscribe
-      ? t("UnsubscribeTitle")
-      : checkedSelections.length === 1 || isPrivacyFolder
-      ? checkedSelections[0].fileExst
-        ? t("MoveToTrashOneFileTitle")
-        : t("MoveToTrashOneFolderTitle")
-      : t("MoveToTrashItemsTitle");
+    const title =
+      isPrivacyFolder || isRecycleBinFolder || checkedSelections[0]?.providerKey
+        ? t("ConfirmRemove")
+        : unsubscribe
+        ? t("UnsubscribeTitle")
+        : checkedSelections.length === 1 || isPrivacyFolder
+        ? checkedSelections[0].fileExst
+          ? t("MoveToTrashOneFileTitle")
+          : t("MoveToTrashOneFolderTitle")
+        : t("MoveToTrashItemsTitle");
 
     const noteText = unsubscribe
       ? t("UnsubscribeNote")
       : checkedSelections.length === 1 || isPrivacyFolder
       ? checkedSelections[0].fileExst
         ? t("MoveToTrashOneFileNote")
+        : personal
+        ? ""
         : t("MoveToTrashOneFolderNote")
       : t("MoveToTrashItemsNote");
 
-    const accessButtonLabel = isPrivacyFolder
-      ? t("Common:OKButton")
-      : unsubscribe
-      ? t("UnsubscribeButton")
-      : t("MoveToTrashButton");
+    const accessButtonLabel =
+      isPrivacyFolder || isRecycleBinFolder || checkedSelections[0]?.providerKey
+        ? t("Common:OKButton")
+        : unsubscribe
+        ? t("UnsubscribeButton")
+        : t("MoveToTrashButton");
 
     const accuracy = 20;
     let filesHeight = 25 * filesList.length + accuracy + 8;
@@ -156,10 +176,12 @@ class DeleteDialogComponent extends React.Component {
         <ModalDialog.Header>{title}</ModalDialog.Header>
         <ModalDialog.Body>
           <div className="modal-dialog-content">
-            <Text className="delete_dialog-header-text">{noteText}</Text>
+            <Text className="delete_dialog-header-text" noSelect>
+              {noteText}
+            </Text>
             <Scrollbar style={{ height, maxHeight: 330 }} stype="mediumBlack">
               {foldersList.length > 0 && (
-                <Text isBold className="delete_dialog-text">
+                <Text isBold className="delete_dialog-text" noSelect>
                   {t("Translations:Folders")}:
                 </Text>
               )}
@@ -176,7 +198,7 @@ class DeleteDialogComponent extends React.Component {
               ))}
 
               {filesList.length > 0 && (
-                <Text isBold className="delete_dialog-text">
+                <Text isBold className="delete_dialog-text" noSelect>
                   {t("Translations:Files")}:
                 </Text>
               )}
@@ -231,10 +253,16 @@ export default inject(
     dialogsStore,
     filesActionsStore,
     treeFoldersStore,
+    auth,
   }) => {
-    const { selection, isLoading } = filesStore;
+    const {
+      selection,
+      isLoading,
+      bufferSelection,
+      setBufferSelection,
+    } = filesStore;
     const { deleteAction, unsubscribeAction } = filesActionsStore;
-    const { isPrivacyFolder } = treeFoldersStore;
+    const { isPrivacyFolder, isRecycleBinFolder } = treeFoldersStore;
 
     const {
       deleteDialogVisible: visible,
@@ -244,12 +272,19 @@ export default inject(
       unsubscribe,
     } = dialogsStore;
 
+    const { personal } = auth.settingsStore;
+
     return {
-      selection: removeMediaItem ? [removeMediaItem] : selection,
+      selection: removeMediaItem
+        ? [removeMediaItem]
+        : selection.length
+        ? selection
+        : [bufferSelection],
       isLoading,
       isRootFolder: selectedFolderStore.isRootFolder,
       visible,
       isPrivacyFolder,
+      isRecycleBinFolder,
 
       setDeleteDialogVisible,
       deleteAction,
@@ -257,6 +292,9 @@ export default inject(
       unsubscribe,
 
       setRemoveMediaItem,
+
+      personal,
+      setBufferSelection,
     };
   }
 )(withRouter(observer(DeleteDialog)));

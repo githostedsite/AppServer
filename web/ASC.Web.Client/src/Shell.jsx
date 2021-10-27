@@ -21,7 +21,7 @@ import i18n from "./i18n";
 import AppLoader from "@appserver/common/components/AppLoader";
 import System from "./components/System";
 import { AppServerConfig } from "@appserver/common/constants";
-import { Snackbar } from "@appserver/components/snackbar";
+import Snackbar from "@appserver/components/snackbar";
 import moment from "moment";
 
 const { proxyURL } = AppServerConfig;
@@ -51,7 +51,7 @@ const Payments = React.lazy(() => import("./components/pages/Payments"));
 const Error404 = React.lazy(() => import("studio/Error404"));
 const Error401 = React.lazy(() => import("studio/Error401"));
 const Home = React.lazy(() => import("./components/pages/Home"));
-const Login = React.lazy(() => import("login/app"));
+
 const About = React.lazy(() => import("./components/pages/About"));
 const Wizard = React.lazy(() => import("./components/pages/Wizard"));
 const Settings = React.lazy(() => import("./components/pages/Settings"));
@@ -105,14 +105,6 @@ const ConfirmRoute = (props) => (
   </React.Suspense>
 );
 
-const LoginRoute = (props) => (
-  <React.Suspense fallback={<AppLoader />}>
-    <ErrorBoundary>
-      <Login {...props} />
-    </ErrorBoundary>
-  </React.Suspense>
-);
-
 const AboutRoute = (props) => (
   <React.Suspense fallback={<AppLoader />}>
     <ErrorBoundary>
@@ -153,6 +145,7 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
     isDesktop,
     language,
     FirebaseHelper,
+    personal,
   } = rest;
 
   useEffect(() => {
@@ -263,19 +256,20 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
     const targetDate = to.locale(language).format("LL");
 
     const barConfig = {
-      textBody: `${t("BarMaintenanceDescription", {
-        targetDate: `<b>${targetDate}</b>`,
+      parentElementId: "main-bar",
+      text: `${t("BarMaintenanceDescription", {
+        targetDate: targetDate,
         productName: "ONLYOFFICE Personal",
       })} ${t("BarMaintenanceDisclaimer")}`,
-      pos: "top_center",
-      showAction: true,
-      onActionClick: (element) => {
-        element.style.opacity = 0;
+      onAction: () => {
+        Snackbar.close();
         localStorage.setItem(LS_CAMPAIGN_DATE, to.format(DATE_FORMAT));
       },
+      opacity: 1,
+      style: {
+        marginTop: "10px",
+      },
     };
-
-    barConfig.parentElementId = "main-bar";
 
     Snackbar.show(barConfig);
   };
@@ -355,7 +349,7 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
     const remoteEntryURL = combineUrl(
       window.location.origin,
       appURL,
-      "remoteEntry.js"
+      `remoteEntry.js`
     );
 
     const system = {
@@ -372,14 +366,40 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
     return (
       <PrivateRoute
         key={m.id}
-        path={appURL}
+        path={
+          m.appName === "files"
+            ? [
+                "/Products/Files",
+                "/Products/Files/",
+                "/Products/Files/?desktop=true",
+                appURL,
+              ]
+            : appURL
+        }
         component={System}
         system={system}
       />
     );
   });
 
-  //console.log("Shell ", history);
+  const loginRoutes = [];
+
+  if (isLoaded && !personal) {
+    const loginSystem = {
+      url: combineUrl(AppServerConfig.proxyURL, "/login/remoteEntry.js"),
+      scope: "login",
+      module: "./app",
+    };
+    loginRoutes.push(
+      <PublicRoute
+        key={loginSystem.scope}
+        exact
+        path={LOGIN_URLS}
+        component={System}
+        system={loginSystem}
+      />
+    );
+  }
 
   return (
     <Layout>
@@ -392,7 +412,7 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
               <PrivateRoute exact path={HOME_URLS} component={HomeRoute} />
               <PublicRoute exact path={WIZARD_URL} component={WizardRoute} />
               <PrivateRoute path={ABOUT_URL} component={AboutRoute} />
-              <PublicRoute exact path={LOGIN_URLS} component={LoginRoute} />
+              {loginRoutes}
               <Route path={CONFIRM_URL} component={ConfirmRoute} />
               <PrivateRoute
                 path={COMING_SOON_URLS}
@@ -422,23 +442,30 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
 };
 
 const ShellWrapper = inject(({ auth }) => {
-  const { init, isLoaded } = auth;
+  const { init, isLoaded, settingsStore, setProductVersion, language } = auth;
+  const {
+    personal,
+    isDesktopClient,
+    firebaseHelper,
+    setModuleInfo,
+  } = settingsStore;
 
   return {
     loadBaseInfo: () => {
       init();
-      auth.settingsStore.setModuleInfo(config.homepage, "home");
-      auth.setProductVersion(config.version);
+      setModuleInfo(config.homepage, "home");
+      setProductVersion(config.version);
 
-      if (auth.settingsStore.isDesktopClient) {
+      if (isDesktopClient) {
         document.body.classList.add("desktop");
       }
     },
-    language: auth.language,
+    language,
     isLoaded,
     modules: auth.moduleStore.modules,
-    isDesktop: auth.settingsStore.isDesktopClient,
-    FirebaseHelper: auth.settingsStore.firebaseHelper,
+    isDesktop: isDesktopClient,
+    FirebaseHelper: firebaseHelper,
+    personal,
   };
 })(observer(Shell));
 

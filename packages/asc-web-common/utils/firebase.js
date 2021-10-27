@@ -1,20 +1,30 @@
 import firebase from "firebase/app";
 import "firebase/remote-config";
+import "firebase/storage";
 
 class FirebaseHelper {
   remoteConfig = null;
   firebaseConfig = null;
+  firebaseStorage = null;
+
   constructor(settings) {
     this.firebaseConfig = settings;
 
     if (!this.isEnabled) return;
-    firebase.initializeApp(this.config);
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(this.config);
+    } else {
+      firebase.app();
+    }
+
+    this.firebaseStorage = firebase.storage();
 
     this.remoteConfig = firebase.remoteConfig();
 
     this.remoteConfig.settings = {
       fetchTimeMillis: 60000,
-      minimumFetchIntervalMillis: 1,
+      minimumFetchIntervalMillis: 3600000,
     };
 
     this.remoteConfig.defaultConfig = {
@@ -43,8 +53,8 @@ class FirebaseHelper {
       this.config["projectId"] &&
       this.config["storageBucket"] &&
       this.config["messagingSenderId"] &&
-      this.config["appId"] &&
-      this.config["measurementId"]
+      this.config["appId"] /*&&
+      this.config["measurementId"]*/
     );
   }
 
@@ -81,6 +91,22 @@ class FirebaseHelper {
     });
 
     return await Promise.resolve(campaigns);
+  }
+
+  async getCampaignsImages(banner) {
+    const storageRef = this.firebaseStorage.ref();
+    const tangRef = storageRef.child(
+      `campaigns/images/campaigns.${banner}.png`
+    );
+    return await tangRef.getDownloadURL();
+  }
+
+  async getCampaignsTranslations(banner, lng) {
+    const storageRef = this.firebaseStorage.ref();
+    const tangRef = storageRef.child(
+      `campaigns/locales/${lng}/CampaignPersonal${banner}.json`
+    );
+    return await tangRef.getDownloadURL();
   }
 }
 

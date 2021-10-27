@@ -119,8 +119,9 @@ namespace ASC.Core.Data
         internal DbSettingsManagerCache DbSettingsManagerCache { get; set; }
         internal AuthContext AuthContext { get; set; }
         internal TenantManager TenantManager { get; set; }
-        internal WebstudioDbContext WebstudioDbContext { get => LazyWebstudioDbContext.Value; }
         internal Lazy<WebstudioDbContext> LazyWebstudioDbContext { get; set; }
+        internal WebstudioDbContext WebstudioDbContext { get => LazyWebstudioDbContext.Value; }
+        
 
         public DbSettingsManager()
         {
@@ -186,10 +187,9 @@ namespace ASC.Core.Data
 
                 var defaultData = Serialize(def);
 
-                var tr = WebstudioDbContext.Database.BeginTransaction();
-
                 if (data.SequenceEqual(defaultData))
                 {
+                    using var tr = WebstudioDbContext.Database.BeginTransaction();
                     // remove default settings
                     var s = WebstudioDbContext.WebstudioSettings
                         .Where(r => r.Id == settings.ID)
@@ -201,6 +201,9 @@ namespace ASC.Core.Data
                     {
                         WebstudioDbContext.WebstudioSettings.Remove(s);
                     }
+
+                    WebstudioDbContext.SaveChanges();
+                    tr.Commit();
                 }
                 else
                 {
@@ -213,10 +216,9 @@ namespace ASC.Core.Data
                     };
 
                     WebstudioDbContext.AddOrUpdate(r => r.WebstudioSettings, s);
-                }
 
-                WebstudioDbContext.SaveChanges();
-                tr.Commit();
+                    WebstudioDbContext.SaveChanges();
+                }
 
                 DbSettingsManagerCache.Remove(key);
 
