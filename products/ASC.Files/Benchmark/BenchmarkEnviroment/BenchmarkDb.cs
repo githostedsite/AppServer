@@ -2,25 +2,25 @@
 using System.IO;
 using System.Reflection;
 
-using ASC.Core.Common.EF.Context;
 using ASC.Core.Common.EF;
+using ASC.Core.Common.EF.Context;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ASC.Files.Benchmark.BenchmarkEnviroment
 {
     public class BenchmarkDb : IDisposable
     {
         protected IServiceScope Scope { get; set; }
-        public const string TestConnection = "Server=localhost;Database=onlyoffice_benchmark;User ID=root;Password=onlyoffice;Pooling=true;Character Set=utf8;AutoEnlist=false;SSL Mode=none;AllowPublicKeyRetrieval=True";
+        public const string TestConnection = "Server=localhost;Database=onlyoffice_benchmark;User ID=root;Password=root;Pooling=true;Character Set=utf8;AutoEnlist=false;SSL Mode=none;AllowPublicKeyRetrieval=True";
         public void Create()
         {
             var host = Program.CreateHostBuilder(new string[] {
                 "--pathToConf", Path.Combine("..", "..", "..", "..", "..", "config"),
                 "--ConnectionStrings:default:connectionString", TestConnection,
                 "--migration:enabled", "true",
-                "--core:products:folder", Path.Combine("..", "..", "..", "products")}).Build();
+                "--core:products", "false" }).Build();
 
             Migrate(host.Services);
             Migrate(host.Services, Assembly.GetExecutingAssembly().GetName().Name);

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using ASC.Core.Common.EF.Context;
 using ASC.Core.Common.EF;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ASC.Files.Benchmark.BenchmarkEnviroment
@@ -24,7 +24,7 @@ namespace ASC.Files.Benchmark.BenchmarkEnviroment
 
             var usersCount = int.Parse(appConfig["Global:UsersCount"]);
 
-            using var db = scope.ServiceProvider.GetService<DbContextManager<TenantDbContext>>();
+            using var db = scope.ServiceProvider.GetService<DbContextManager<UserDbContext>>();
 
             Users = new List<TestUser>();
             UsersForShare = new List<TestUser>();
@@ -38,7 +38,7 @@ namespace ASC.Files.Benchmark.BenchmarkEnviroment
             db.Value.SaveChanges();
         }
 
-        private TestUser CreateUser(TenantDbContext context, BenchmarkFilesHost host)
+        private TestUser CreateUser(UserDbContext context, BenchmarkFilesHost host)
         {
             var id = Guid.NewGuid();
             var testUser = new User

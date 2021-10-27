@@ -90,7 +90,7 @@ namespace ASC.Files.Benchmark.BenchmarkEnviroment
         {
             InitialScope(() =>
             {
-                filesControllerHelper.OpenEdit(fileId, 1, null);
+                filesControllerHelper.OpenEdit(fileId, 1, null, true);
             });
         }
 
@@ -188,8 +188,8 @@ namespace ASC.Files.Benchmark.BenchmarkEnviroment
 
         public void GetFolder(int folderId)
         {
-            InitialScope(() => 
-            { 
+            InitialScope(() =>
+            {
                 filesControllerHelper.GetFolder(folderId, Id, Core.FilterType.None, false);
             });
         }
