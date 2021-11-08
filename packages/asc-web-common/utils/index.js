@@ -93,14 +93,23 @@ export function updateTempContent(isAuth = false) {
   }
 }
 
+let timer = null;
+
 export function hideLoader() {
   if (isMobile) return;
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
   TopLoaderService.end();
 }
 
 export function showLoader() {
   if (isMobile) return;
-  TopLoaderService.start();
+
+  hideLoader();
+
+  timer = setTimeout(() => TopLoaderService.start(), 500);
 }
 
 export { withLayoutSize } from "./withLayoutSize";
@@ -133,7 +142,7 @@ export function isAdmin(currentUser, currentProductId) {
       productName = "people";
       break;
     case "e67be73d-f9ae-4ce1-8fec-1880cb518cb4":
-      productName = "documents";
+      productName = "files";
       break;
     default:
       break;
@@ -146,21 +155,6 @@ export function isAdmin(currentUser, currentProductId) {
 
   return currentUser.isAdmin || currentUser.isOwner || isProductAdmin;
 }
-
-// export function combineUrl(host = "", ...params) {
-//   let url = host.replace(/\/+$/, "");
-
-//   params.forEach((part) => {
-//     const newPart = part.trim().replace(/^\/+/, "");
-//     url += newPart
-//       ? url.length > 0 && url[url.length - 1] === "/"
-//         ? newPart
-//         : `/${newPart}`
-//       : "";
-//   });
-
-//   return url;
-// }
 
 import combineUrlFunc from "./combineUrl";
 
@@ -212,4 +206,104 @@ export function clickBackdrop() {
   if (elms && elms.length > 0) {
     elms[0].click();
   }
+}
+
+export function objectToGetParams(object) {
+  const params = Object.entries(object)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .map(
+      ([key, value]) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`
+    );
+
+  return params.length > 0 ? `?${params.join("&")}` : "";
+}
+
+export function toCommunityHostname(hostname) {
+  let communityHostname;
+  try {
+    communityHostname =
+      hostname.indexOf("m.") > -1
+        ? hostname.substring(2, hostname.length)
+        : hostname;
+  } catch (e) {
+    console.error(e);
+    communityHostname = hostname;
+  }
+
+  return communityHostname;
+}
+
+export function getProviderTranslation(provider, t) {
+  switch (provider) {
+    case "google":
+      return t("Common:SignInWithGoogle");
+    case "facebook":
+      return t("Common:SignInWithFacebook");
+    case "twitter":
+      return t("Common:SignInWithTwitter");
+    case "linkedin":
+      return t("Common:SignInWithLinkedIn");
+  }
+}
+
+export function getLanguage(lng) {
+  try {
+    let language = lng == "en-US" || lng == "en-GB" ? "en" : lng;
+
+    const splitted = lng.split("-");
+
+    if (splitted.length == 2 && splitted[0] == splitted[1].toLowerCase()) {
+      language = splitted[0];
+    }
+
+    return language;
+  } catch (error) {
+    console.error(error);
+  }
+
+  return lng;
+}
+
+export function loadLanguagePath(homepage, fixedNS = null) {
+  return (lng, ns) => {
+    const language = getLanguage(lng instanceof Array ? lng[0] : lng);
+
+    if (ns.length > 0 && ns[0] === "Common") {
+      return `/static/locales/${language}/Common.json`;
+    }
+    return `${homepage}/locales/${language}/${fixedNS || ns}.json`;
+  };
+}
+
+export function loadScript(url, id, onLoad, onError) {
+  try {
+    const script = document.createElement("script");
+    script.setAttribute("type", "text/javascript");
+    script.setAttribute("id", id);
+
+    if (onLoad) script.onload = onLoad;
+    if (onError) script.onerror = onError;
+
+    script.src = url;
+    script.async = true;
+
+    document.body.appendChild(script);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export function isRetina() {
+  if (window.devicePixelRatio > 1) return true;
+
+  var mediaQuery =
+    "(-webkit-min-device-pixel-ratio: 1.5),\
+      (min--moz-device-pixel-ratio: 1.5),\
+      (-o-min-device-pixel-ratio: 3/2),\
+      (min-resolution: 1.5dppx),\
+      (min-device-pixel-ratio: 1.5)";
+
+  if (window.matchMedia && window.matchMedia(mediaQuery).matches) return true;
+  return false;
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { isMobile } from "react-device-detect";
 import Row from "@appserver/components/row";
 import RowContent from "@appserver/components/row-content";
 import RowContainer from "@appserver/components/row-container";
@@ -19,227 +20,101 @@ const DownloadContent = (props) => {
     checkedTitle,
     indeterminateTitle,
     items,
-    formatKeys,
     onSelectFormat,
     onRowSelect,
     getItemIcon,
     titleFormat,
-    getTitleLabel,
     type,
+    filesConverts,
+    title,
   } = props;
 
+  const getTitleExtensions = () => {
+    let arr = [];
+    for (let item of items) {
+      const exst = item.fileExst;
+
+      const exstItem = filesConverts.find((f) => f[exst]);
+      const arrayExst = exstItem ? exstItem[exst] : [];
+      arr = [...arr, ...arrayExst];
+    }
+
+    arr = arr.filter((x, pos) => arr.indexOf(x) !== pos);
+    arr = arr.filter((x, pos) => arr.indexOf(x) === pos);
+
+    const formats = [
+      {
+        key: "original",
+        label: t("OriginalFormat"),
+        onClick: onSelectFormat,
+        "data-format": t("OriginalFormat"),
+        "data-type": type,
+      },
+    ];
+
+    for (let f of arr) {
+      formats.push({
+        key: f,
+        label: f,
+        onClick: onSelectFormat,
+        "data-format": f,
+        "data-type": type,
+      });
+    }
+
+    formats.push({
+      key: "custom",
+      label: t("CustomFormat"),
+      onClick: onSelectFormat,
+      "data-format": t("CustomFormat"),
+      "data-type": type,
+    });
+
+    return formats;
+  };
+
   const getFormats = (item) => {
-    const documentFormats = [
-      {
-        key: "key1",
-        label: t("OriginalFormat"),
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.OriginalFormat,
-          item,
-          "document"
-        ),
-      },
-      {
-        key: "key2",
-        label: ".txt",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.TxtFormat,
-          item,
-          "document"
-        ),
-      },
-      {
-        key: "key3",
-        label: ".docx",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.DocxFormat,
-          item,
-          "document"
-        ),
-      },
-      {
-        key: "key4",
-        label: ".odt",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.OdtFormat,
-          item,
-          "document"
-        ),
-      },
-      {
-        key: "key5",
-        label: ".pdf",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.PdfFormat,
-          item,
-          "document"
-        ),
-      },
-      {
-        key: "key6",
-        label: ".rtf",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.RtfFormat,
-          item,
-          "document"
-        ),
-      },
-      {
-        key: "key7",
-        label: t("CustomFormat"),
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.CustomFormat,
-          item,
-          "document"
-        ),
-      },
-    ];
+    const arrayFormats = item && filesConverts.find((f) => f[item.fileExst]);
+    const conversionFormats = arrayFormats ? arrayFormats[item.fileExst] : [];
 
-    const presentationFormats = [
+    const formats = [
       {
-        key: "key1",
+        key: "original",
         label: t("OriginalFormat"),
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.OriginalFormat,
-          item,
-          "presentation"
-        ),
-      },
-      {
-        key: "key2",
-        label: ".odp",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.OdpFormat,
-          item,
-          "presentation"
-        ),
-      },
-      {
-        key: "key3",
-        label: ".pdf",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.PdfFormat,
-          item,
-          "presentation"
-        ),
-      },
-      {
-        key: "key4",
-        label: ".pptx",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.PptxFormat,
-          item,
-          "presentation"
-        ),
-      },
-      {
-        key: "key5",
-        label: t("CustomFormat"),
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.CustomFormat,
-          item,
-          "presentation"
-        ),
+        onClick: onSelectFormat,
+        "data-format": t("OriginalFormat"),
+        "data-type": type,
+        "data-file-id": item.id,
       },
     ];
-
-    const spreadsheetFormats = [
-      {
-        key: "key1",
-        label: t("OriginalFormat"),
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.OriginalFormat,
-          item,
-          "spreadsheet"
-        ),
-      },
-      {
-        key: "key2",
-        label: ".odp",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.OdsFormat,
-          item,
-          "spreadsheet"
-        ),
-      },
-      {
-        key: "key3",
-        label: ".pdf",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.PdfFormat,
-          item,
-          "spreadsheet"
-        ),
-      },
-      {
-        key: "key4",
-        label: ".xlsx",
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.XlsxFormat,
-          item,
-          "spreadsheet"
-        ),
-      },
-      {
-        key: "key5",
-        label: t("CustomFormat"),
-        onClick: onSelectFormat.bind(
-          this,
-          formatKeys.CustomFormat,
-          item,
-          "spreadsheet"
-        ),
-      },
-    ];
+    for (let f of conversionFormats) {
+      formats.push({
+        key: f,
+        label: f,
+        onClick: onSelectFormat,
+        "data-format": f,
+        "data-type": type,
+        "data-file-id": item.id,
+      });
+    }
 
     switch (type) {
       case "document":
-        return documentFormats;
+        return formats;
       case "spreadsheet":
-        return spreadsheetFormats;
+        return formats;
       case "presentation":
-        return presentationFormats;
+        return formats;
       default:
         return [];
     }
   };
 
-  const getTitle = () => {
-    switch (type) {
-      case "document":
-        return t("Documents");
-      case "spreadsheet":
-        return t("Spreadsheets");
-      case "presentation":
-        return t("Presentations");
-      default:
-        return "";
-    }
-  };
-
-  const title = getTitle();
-
   const length = items.length;
   const minHeight = length > 2 ? 110 : length * 50;
   const showTitle = length > 1;
-  const formats = getFormats();
-  const documentsTitle = getTitleLabel(titleFormat);
+
+  const titleData = getTitleExtensions();
 
   return (
     <StyledDownloadContent>
@@ -256,18 +131,22 @@ const DownloadContent = (props) => {
             </Text>
             <></>
             <Text fontSize="12px" containerWidth="auto">
-              {t("ConvertInto")}
+              {(checkedTitle || indeterminateTitle) && t("ConvertInto")}
             </Text>
-            <LinkWithDropdown
-              containerWidth="auto"
-              data={formats}
-              directionX="left"
-              directionY="bottom"
-              dropdownType="appearDashedAfterHover"
-              fontSize="12px"
-            >
-              {documentsTitle}
-            </LinkWithDropdown>
+            {checkedTitle || indeterminateTitle ? (
+              <LinkWithDropdown
+                containerWidth="auto"
+                data={titleData}
+                directionX="left"
+                directionY="bottom"
+                dropdownType="appearDashedAfterHover"
+                fontSize="12px"
+              >
+                {titleFormat}
+              </LinkWithDropdown>
+            ) : (
+              <></>
+            )}
           </RowContent>
         </Row>
       )}
@@ -280,8 +159,6 @@ const DownloadContent = (props) => {
         {items.map((file) => {
           const element = getItemIcon(file);
           let dropdownItems = getFormats(file);
-          const format = getTitleLabel(file.format);
-          dropdownItems = dropdownItems.slice(1, -1);
           dropdownItems = dropdownItems.filter(
             (x) => x.label !== file.fileExst
           );
@@ -293,23 +170,38 @@ const DownloadContent = (props) => {
               element={element}
             >
               <RowContent convertSideInfo={false}>
-                <Text truncate type="page" title={file.title} fontSize="14px">
+                <Text
+                  truncate
+                  type="page"
+                  title={file.title}
+                  fontSize="14px"
+                  noSelect
+                >
                   {file.title}
                 </Text>
                 <></>
-                <Text fontSize="12px" containerWidth="auto">
-                  {file.checked && t("ConvertInto")}
-                </Text>
-                <LinkWithDropdown
-                  dropdownType="appearDashedAfterHover"
-                  containerWidth="auto"
-                  data={dropdownItems}
-                  directionX="left"
-                  directionY="bottom"
-                  fontSize="12px"
-                >
-                  {format}
-                </LinkWithDropdown>
+                {file.checked && (
+                  <Text fontSize="12px" containerWidth="auto" noSelect>
+                    {t("ConvertInto")}
+                  </Text>
+                )}
+
+                {file.checked ? (
+                  <LinkWithDropdown
+                    dropdownType={
+                      isMobile ? "alwaysDashed" : "appearDashedAfterHover"
+                    }
+                    containerWidth="auto"
+                    data={dropdownItems}
+                    directionX="left"
+                    directionY="bottom"
+                    fontSize="12px"
+                  >
+                    {file.format || t("OriginalFormat")}
+                  </LinkWithDropdown>
+                ) : (
+                  <></>
+                )}
               </RowContent>
             </Row>
           );

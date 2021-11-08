@@ -109,42 +109,24 @@ export const ConflictResolveType = Object.freeze({
   Duplicate: 2,
 });
 export const providersData = Object.freeze({
-  Google: {
-    label: "SignInWithGoogle",
+  google: {
+    label: "google",
     icon: "/static/images/share.google.react.svg",
   },
-  Facebook: {
-    label: "SignInWithFacebook",
+  facebook: {
+    label: "facebook",
     icon: "/static/images/share.facebook.react.svg",
   },
-  Twitter: {
-    label: "SignInWithTwitter",
+  twitter: {
+    label: "twitter",
     icon: "/static/images/share.twitter.react.svg",
     iconOptions: { color: "#2AA3EF" },
   },
-  LinkedIn: {
-    label: "SignInWithLinkedIn",
+  linkedin: {
+    label: "linkedin",
     icon: "/static/images/share.linkedin.react.svg",
   },
 });
-export const i18nBaseSettings = {
-  lng: localStorage.getItem(LANGUAGE) || "en",
-  supportedLngs: ["en", "ru"],
-  fallbackLng: "en",
-  load: "languageOnly",
-
-  interpolation: {
-    escapeValue: false, // not needed for react as it escapes by default
-    format: function (value, format) {
-      if (format === "lowercase") return value.toLowerCase();
-      return value;
-    },
-  },
-
-  react: {
-    useSuspense: true,
-  },
-};
 
 export const LoaderStyle = {
   title: "",
@@ -163,3 +145,15 @@ export const LoaderStyle = {
 import config from "./AppServerConfig";
 
 export const AppServerConfig = config;
+
+/**
+ * Enum for Tenant trusted domains on registration.
+ * @readonly
+ */
+export const TenantTrustedDomainsType = Object.freeze({
+  None: 0,
+  Custom: 1,
+  All: 2,
+});
+
+export const PasswordLimitSpecialCharacters = "!@#$%^&*";
