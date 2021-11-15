@@ -50,6 +50,7 @@ using ASC.Web.Studio.UserControls.Statistics;
 using ASC.Web.Studio.Utility;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -67,6 +68,7 @@ namespace ASC.Files.Core.Data
         private const string privacy = "privacy";
         private const string trash = "trash";
         private const string projects = "projects";
+        private const string custom = "custom";
 
         private FactoryIndexerFolder FactoryIndexer { get; }
         private GlobalSpace GlobalSpace { get; }
@@ -347,7 +349,9 @@ namespace ASC.Files.Core.Data
 
                 newFolder = FilesDbContext.Folders.Add(newFolder).Entity;
                 FilesDbContext.SaveChanges();
-                if (folder.FolderType == FolderType.DEFAULT || folder.FolderType == FolderType.BUNCH)
+
+                if (folder.FolderType == FolderType.DEFAULT || folder.FolderType == FolderType.BUNCH 
+                    || folder.FolderType == FolderType.Custom)
                 {
                     FactoryIndexer.IndexAsync(newFolder);
                 }
@@ -485,7 +489,7 @@ namespace ASC.Files.Core.Data
             {
                 var folder = GetFolder(folderId);
 
-                if (folder.FolderType != FolderType.DEFAULT)
+                if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.Custom)
                     throw new ArgumentException("It is forbidden to move the System folder.", "folderId");
 
                 var recalcFolders = new List<int> { toFolderId };
@@ -819,7 +823,8 @@ namespace ASC.Files.Core.Data
             return FromQueryWithShared(q).Select(ToFolder).ToList();
         }
 
-        public IEnumerable<int> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists)
+        public IEnumerable<int> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists,
+            string title = null)
         {
             if (string.IsNullOrEmpty(module)) throw new ArgumentNullException("module");
             if (string.IsNullOrEmpty(bunch)) throw new ArgumentNullException("bunch");
@@ -831,7 +836,7 @@ namespace ASC.Files.Core.Data
                 .Where(r => keys.Length > 1 ? keys.Any(a => a == r.RightNode) : r.RightNode == keys[0])
                 .ToDictionary(r => r.RightNode, r => r.LeftNode);
 
-            var folderIds = new List<int>();
+            var folderIds = folderIdsDictionary.Values.Select(id => Convert.ToInt32(id)).ToList();
 
             foreach (var key in keys)
             {
@@ -877,6 +882,10 @@ namespace ASC.Files.Core.Data
                             folder.FolderType = FolderType.Projects;
                             folder.Title = projects;
                             break;
+                        case custom:
+                            folder.FolderType = FolderType.Custom;
+                            folder.Title = title;
+                            break;
                         default:
                             folder.FolderType = FolderType.BUNCH;
                             folder.Title = key;
@@ -897,13 +906,15 @@ namespace ASC.Files.Core.Data
                     FilesDbContext.SaveChanges();
 
                     tx.Commit(); //Commit changes
+
+                    folderIds.Add(newFolderId);
                 }
-                folderIds.Add(newFolderId);
+                
             }
             return folderIds;
         }
 
-        public int GetFolderID(string module, string bunch, string data, bool createIfNotExists)
+        public int GetFolderID(string module, string bunch, string data, bool createIfNotExists, string title = null)
         {
             if (string.IsNullOrEmpty(module)) throw new ArgumentNullException("module");
             if (string.IsNullOrEmpty(bunch)) throw new ArgumentNullException("bunch");
@@ -964,6 +975,10 @@ namespace ASC.Files.Core.Data
                     case projects:
                         folder.FolderType = FolderType.Projects;
                         folder.Title = projects;
+                        break;
+                    case custom:
+                        folder.FolderType = FolderType.Custom;
+                        folder.Title = title;
                         break;
                     default:
                         folder.FolderType = FolderType.BUNCH;
@@ -1033,6 +1048,11 @@ namespace ASC.Files.Core.Data
         public int GetFolderIDPrivacy(bool createIfNotExists, Guid? userId = null)
         {
             return (this as IFolderDao<int>).GetFolderID(FileConstant.ModuleId, privacy, (userId ?? AuthContext.CurrentAccount.ID).ToString(), createIfNotExists);
+        }
+
+        public IEnumerable<int> GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
+        {
+            return (this as IFolderDao<int>).GetFolderIDs(FileConstant.ModuleId, custom, groupIDs.Select(i => i.ToString()), false);
         }
 
 
@@ -1230,6 +1250,11 @@ namespace ASC.Files.Core.Data
             return q1.Union(q2);
         }
 
+        private string CreateKey(string module, string bunch, string data)
+        {
+            return string.Format("{0}/{1}/{2}", module, bunch, data);
+        }
+
         private string GetProjectTitle(object folderID)
         {
             return "";
@@ -1283,7 +1308,10 @@ namespace ASC.Files.Core.Data
             //return projectTitle;
         }
 
-
+        public int[] GetFoldersIDsCustom()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class DbFolderQuery
