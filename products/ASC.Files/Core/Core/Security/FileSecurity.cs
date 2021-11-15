@@ -377,7 +377,8 @@ namespace ASC.Files.Core.Security
                      f.RootFolderType == FolderType.Favorites ||
                      f.RootFolderType == FolderType.Templates ||
                      f.RootFolderType == FolderType.Privacy ||
-                     f.RootFolderType == FolderType.Projects;
+                     f.RootFolderType == FolderType.Projects ||
+                     f.RootFolderType == FolderType.Custom;
 
             var isVisitor = user.IsVisitor(UserManager);
 
@@ -516,6 +517,12 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
+                    if (e.RootFolderType == FolderType.Custom && FileSecurityCommon.IsAdministrator(userId))
+                    {
+                        result.Add(e);
+                        continue;
+                    }
+
                     if (shares == null)
                     {
                         shares = GetShares(entries).Join(subjects, r => r.Subject, s => s, (r, s) => r).ToList();
@@ -554,6 +561,8 @@ namespace ASC.Files.Core.Security
                             ? DefaultMyShare
                         : e.RootFolderType == FolderType.Privacy
                             ? DefaultPrivacyShare
+                            : e.RootFolderType == FolderType.Custom
+                            ? FileShare.Restrict
                             : DefaultCommonShare;
 
                     e.Access = ace != null ? ace.Share : defaultShare;
