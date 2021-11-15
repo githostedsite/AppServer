@@ -161,6 +161,9 @@ namespace ASC.Employee.Core.Controllers
             var @group = GetGroupInfo(groupid);
             var groupWrapperFull = GroupWraperFullHelper.Get(group, false);
 
+            if (group.CategoryID == Constants.LinkedGroupCategoryId) // TODO: add VDR check
+                throw new Exception("Unable to delete linked group");
+
             UserManager.DeleteGroup(groupid);
 
             MessageService.Send(MessageAction.GroupDeleted, MessageTarget.Create(group.ID), group.Name);
