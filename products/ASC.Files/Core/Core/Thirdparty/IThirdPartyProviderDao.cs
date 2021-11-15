@@ -122,12 +122,13 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public string GetFolderID(string module, string bunch, string data, bool createIfNotExists)
+        public string GetFolderID(string module, string bunch, string data, bool createIfNotExists, string title = null)
         {
             return null;
         }
 
-        public IEnumerable<string> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists)
+        public IEnumerable<string> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists,
+            string title = null)
         {
             return new List<string>();
         }
@@ -179,6 +180,11 @@ namespace ASC.Files.Thirdparty
         }
 
         public string GetFolderIDProjects(bool createIfNotExists)
+        {
+            return null;
+        }
+
+        public IEnumerable<int> GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
         {
             return null;
         }
