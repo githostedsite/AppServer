@@ -234,9 +234,10 @@ namespace ASC.Files.Core
         /// <param name="data"></param>
         /// <param name="createIfNotExists"></param>
         /// <returns></returns>
-        T GetFolderID(string module, string bunch, string data, bool createIfNotExists);
+        T GetFolderID(string module, string bunch, string data, bool createIfNotExists, string title = null);
 
-        IEnumerable<T> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists);
+        IEnumerable<T> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists, 
+            string title = null);
 
         /// <summary>
         ///  Returns id folder "Shared Documents"
@@ -313,6 +314,12 @@ namespace ASC.Files.Core
         /// <returns></returns>
         T GetFolderIDProjects(bool createIfNotExists);
 
+        /// <summary>
+        /// Returns ids folder "Custom"
+        /// Only in TMFolderDao
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<int> GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
 
         /// <summary>
         /// Return id of related object
@@ -329,7 +336,6 @@ namespace ASC.Files.Core
         /// <param name="folderIDs"></param>
         /// <returns></returns>
         Dictionary<string, string> GetBunchObjectIDs(List<T> folderIDs);
-
 
         IEnumerable<(Folder<T>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to);
 
