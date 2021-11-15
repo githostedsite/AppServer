@@ -28,6 +28,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 using ASC.Common;
@@ -516,6 +517,23 @@ namespace ASC.Web.Files.Classes
             return trashFolderId;
         }
 
+        public T GetFoldersCustom<T>(IDaoFactory daoFactory)
+        {
+            return (T)Convert.ChangeType(GetFoldersCustom(daoFactory), typeof(T));
+        }
+
+        public IEnumerable<int> GetFoldersCustom(IDaoFactory daoFactory)
+        {
+            if (IsOutsider) return null;
+
+            var groupIDs = UserManager.GetUserGroupsId(AuthContext.CurrentAccount.ID);
+
+            if (groupIDs == null || groupIDs.Any() == false)
+                return new List<int>();
+
+            return daoFactory.GetFolderDao<int>().GetFolderIDsCustom(groupIDs);
+        }
+
         protected internal void SetFolderTrash(object value)
         {
             var cacheKey = string.Format("trash/{0}/{1}", TenantManager.GetCurrentTenant().TenantId, value);
@@ -644,6 +662,7 @@ namespace ASC.Web.Files.Classes
         public int FolderRecent => GlobalFolder.GetFolderRecent(DaoFactory);
         public int FolderFavorites => GlobalFolder.GetFolderFavorites(DaoFactory);
         public int FolderTemplates => GlobalFolder.GetFolderTemplates(DaoFactory);
+        public IEnumerable<int> FoldersCustom => GlobalFolder.GetFoldersCustom(DaoFactory);
 
         public T GetFolderMy<T>()
         {
