@@ -137,7 +137,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
-                else if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.BUNCH)
+                else if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.BUNCH
+                    && folder.FolderType != FolderType.Custom)
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_DeleteFolder;
                 }
