@@ -51,6 +51,7 @@ namespace ASC.Web.Files.Utils
     public class FileSharingAceHelper<T>
     {
         private FileSecurity FileSecurity { get; }
+        private Global Global { get; }
         private CoreBaseSettings CoreBaseSettings { get; }
         private FileUtility FileUtility { get; }
         private UserManager UserManager { get; }
@@ -64,6 +65,7 @@ namespace ASC.Web.Files.Utils
 
         public FileSharingAceHelper(
             FileSecurity fileSecurity,
+            Global global,
             CoreBaseSettings coreBaseSettings,
             FileUtility fileUtility,
             UserManager userManager,
@@ -76,6 +78,7 @@ namespace ASC.Web.Files.Utils
             FileTrackerHelper fileTracker)
         {
             FileSecurity = fileSecurity;
+            Global = global;
             CoreBaseSettings = coreBaseSettings;
             FileUtility = fileUtility;
             UserManager = userManager;
@@ -107,6 +110,10 @@ namespace ASC.Web.Files.Utils
                 var ownerId = entry.RootFolderType == FolderType.USER ? entry.RootFolderCreator : entry.CreateBy;
                 if (entry.RootFolderType == FolderType.COMMON && subjects.Contains(Constants.GroupAdmin.ID)
                     || ownerId == w.SubjectId)
+                    continue;
+
+                if (entry.RootFolderType == FolderType.Custom && w.Share == FileShare.ReadWrite
+                    && !Global.IsAdministrator) //TODO: add VDR check // Only the portal administrator can grant full rights to custom root folder
                     continue;
 
                 var share = w.Share;
@@ -244,7 +251,8 @@ namespace ASC.Web.Files.Utils
         {
             return
                 entry != null
-                && (entry.RootFolderType == FolderType.COMMON && Global.IsAdministrator
+                && ((entry.RootFolderType == FolderType.COMMON && Global.IsAdministrator) 
+                || (entry.RootFolderType == FolderType.Custom && (Global.IsAdministrator || FileSecurity.CanEdit(entry)))
                     || !UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)
                         && (entry.RootFolderType == FolderType.USER
                             && (Equals(entry.RootFolderId, GlobalFolderHelper.FolderMy) || FileSecurity.CanEdit(entry))
