@@ -81,6 +81,7 @@ namespace ASC.Core.Users
         #region system group and category groups
 
         public static readonly Guid SysGroupCategoryId = new Guid("{7717039D-FBE9-45ad-81C1-68A1AA10CE1F}");
+        public static readonly Guid LinkedGroupCategoryId = new Guid("{9FFA8F4D-182F-4158-9E46-134F4C2B146C}");
 
         public static readonly GroupInfo GroupEveryone = new GroupInfo(SysGroupCategoryId)
         {
@@ -155,6 +156,10 @@ namespace ASC.Core.Users
         public static readonly Action Action_EditGroups = new Action(
             new Guid("{1D4FEEAC-0BF3-4aa9-B096-6D6B104B79B5}"),
             "Edit categories and groups");
+
+        public static readonly Action Action_EditLinkedGroups = new Action(
+            new Guid("{6F67003E-43A5-11ec-81D3-0242AC130003}"),
+            "Edit groups linked with root folders");
 
         #endregion
     }
