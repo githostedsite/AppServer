@@ -44,6 +44,7 @@ namespace ASC.Files.Core
         Recent = 11,
         Templates = 12,
         Privacy = 13,
+        Custom = 14,
     }
 
     public interface IFolder
