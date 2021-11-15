@@ -41,6 +41,7 @@ using ASC.Core.Users;
 using ASC.FederatedLogin.Helpers;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
+using ASC.Files.Core.Core;
 using ASC.Files.Core.Model;
 using ASC.Files.Helpers;
 using ASC.Files.Model;
@@ -97,6 +98,7 @@ namespace ASC.Api.Documents
         private ProductEntryPoint ProductEntryPoint { get; }
         private TenantManager TenantManager { get; }
         private FileUtility FileUtility { get; }
+        private VirtualRoomService VirtualRoomService { get; }
 
         /// <summary>
         /// </summary>
@@ -125,7 +127,8 @@ namespace ASC.Api.Documents
             ProductEntryPoint productEntryPoint,
             TenantManager tenantManager,
             FileUtility fileUtility,
-            ConsumerFactory consumerFactory)
+            ConsumerFactory consumerFactory,
+            VirtualRoomService virtualRoomService)
         {
             FilesControllerHelperString = filesControllerHelperString;
             FilesControllerHelperInt = filesControllerHelperInt;
@@ -150,6 +153,7 @@ namespace ASC.Api.Documents
             ProductEntryPoint = productEntryPoint;
             TenantManager = tenantManager;
             FileUtility = fileUtility;
+            VirtualRoomService = virtualRoomService;
         }
 
         [Read("info")]
@@ -218,6 +222,11 @@ namespace ASC.Api.Documents
                 result.Add((int)GlobalFolderHelper.FolderTrash);
             }
 
+            foreach (var id in GlobalFolderHelper.FoldersCustom)
+            {
+                result.Add(id);
+            }
+
             return result.Select(r => FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
         }
 
@@ -271,11 +280,66 @@ namespace ASC.Api.Documents
         /// Common folder
         /// </short>
         /// <category>Folders</category>
-        /// <returns>Common folder contents</returns>
+        /// <returns>Common folder contents</returns>T
         [Read("@common")]
         public FolderContentWrapper<int> GetCommonFolder(Guid userIdOrGroupId, FilterType filterType, bool withsubfolders)
         {
             return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderCommon, userIdOrGroupId, filterType, withsubfolders);
+        }
+
+        [Create("room")]
+        public FolderWrapper<int> CreateVirtualRoomFromBody([FromBody] CreateFolderModel model)
+        {
+            return FilesControllerHelperInt.CreateVirtualRoom(model.Title);
+        }
+
+        [Update("room/{folderId}")]
+        public FolderWrapper<int> RenameVirtualRoom(int folderId, [FromBody] CreateFolderModel model)
+        {
+            return FilesControllerHelperInt.RenameVirtualRoom(folderId, model.Title);
+        }
+
+        [Read("@rooms")]
+        public IEnumerable<FolderWrapper<int>> GetVirtualRooms()
+        {
+            return FilesControllerHelperInt.GetVirtualRooms();
+        }
+
+        [Delete("room/{folderId}")]
+        public IEnumerable<FileOperationWraper> DeleteVirtualRoom(int folderId)
+        {
+            return FilesControllerHelperInt.DeleteVirtualRoom(folderId);
+        }
+
+        [Update("room/users/{folderId}")]
+        public IEnumerable<FileShareWrapper> AddUserIntoRoom(int folderId, [FromBody] UserModel model)
+        {
+            return FilesControllerHelperInt.AddUserIntoRoom(folderId, model.UserId);
+        }
+
+        [Update("room/users/privilege/{folderId}")]
+        public bool SetRoomAdmin(int folderId, [FromBody] UserModel model)
+        {
+            return VirtualRoomService.SetRoomAdministartor(folderId, model.UserId);
+        }
+
+        [Delete("room/users/privilege/{folderId}")]
+        public bool RemoveRoomAdmin(int folderId, [FromBody] UserModel model)
+        {
+            return VirtualRoomService.RemoveRoomAdministrator(folderId, model.UserId);
+        }
+
+        [Delete("room/users/{folderId}")]
+        public bool RemoveUserFromRoom(int folderId, [FromBody] UserModel model)
+        {
+            return VirtualRoomService.RemoveUserFromRoom(folderId, model.UserId);
+        }
+
+        [Update("room/users/security/{folderId}")]
+        public bool SetRoomSecurity(int folderId, [FromBody] SecurityInfoModel model)
+        {
+            return VirtualRoomService.SetRoomSecurity(folderId, model.Share.FirstOrDefault().ShareTo,
+                model.Share.FirstOrDefault().Access);
         }
 
         /// <summary>
