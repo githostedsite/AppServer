@@ -31,6 +31,7 @@ using System.Linq.Expressions;
 
 using ASC.Collections;
 using ASC.Common;
+using ASC.Common.Security;
 using ASC.Core.Caching;
 using ASC.Core.Common.EF;
 using ASC.Core.Tenants;
@@ -485,7 +486,18 @@ namespace ASC.Core
             {
                 return;
             }
+
             PermissionContext.DemandPermissions(Constants.Action_EditGroups);
+
+            UserService.SaveUserGroupRef(Tenant.TenantId, new UserGroupRef(userId, groupId, UserGroupRefType.Contains));
+
+            ResetGroupCache(userId);
+        }
+
+        public void AddUserIntoLinkedGroup(Guid userId, Guid groupId)
+        {
+            if (Constants.LostUser.ID == userId || Constants.LostGroupInfo.ID == groupId) return;
+            PermissionContext.DemandPermissions(new GroupSecurityObject(groupId), Constants.Action_EditLinkedGroups);
 
             UserService.SaveUserGroupRef(Tenant.TenantId, new UserGroupRef(userId, groupId, UserGroupRefType.Contains));
 
@@ -500,6 +512,14 @@ namespace ASC.Core
             UserService.RemoveUserGroupRef(Tenant.TenantId, userId, groupId, UserGroupRefType.Contains);
 
             ResetGroupCache(userId);
+        }
+
+        public void RemoveUserFromLinkedGroup(Guid userId, Guid groupId)
+        {
+            if (Constants.LostUser.ID == userId || Constants.LostGroupInfo.ID == groupId) return;
+            PermissionContext.DemandPermissions(new GroupSecurityObject(groupId), Constants.Action_EditLinkedGroups);
+
+            UserService.RemoveUserGroupRef(Tenant.TenantId, userId, groupId, UserGroupRefType.Contains);
         }
 
         internal void ResetGroupCache(Guid userID)
@@ -562,13 +582,26 @@ namespace ASC.Core
 
         public GroupInfo[] GetGroups()
         {
-            return GetGroups(Guid.Empty);
+            return GetGroups(Guid.Empty, Constants.LinkedGroupCategoryId);
         }
 
-        public GroupInfo[] GetGroups(Guid categoryID)
+        public GroupInfo[] GetGroups(params Guid[] categoryID)
         {
+            Expression result = null;
+            Expression<Func<GroupInfo, Guid>> exp = g => g.CategoryID;
+
+            foreach (var id in categoryID)
+            {
+                var match = Expression.Equal(exp.Body,
+                    Expression.Constant(id));
+
+                result = result == null ? match : Expression.Or(result, match);
+            }
+
+            var predicate = Expression.Lambda<Func<GroupInfo, bool>>(result, exp.Parameters).Compile();
+
             return GetGroupsInternal()
-                .Where(g => g.CategoryID == categoryID)
+                .Where(predicate)
                 .ToArray();
         }
 
