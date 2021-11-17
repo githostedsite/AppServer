@@ -311,13 +311,13 @@ namespace ASC.Api.Documents
         }
 
         [Update("room/{folderId}/members")]
-        public IEnumerable<FileShareWrapper> AddUsersIntoRoom(int folderId, [FromBody] UsersModel model)
+        public IEnumerable<FileShareWrapper> AddUsersIntoRoom(int folderId, [FromBody] MembersModel model)
         {
             return FilesControllerHelperInt.AddUsersIntoRoom(folderId, model.UsersIds);
         }
 
         [Delete("room/{folderId}/members")]
-        public IEnumerable<FileShareWrapper> RemoveUsersFromRoom(int folderId, [FromBody] UsersModel model)
+        public IEnumerable<FileShareWrapper> RemoveUsersFromRoom(int folderId, [FromBody] MembersModel model)
         {
             return FilesControllerHelperInt.RemoveUsersFromRoom(folderId, model.UsersIds);
         }
