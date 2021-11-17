@@ -184,7 +184,7 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public IEnumerable<int> GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
+        public IEnumerable<string> GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
         {
             return null;
         }
