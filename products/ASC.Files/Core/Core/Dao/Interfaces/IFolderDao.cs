@@ -319,7 +319,7 @@ namespace ASC.Files.Core
         /// Only in TMFolderDao
         /// </summary>
         /// <returns></returns>
-        IEnumerable<int> GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
+        IEnumerable<T> GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
 
         /// <summary>
         /// Return id of related object
