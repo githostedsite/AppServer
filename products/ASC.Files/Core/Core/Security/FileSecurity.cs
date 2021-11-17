@@ -384,7 +384,7 @@ namespace ASC.Files.Core.Security
 
             if (entries.Any(filter))
             {
-                var subjects = GetUserSubjects(userId);
+                var subjects = GetUserSubjects(userId, Constants.LinkedGroupCategoryId);
                 List<FileShareRecord> shares = null;
                 foreach (var e in entries.Where(filter))
                 {
@@ -928,7 +928,7 @@ namespace ASC.Files.Core.Security
             daoFactory.GetSecurityDao<T>().RemoveSubject(subject);
         }
 
-        public List<Guid> GetUserSubjects(Guid userId)
+        public List<Guid> GetUserSubjects(Guid userId, Guid categoryId = default)
         {
             // priority order
             // User, Departments, admin, everyone
@@ -937,7 +937,7 @@ namespace ASC.Files.Core.Security
             if (userId == FileConstant.ShareLinkId)
                 return result;
 
-            result.AddRange(UserManager.GetUserGroups(userId).Select(g => g.ID));
+            result.AddRange(UserManager.GetUserGroups(userId, categoryId).Select(g => g.ID));
             if (FileSecurityCommon.IsAdministrator(userId)) result.Add(Constants.GroupAdmin.ID);
             result.Add(Constants.GroupEveryone.ID);
 
