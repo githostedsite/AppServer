@@ -41,7 +41,6 @@ using ASC.Core.Users;
 using ASC.FederatedLogin.Helpers;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
-using ASC.Files.Core.Core;
 using ASC.Files.Core.Model;
 using ASC.Files.Helpers;
 using ASC.Files.Model;
@@ -98,7 +97,6 @@ namespace ASC.Api.Documents
         private ProductEntryPoint ProductEntryPoint { get; }
         private TenantManager TenantManager { get; }
         private FileUtility FileUtility { get; }
-        private VirtualRoomService VirtualRoomService { get; }
 
         /// <summary>
         /// </summary>
@@ -127,8 +125,7 @@ namespace ASC.Api.Documents
             ProductEntryPoint productEntryPoint,
             TenantManager tenantManager,
             FileUtility fileUtility,
-            ConsumerFactory consumerFactory,
-            VirtualRoomService virtualRoomService)
+            ConsumerFactory consumerFactory)
         {
             FilesControllerHelperString = filesControllerHelperString;
             FilesControllerHelperInt = filesControllerHelperInt;
@@ -153,7 +150,6 @@ namespace ASC.Api.Documents
             ProductEntryPoint = productEntryPoint;
             TenantManager = tenantManager;
             FileUtility = fileUtility;
-            VirtualRoomService = virtualRoomService;
         }
 
         [Read("info")]
@@ -288,9 +284,9 @@ namespace ASC.Api.Documents
         }
 
         [Create("room")]
-        public FolderWrapper<int> CreateVirtualRoomFromBody([FromBody] CreateFolderModel model)
+        public FolderWrapper<int> CreateVirtualRoomFromBody([FromBody] CreateRoomModel model)
         {
-            return FilesControllerHelperInt.CreateVirtualRoom(model.Title);
+            return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
         }
 
         [Update("room/{folderId}")]
@@ -300,9 +296,12 @@ namespace ASC.Api.Documents
         }
 
         [Read("@rooms")]
-        public IEnumerable<FolderWrapper<int>> GetVirtualRooms()
+        public IEnumerable<FolderContentWrapper<int>> GetVirtualRooms()
         {
-            return FilesControllerHelperInt.GetVirtualRooms();
+            var folderIds = GlobalFolderHelper.FoldersCustom;
+
+            return folderIds.Select(id =>
+                FilesControllerHelperInt.GetFolder(id, Guid.Empty, FilterType.None, false));
         }
 
         [Delete("room/{folderId}")]
@@ -311,35 +310,22 @@ namespace ASC.Api.Documents
             return FilesControllerHelperInt.DeleteVirtualRoom(folderId);
         }
 
-        [Update("room/users/{folderId}")]
-        public IEnumerable<FileShareWrapper> AddUserIntoRoom(int folderId, [FromBody] UserModel model)
+        [Update("room/{folderId}/members")]
+        public IEnumerable<FileShareWrapper> AddUsersIntoRoom(int folderId, [FromBody] UsersModel model)
         {
-            return FilesControllerHelperInt.AddUserIntoRoom(folderId, model.UserId);
+            return FilesControllerHelperInt.AddUsersIntoRoom(folderId, model.UsersIds);
         }
 
-        [Update("room/users/privilege/{folderId}")]
-        public bool SetRoomAdmin(int folderId, [FromBody] UserModel model)
+        [Delete("room/{folderId}/members")]
+        public IEnumerable<FileShareWrapper> RemoveUsersFromRoom(int folderId, [FromBody] UsersModel model)
         {
-            return VirtualRoomService.SetRoomAdministartor(folderId, model.UserId);
+            return FilesControllerHelperInt.RemoveUsersFromRoom(folderId, model.UsersIds);
         }
 
-        [Delete("room/users/privilege/{folderId}")]
-        public bool RemoveRoomAdmin(int folderId, [FromBody] UserModel model)
+        [Update("room/{folderId}/security")]
+        public IEnumerable<FileShareWrapper> SetRoomSecurity(int folderId, [FromBody] SecurityInfoModel model)
         {
-            return VirtualRoomService.RemoveRoomAdministrator(folderId, model.UserId);
-        }
-
-        [Delete("room/users/{folderId}")]
-        public bool RemoveUserFromRoom(int folderId, [FromBody] UserModel model)
-        {
-            return VirtualRoomService.RemoveUserFromRoom(folderId, model.UserId);
-        }
-
-        [Update("room/users/security/{folderId}")]
-        public bool SetRoomSecurity(int folderId, [FromBody] SecurityInfoModel model)
-        {
-            return VirtualRoomService.SetRoomSecurity(folderId, model.Share.FirstOrDefault().ShareTo,
-                model.Share.FirstOrDefault().Access);
+            return FilesControllerHelperInt.SetRoomSecurityInfo(folderId, model.Share, model.Notify, model.SharingMessage);
         }
 
         /// <summary>
