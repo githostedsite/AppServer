@@ -260,6 +260,7 @@ namespace ASC.Web.Files.Classes
         private CoreBaseSettings CoreBaseSettings { get; }
         private WebItemManager WebItemManager { get; }
         private WebItemSecurity WebItemSecurity { get; }
+        private FileSecurityCommon FileSecurityCommon { get; }
         private AuthContext AuthContext { get; }
         private TenantManager TenantManager { get; }
         private UserManager UserManager { get; }
@@ -273,6 +274,7 @@ namespace ASC.Web.Files.Classes
             CoreBaseSettings coreBaseSettings,
             WebItemManager webItemManager,
             WebItemSecurity webItemSecurity,
+            FileSecurityCommon fileSecurityCommon,
             AuthContext authContext,
             TenantManager tenantManager,
             UserManager userManager,
@@ -286,6 +288,7 @@ namespace ASC.Web.Files.Classes
             CoreBaseSettings = coreBaseSettings;
             WebItemManager = webItemManager;
             WebItemSecurity = webItemSecurity;
+            FileSecurityCommon = fileSecurityCommon;
             AuthContext = authContext;
             TenantManager = tenantManager;
             UserManager = userManager;
@@ -517,16 +520,23 @@ namespace ASC.Web.Files.Classes
             return trashFolderId;
         }
 
-        public T GetFoldersCustom<T>(IDaoFactory daoFactory)
-        {
-            return (T)Convert.ChangeType(GetFoldersCustom(daoFactory), typeof(T));
-        }
-
         public IEnumerable<int> GetFoldersCustom(IDaoFactory daoFactory)
         {
             if (IsOutsider) return null;
 
-            var groupIDs = UserManager.GetUserGroupsId(AuthContext.CurrentAccount.ID);
+            var userId = AuthContext.CurrentAccount.ID;
+            IEnumerable<Guid> groupIDs;
+
+            if (FileSecurityCommon.IsAdministrator(userId))
+            {
+                groupIDs = UserManager.GetGroups(userId)
+                    .Where(g => g.CategoryID == ASC.Core.Users.Constants.LinkedGroupCategoryId)
+                    .Select(g => g.ID);
+            }
+            else
+            {
+                groupIDs = UserManager.GetUserGroupsId(AuthContext.CurrentAccount.ID);
+            }
 
             if (groupIDs == null || groupIDs.Any() == false)
                 return new List<int>();
