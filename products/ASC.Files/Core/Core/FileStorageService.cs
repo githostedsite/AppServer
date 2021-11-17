@@ -51,6 +51,7 @@ using ASC.Files.Core;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Services.NotifyService;
+using ASC.Files.Core.Utils;
 using ASC.MessagingSystem;
 using ASC.Web.Core.Files;
 using ASC.Web.Core.PublicResources;
@@ -408,6 +409,32 @@ namespace ASC.Web.Files.Services.WCFService
                 var newFolder = ServiceProvider.GetService<Folder<T>>();
                 newFolder.Title = title;
                 newFolder.FolderID = parent.ID;
+
+                var folderId = folderDao.SaveFolder(newFolder);
+                var folder = folderDao.GetFolder(folderId);
+                FilesMessageService.Send(folder, GetHttpHeaders(), MessageAction.FolderCreated, folder.Title);
+
+                return folder;
+            }
+            catch (Exception e)
+            {
+                throw GenerateException(e);
+            }
+        }
+
+        public Folder<T> CreateNewRootFolder(string title, FolderType type, string bunchKeyData)
+        {
+            if (string.IsNullOrEmpty(title)) throw new ArgumentException();
+
+            var folderDao = GetFolderDao();
+
+            try
+            {
+                var newFolder = ServiceProvider.GetService<Folder<T>>();
+                newFolder.Title = title;
+                newFolder.FolderID = default(T);
+                newFolder.FolderType = type;
+                newFolder.BunchKey = RootFoldersHelper.GetBunchKey(type, bunchKeyData);
 
                 var folderId = folderDao.SaveFolder(newFolder);
                 var folder = folderDao.GetFolder(folderId);
