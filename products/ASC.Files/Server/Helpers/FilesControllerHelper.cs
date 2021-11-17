@@ -48,7 +48,7 @@ namespace ASC.Files.Helpers
     {
         private readonly ApiContext ApiContext;
         private readonly FileStorageService<T> FileStorageService;
-        private readonly VirtualRoomService VirtualRoomService;
+        private readonly VirtualRoomService<T> VirtualRoomService;
 
         private FileWrapperHelper FileWrapperHelper { get; }
         private FilesSettingsHelper FilesSettingsHelper { get; }
@@ -96,7 +96,7 @@ namespace ASC.Files.Helpers
             SettingsManager settingsManager,
             EncryptionKeyPairHelper encryptionKeyPairHelper,
             IHttpContextAccessor httpContextAccessor,
-            VirtualRoomService virtualRoomService)
+            VirtualRoomService<T> virtualRoomService)
         {
             ApiContext = context;
             FileStorageService = fileStorageService;
@@ -634,37 +634,45 @@ namespace ASC.Files.Helpers
         }
 
         #region VirtualRooms
-        public FolderWrapper<int> CreateVirtualRoom(string title)
+        public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy)
         {
-            var folder = VirtualRoomService.CreateRoom(title);
+            var folder = VirtualRoomService.CreateRoom(title, privacy);
 
             return FolderWrapperHelper.Get(folder);
         }
 
-        public FolderWrapper<int> RenameVirtualRoom(int folderId, string title)
+        public FolderWrapper<T> RenameVirtualRoom(T folderId, string title)
         {
             var folder = VirtualRoomService.RenameRoom(folderId, title);
 
             return FolderWrapperHelper.Get(folder);
         }
 
-        public IEnumerable<FileOperationWraper> DeleteVirtualRoom(int folderId)
+        public IEnumerable<FileOperationWraper> DeleteVirtualRoom(T folderId)
         {
             var operations = VirtualRoomService.DeleteRoom(folderId);
 
             return operations.Select(o => FileOperationWraperHelper.Get(o));
         }
 
-        public IEnumerable<FolderWrapper<int>> GetVirtualRooms()
+        public IEnumerable<FileShareWrapper> AddUsersIntoRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
-            var folders = VirtualRoomService.GetRooms();
+            var security = VirtualRoomService.AddUsersIntoRoom(folderId, usersIDs);
 
-            return folders.Select(f => FolderWrapperHelper.Get(f));
+            return security.Select(FileShareWrapperHelper.Get).ToList();
         }
 
-        public IEnumerable<FileShareWrapper> AddUserIntoRoom(int folderId, Guid userId)
+        public IEnumerable<FileShareWrapper> RemoveUsersFromRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
-            var security = VirtualRoomService.AddUserIntoRoom(folderId, userId);
+            var security = VirtualRoomService.RemoveUsersFromRoom(folderId, usersIDs);
+
+            return security.Select(FileShareWrapperHelper.Get).ToList();
+        }
+
+        public IEnumerable<FileShareWrapper> SetRoomSecurityInfo(T fodlerId, IEnumerable<FileShareParams> fileShareParams,
+            bool notify, string sharingMessage)
+        {
+            var security = VirtualRoomService.SetRoomSecurityInfo(fodlerId, fileShareParams, notify, sharingMessage);
 
             return security.Select(FileShareWrapperHelper.Get).ToList();
         }
