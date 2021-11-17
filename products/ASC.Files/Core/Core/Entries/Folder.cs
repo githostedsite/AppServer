@@ -45,6 +45,7 @@ namespace ASC.Files.Core
         Templates = 12,
         Privacy = 13,
         Custom = 14,
+        CustomPrivacy = 15,
     }
 
     public interface IFolder
@@ -77,6 +78,7 @@ namespace ASC.Files.Core
         public int NewForMe { get; set; }
 
         public string FolderUrl { get; set; }
+        public string BunchKey { get; set; }
 
         public override bool IsNew
         {
