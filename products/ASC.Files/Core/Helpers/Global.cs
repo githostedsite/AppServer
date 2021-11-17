@@ -529,8 +529,7 @@ namespace ASC.Web.Files.Classes
 
             if (FileSecurityCommon.IsAdministrator(userId))
             {
-                groupIDs = UserManager.GetGroups(userId)
-                    .Where(g => g.CategoryID == ASC.Core.Users.Constants.LinkedGroupCategoryId)
+                groupIDs = UserManager.GetGroups(ASC.Core.Users.Constants.LinkedGroupCategoryId)
                     .Select(g => g.ID);
             }
             else
