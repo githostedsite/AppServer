@@ -21,7 +21,6 @@ namespace ASC.Files.Core.Core
     public class VirtualRoomService<T>
     {
         private FileStorageService<T> FileStorageService { get; }
-        private GlobalFolderHelper GlobalFolderHelper { get; }
         private FileSecurityCommon FileSecurityCommon { get; }
         private FileShareParamsHelper FileShareParamsHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
@@ -30,7 +29,6 @@ namespace ASC.Files.Core.Core
 
         public VirtualRoomService(FileStorageService<T> storageService, 
             UserManager userManager, 
-            GlobalFolderHelper globalFolderHelper, 
             AuthorizationManager authorizationManager, 
             FileSecurityCommon fileSecurityCommon,
             SecurityContext securityContext,
@@ -38,7 +36,6 @@ namespace ASC.Files.Core.Core
         {
             FileStorageService = storageService;
             UserManager = userManager;
-            GlobalFolderHelper = globalFolderHelper;
             AuthorizationManager = authorizationManager;
             FileSecurityCommon = fileSecurityCommon;
             SecurityContext = securityContext;
@@ -108,11 +105,7 @@ namespace ASC.Files.Core.Core
             {
                 if (!UserManager.UserExists(id)) continue;
 
-                var record = AuthorizationManager.GetAces(id,
-                Constants.Action_EditLinkedGroups.ID)
-                .FirstOrDefault(r => r.ObjectId == AzObjectIdHelper.GetFullObjectId(objectId));
-
-                if (record == null)
+                if (!IsRoomAdministartor(id, groupId))
                 {
                     UserManager.RemoveUserFromLinkedGroup(id, groupId);
                     result.Add(id);
@@ -163,13 +156,17 @@ namespace ASC.Files.Core.Core
                 if (ace.Share == FileShare.None && isAdmin)
                     RemoveAdminRoomPrivilege(groupId, ace.SubjectId);
 
+                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) 
+                    && IsRoomAdministartor(ace.SubjectId, groupId))
+                    continue;
+
                 result.Add(ace);
             }
 
             var aceCollection = new AceCollection<T>
             {
                 Files = new List<T>(),
-                Folders = new List<T>(),
+                Folders = new List<T> { folderId },
                 Aces = result,
                 Message = sharingMessage
             };
@@ -224,7 +221,7 @@ namespace ASC.Files.Core.Core
             var folder = FileStorageService.GetFolder(folderId);
 
             if (folder.FolderType != FolderType.Custom 
-                || folder.FolderType != FolderType.CustomPrivacy)
+                && folder.FolderType != FolderType.CustomPrivacy)
                 throw new Exception("Entity is not virtual room");
 
             var ace = FileStorageService.
@@ -235,6 +232,16 @@ namespace ASC.Files.Core.Core
                 throw new Exception("Virtual room deleted");
 
             return ace.SubjectId;
+        }
+        
+        private bool IsRoomAdministartor(Guid userId, Guid groupId)
+        {
+            var record = AuthorizationManager.GetAces(userId,
+                Constants.Action_EditLinkedGroups.ID)
+                .FirstOrDefault(r => r.ObjectId == AzObjectIdHelper
+                .GetFullObjectId(new GroupSecurityObject(groupId)));
+
+            return record != null;
         }
 
         private List<AceWrapper> GetSharedInfo(T folderId, Guid groupId)
