@@ -350,7 +350,7 @@ namespace ASC.Files.Core.Data
                 newFolder = FilesDbContext.Folders.Add(newFolder).Entity;
                 FilesDbContext.SaveChanges();
 
-                if (folder.FolderType == FolderType.DEFAULT || folder.FolderType == FolderType.BUNCH 
+                if (folder.FolderType == FolderType.DEFAULT || folder.FolderType == FolderType.BUNCH
                     || folder.FolderType == FolderType.Custom)
                 {
                     FactoryIndexer.IndexAsync(newFolder);
@@ -385,6 +385,19 @@ namespace ASC.Files.Core.Data
                 }
 
                 FilesDbContext.SaveChanges();
+
+                if (folder.FolderType == FolderType.Custom)
+                {
+                    var toInsert = new DbFilesBunchObjects
+                    {
+                        LeftNode = folder.ID.ToString(),
+                        RightNode = folder.BunchKey,
+                        TenantId = TenantID
+                    };
+
+                    FilesDbContext.BunchObjects.Add(toInsert);
+                    FilesDbContext.SaveChanges();
+                }
             }
 
             if (transaction == null)
@@ -489,7 +502,7 @@ namespace ASC.Files.Core.Data
             {
                 var folder = GetFolder(folderId);
 
-                if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.Custom)
+                if (folder.FolderType != FolderType.DEFAULT)
                     throw new ArgumentException("It is forbidden to move the System folder.", "folderId");
 
                 var recalcFolders = new List<int> { toFolderId };
@@ -909,7 +922,7 @@ namespace ASC.Files.Core.Data
 
                     folderIds.Add(newFolderId);
                 }
-                
+
             }
             return folderIds;
         }
