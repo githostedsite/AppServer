@@ -8,7 +8,6 @@ using ASC.Common.Security.Authorizing;
 using ASC.Core;
 using ASC.Core.Users;
 using ASC.Files.Core.Security;
-using ASC.Web.Files.Classes;
 using ASC.Web.Files.Services.WCFService;
 using ASC.Web.Files.Services.WCFService.FileOperations;
 
@@ -27,9 +26,9 @@ namespace ASC.Files.Core.Core
         private SecurityContext SecurityContext { get; }
         private UserManager UserManager { get; }
 
-        public VirtualRoomService(FileStorageService<T> storageService, 
-            UserManager userManager, 
-            AuthorizationManager authorizationManager, 
+        public VirtualRoomService(FileStorageService<T> storageService,
+            UserManager userManager,
+            AuthorizationManager authorizationManager,
             FileSecurityCommon fileSecurityCommon,
             SecurityContext securityContext,
             FileShareParamsHelper fileShareParamsHelper)
@@ -39,7 +38,7 @@ namespace ASC.Files.Core.Core
             AuthorizationManager = authorizationManager;
             FileSecurityCommon = fileSecurityCommon;
             SecurityContext = securityContext;
-            FileShareParamsHelper= fileShareParamsHelper;
+            FileShareParamsHelper = fileShareParamsHelper;
         }
 
         public Folder<T> CreateRoom(string title, bool privacy)
@@ -70,7 +69,7 @@ namespace ASC.Files.Core.Core
         public Folder<T> RenameRoom(T folderId, string title)
         {
             var groupId = GetLinkedGroupId(folderId);
-            
+
             var group = UserManager.GetGroupInfo(groupId);
             group.Name = title;
 
@@ -143,21 +142,31 @@ namespace ASC.Files.Core.Core
         {
             var groupId = GetLinkedGroupId(folderId);
             var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
-            List<AceWrapper> result = new List<AceWrapper>();
+            var result = new List<AceWrapper>();
 
             foreach (var ace in shareParams.Select(FileShareParamsHelper.ToAceObject))
             {
                 if (ace.SubjectGroup)
                     continue;
 
+                if (!UserManager.IsUserInGroup(ace.SubjectId, groupId))
+                    continue;
+
                 if (ace.Share == FileShare.ReadWrite && isAdmin)
+                {
                     AddAdminRoomPrivilege(groupId, ace.SubjectId);
+                    result.Add(ace);
+                    continue;
+                }
 
-                if (ace.Share == FileShare.None && isAdmin)
+                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) && isAdmin)
+                {
                     RemoveAdminRoomPrivilege(groupId, ace.SubjectId);
+                    result.Add(ace);
+                    continue;
+                }
 
-                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) 
-                    && IsRoomAdministartor(ace.SubjectId, groupId))
+                if (IsRoomAdministartor(ace.SubjectId, groupId))
                     continue;
 
                 result.Add(ace);
@@ -220,7 +229,7 @@ namespace ASC.Files.Core.Core
         {
             var folder = FileStorageService.GetFolder(folderId);
 
-            if (folder.FolderType != FolderType.Custom 
+            if (folder.FolderType != FolderType.Custom
                 && folder.FolderType != FolderType.CustomPrivacy)
                 throw new Exception("Entity is not virtual room");
 
@@ -233,7 +242,7 @@ namespace ASC.Files.Core.Core
 
             return ace.SubjectId;
         }
-        
+
         private bool IsRoomAdministartor(Guid userId, Guid groupId)
         {
             var record = AuthorizationManager.GetAces(userId,
