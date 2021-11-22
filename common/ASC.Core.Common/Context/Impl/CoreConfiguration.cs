@@ -46,6 +46,7 @@ namespace ASC.Core
         private bool? standalone;
         private bool? personal;
         private bool? customMode;
+        private bool? vdr;
 
         private IConfiguration Configuration { get; }
 
@@ -71,6 +72,11 @@ namespace ASC.Core
         public bool CustomMode
         {
             get { return customMode ?? (bool)(customMode = string.Compare(Configuration["core:custom-mode"], "true", true) == 0); }
+        }
+
+        public bool VDR
+        {
+            get { return vdr ?? (bool)(vdr = string.Compare(Configuration["core:vdr"], "true", true) == 0); }
         }
     }
 
