@@ -142,59 +142,7 @@ namespace ASC.Files.Core.Core
             FileStorageService.SetAceObject(collection, false);
         }
 
-        public List<AceWrapper> SetRoomSecurityInfo(T folderId, IEnumerable<FileShareParams> shareParams, bool notify,
-            string sharingMessage)
-        {
-            var groupId = GetLinkedGroupId(folderId);
-
-            ErrorIfEmpty(groupId);
-
-            var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
-            var result = new List<AceWrapper>();
-
-            foreach (var ace in shareParams.Select(FileShareParamsHelper.ToAceObject))
-            {
-                if (ace.SubjectGroup) // Only one group can be linked to the root folder
-                    continue;
-
-                if (!UserManager.IsUserInGroup(ace.SubjectId, groupId))
-                    continue;
-
-                if (ace.Share == FileShare.ReadWrite && isAdmin) // Only the owner or administrator of the portal can assign a room administrator
-                {
-                    AddAdminRoomPrivilege(groupId, ace.SubjectId);
-                    result.Add(ace);
-                    continue;
-                }
-
-                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) && isAdmin) // Only the owner or administrator of the portal can remove room administrator privileges
-                {
-                    RemoveAdminRoomPrivilege(groupId, ace.SubjectId);
-                    result.Add(ace);
-                    continue;
-                }
-
-                if (IsRoomAdministartor(ace.SubjectId, groupId))
-                    continue;
-
-                if (ace.Share != FileShare.ReadWrite)
-                    result.Add(ace);
-            }
-
-            var aceCollection = new AceCollection<T>
-            {
-                Files = new List<T>(),
-                Folders = new List<T> { folderId },
-                Aces = result,
-                Message = sharingMessage
-            };
-
-            FileStorageService.SetAceObject(aceCollection, notify);
-
-            return result;
-        }
-
-        public List<T> ProcessAces(IEnumerable<T> folderIds, List<AceWrapper> aces)
+        public List<T> ProcessAcesForRooms(IEnumerable<T> folderIds, List<AceWrapper> aces)
         {
             var result = new List<T>();
             var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
@@ -231,7 +179,7 @@ namespace ASC.Files.Core.Core
                         continue;
                     }
 
-                    if (IsRoomAdministartor(ace.SubjectId, groupId))
+                    if (IsRoomAdministartor(ace.SubjectId, groupId)) // The room administrator cannot set rights for another room administrator
                         continue;
 
                     if (ace.Share != FileShare.ReadWrite)
