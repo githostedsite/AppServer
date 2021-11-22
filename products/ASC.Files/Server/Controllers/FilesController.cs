@@ -218,9 +218,12 @@ namespace ASC.Api.Documents
                 result.Add((int)GlobalFolderHelper.FolderTrash);
             }
 
-            foreach (var id in GlobalFolderHelper.FoldersCustom)
+            if (CoreBaseSettings.VDR)
             {
-                result.Add(id);
+                foreach (var id in GlobalFolderHelper.FoldersCustom)
+                {
+                    result.Add(id);
+                }
             }
 
             return result.Select(r => FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
@@ -311,21 +314,15 @@ namespace ASC.Api.Documents
         }
 
         [Update("room/{folderId}/members")]
-        public IEnumerable<FileShareWrapper> AddUsersIntoRoom(int folderId, [FromBody] MembersModel model)
+        public IEnumerable<FileShareWrapper> AddMembersIntoRoom(int folderId, [FromBody] MembersModel model)
         {
-            return FilesControllerHelperInt.AddUsersIntoRoom(folderId, model.UsersIds);
+            return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
         [Delete("room/{folderId}/members")]
-        public IEnumerable<FileShareWrapper> RemoveUsersFromRoom(int folderId, [FromBody] MembersModel model)
+        public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(int folderId, [FromBody] MembersModel model)
         {
-            return FilesControllerHelperInt.RemoveUsersFromRoom(folderId, model.UsersIds);
-        }
-
-        [Update("room/{folderId}/security")]
-        public IEnumerable<FileShareWrapper> SetRoomSecurity(int folderId, [FromBody] SecurityInfoModel model)
-        {
-            return FilesControllerHelperInt.SetRoomSecurityInfo(folderId, model.Share, model.Notify, model.SharingMessage);
+            return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
         }
 
         /// <summary>
