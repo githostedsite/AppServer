@@ -112,10 +112,6 @@ namespace ASC.Web.Files.Utils
                     || ownerId == w.SubjectId)
                     continue;
 
-                if (entry.RootFolderType == FolderType.Custom && w.Share == FileShare.ReadWrite
-                    && !Global.IsAdministrator) //TODO: add VDR check // Only the portal administrator can grant full rights to custom root folder
-                    continue;
-
                 var share = w.Share;
 
                 if (w.SubjectId == FileConstant.ShareLinkId)
