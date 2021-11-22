@@ -66,6 +66,7 @@ namespace ASC.Files.Helpers
         private ChunkedUploadSessionHelper ChunkedUploadSessionHelper { get; }
         private DocumentServiceTrackerHelper DocumentServiceTracker { get; }
         private SettingsManager SettingsManager { get; }
+        private CoreBaseSettings CoreBaseSettings { get; }
         private EncryptionKeyPairHelper EncryptionKeyPairHelper { get; }
         private IHttpContextAccessor HttpContextAccessor { get; }
         private ILog Logger { get; set; }
@@ -96,7 +97,8 @@ namespace ASC.Files.Helpers
             SettingsManager settingsManager,
             EncryptionKeyPairHelper encryptionKeyPairHelper,
             IHttpContextAccessor httpContextAccessor,
-            VirtualRoomService<T> virtualRoomService)
+            VirtualRoomService<T> virtualRoomService,
+            CoreBaseSettings coreBaseSettings)
         {
             ApiContext = context;
             FileStorageService = fileStorageService;
@@ -119,6 +121,7 @@ namespace ASC.Files.Helpers
             EncryptionKeyPairHelper = encryptionKeyPairHelper;
             HttpContextAccessor = httpContextAccessor;
             VirtualRoomService = virtualRoomService;
+            CoreBaseSettings = coreBaseSettings;
             Logger = optionMonitor.Get("ASC.Files");
         }
 
@@ -572,6 +575,17 @@ namespace ASC.Files.Helpers
 
         public IEnumerable<FileShareWrapper> SetFolderSecurityInfo(T folderId, IEnumerable<FileShareParams> share, bool notify, string sharingMessage)
         {
+            if (CoreBaseSettings.VDR)
+            {
+                var groupId = VirtualRoomService.GetLinkedGroupId(folderId);
+
+                if (groupId != Guid.Empty)
+                {
+                    VirtualRoomService.SetRoomSecurityInfo(folderId, share, notify, sharingMessage);
+                    return GetSecurityInfo(new List<T>(), new List<T> { folderId });
+                }
+            }
+
             return SetSecurityInfo(new List<T>(), new List<T> { folderId }, share, notify, sharingMessage);
         }
 
@@ -580,10 +594,17 @@ namespace ASC.Files.Helpers
             if (share != null && share.Any())
             {
                 var list = new List<AceWrapper>(share.Select(FileShareParamsHelper.ToAceObject));
+                var filteredIds = new List<T>();
+
+                if (CoreBaseSettings.VDR)
+                {
+                    filteredIds = VirtualRoomService.ProcessAces(folderIds, list);
+                }
+
                 var aceCollection = new AceCollection<T>
                 {
                     Files = fileIds,
-                    Folders = folderIds,
+                    Folders = CoreBaseSettings.VDR ? filteredIds : folderIds,
                     Aces = list,
                     Message = sharingMessage
                 };
@@ -636,6 +657,8 @@ namespace ASC.Files.Helpers
         #region VirtualRooms
         public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy)
         {
+            ErrorIfNotVDR();
+
             var folder = VirtualRoomService.CreateRoom(title, privacy);
 
             return FolderWrapperHelper.Get(folder);
@@ -643,6 +666,8 @@ namespace ASC.Files.Helpers
 
         public FolderWrapper<T> RenameVirtualRoom(T folderId, string title)
         {
+            ErrorIfNotVDR();
+
             var folder = VirtualRoomService.RenameRoom(folderId, title);
 
             return FolderWrapperHelper.Get(folder);
@@ -650,31 +675,29 @@ namespace ASC.Files.Helpers
 
         public IEnumerable<FileOperationWraper> DeleteVirtualRoom(T folderId)
         {
+            ErrorIfNotVDR();
+
             var operations = VirtualRoomService.DeleteRoom(folderId);
 
             return operations.Select(o => FileOperationWraperHelper.Get(o));
         }
 
-        public IEnumerable<FileShareWrapper> AddUsersIntoRoom(T folderId, IEnumerable<Guid> usersIDs)
+        public IEnumerable<FileShareWrapper> AddMembersIntoRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
-            var security = VirtualRoomService.AddUsersIntoRoom(folderId, usersIDs);
+            ErrorIfNotVDR();
 
-            return security.Select(FileShareWrapperHelper.Get).ToList();
+            VirtualRoomService.AddMembersIntoRoom(folderId, usersIDs);
+
+            return GetSecurityInfo(new List<T>(), new List<T> { folderId });
         }
 
-        public IEnumerable<FileShareWrapper> RemoveUsersFromRoom(T folderId, IEnumerable<Guid> usersIDs)
+        public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
-            var security = VirtualRoomService.RemoveUsersFromRoom(folderId, usersIDs);
+            ErrorIfNotVDR();
 
-            return security.Select(FileShareWrapperHelper.Get).ToList();
-        }
+            VirtualRoomService.RemoveMembersFromRoom(folderId, usersIDs);
 
-        public IEnumerable<FileShareWrapper> SetRoomSecurityInfo(T fodlerId, IEnumerable<FileShareParams> fileShareParams,
-            bool notify, string sharingMessage)
-        {
-            var security = VirtualRoomService.SetRoomSecurityInfo(fodlerId, fileShareParams, notify, sharingMessage);
-
-            return security.Select(FileShareWrapperHelper.Get).ToList();
+            return GetSecurityInfo(new List<T>(), new List<T> { folderId });
         }
         #endregion
 
@@ -748,6 +771,12 @@ namespace ASC.Files.Helpers
             }
 
             return model.File;
+        }
+
+        private void ErrorIfNotVDR()
+        {
+            if (!CoreBaseSettings.VDR)
+                throw new NotSupportedException("Not available in current delivery");
         }
     }
 }
