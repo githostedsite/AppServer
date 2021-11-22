@@ -61,6 +61,8 @@ namespace ASC.Files.Core.Core
         {
             var groupId = GetLinkedGroupId(folderId);
 
+            ErrorIfEmpty(groupId);
+
             UserManager.DeleteGroup(groupId);
 
             return FileStorageService.DeleteFolder("delete", folderId);
@@ -69,6 +71,8 @@ namespace ASC.Files.Core.Core
         public Folder<T> RenameRoom(T folderId, string title)
         {
             var groupId = GetLinkedGroupId(folderId);
+
+            ErrorIfEmpty(groupId);
 
             var group = UserManager.GetGroupInfo(groupId);
             group.Name = title;
@@ -79,9 +83,11 @@ namespace ASC.Files.Core.Core
             return folder;
         }
 
-        public List<AceWrapper> AddUsersIntoRoom(T folderId, IEnumerable<Guid> userIDs)
+        public void AddMembersIntoRoom(T folderId, IEnumerable<Guid> userIDs)
         {
             var groupId = GetLinkedGroupId(folderId);
+
+            ErrorIfEmpty(groupId);
 
             foreach (var id in userIDs)
             {
@@ -89,13 +95,14 @@ namespace ASC.Files.Core.Core
 
                 UserManager.AddUserIntoLinkedGroup(id, groupId);
             }
-
-            return GetSharedInfo(folderId, groupId);
         }
 
-        public List<AceWrapper> RemoveUsersFromRoom(T folderId, IEnumerable<Guid> userIDs)
+        public void RemoveMembersFromRoom(T folderId, IEnumerable<Guid> userIDs)
         {
             var groupId = GetLinkedGroupId(folderId);
+
+            ErrorIfEmpty(groupId);
+
             var objectId = new GroupSecurityObject(groupId);
             var result = new List<Guid>();
             var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
@@ -133,33 +140,34 @@ namespace ASC.Files.Core.Core
             };
 
             FileStorageService.SetAceObject(collection, false);
-
-            return GetSharedInfo(folderId, groupId);
         }
 
         public List<AceWrapper> SetRoomSecurityInfo(T folderId, IEnumerable<FileShareParams> shareParams, bool notify,
             string sharingMessage)
         {
             var groupId = GetLinkedGroupId(folderId);
+
+            ErrorIfEmpty(groupId);
+
             var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
             var result = new List<AceWrapper>();
 
             foreach (var ace in shareParams.Select(FileShareParamsHelper.ToAceObject))
             {
-                if (ace.SubjectGroup)
+                if (ace.SubjectGroup) // Only one group can be linked to the root folder
                     continue;
 
                 if (!UserManager.IsUserInGroup(ace.SubjectId, groupId))
                     continue;
 
-                if (ace.Share == FileShare.ReadWrite && isAdmin)
+                if (ace.Share == FileShare.ReadWrite && isAdmin) // Only the owner or administrator of the portal can assign a room administrator
                 {
                     AddAdminRoomPrivilege(groupId, ace.SubjectId);
                     result.Add(ace);
                     continue;
                 }
 
-                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) && isAdmin)
+                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) && isAdmin) // Only the owner or administrator of the portal can remove room administrator privileges
                 {
                     RemoveAdminRoomPrivilege(groupId, ace.SubjectId);
                     result.Add(ace);
@@ -169,7 +177,8 @@ namespace ASC.Files.Core.Core
                 if (IsRoomAdministartor(ace.SubjectId, groupId))
                     continue;
 
-                result.Add(ace);
+                if (ace.Share != FileShare.ReadWrite)
+                    result.Add(ace);
             }
 
             var aceCollection = new AceCollection<T>
@@ -182,25 +191,67 @@ namespace ASC.Files.Core.Core
 
             FileStorageService.SetAceObject(aceCollection, notify);
 
-            return GetSharedInfo(folderId, groupId);
+            return result;
+        }
+
+        public List<T> ProcessAces(IEnumerable<T> folderIds, List<AceWrapper> aces)
+        {
+            var result = new List<T>();
+            var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
+
+            foreach (var folderId in folderIds)
+            {
+                var groupId = GetLinkedGroupId(folderId);
+
+                if (groupId == Guid.Empty)
+                {
+                    result.Add(folderId);
+                    continue;
+                }
+
+                foreach (var ace in aces)
+                {
+                    if (ace.SubjectGroup)
+                        continue;
+
+                    if (!UserManager.IsUserInGroup(ace.SubjectId, groupId))
+                        continue;
+
+                    if (ace.Share == FileShare.ReadWrite && isAdmin) // Only the owner or administrator of the portal can assign a room administrator
+                    {
+                        AddAdminRoomPrivilege(groupId, ace.SubjectId);
+                        result.Add(folderId);
+                        continue;
+                    }
+
+                    if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) && isAdmin) // Only the owner or administrator of the portal can remove room administrator privileges
+                    {
+                        RemoveAdminRoomPrivilege(groupId, ace.SubjectId);
+                        result.Add(folderId);
+                        continue;
+                    }
+
+                    if (IsRoomAdministartor(ace.SubjectId, groupId))
+                        continue;
+
+                    if (ace.Share != FileShare.ReadWrite)
+                        result.Add(folderId);
+                }
+            }
+
+            return result;
         }
 
         private void AddAdminRoomPrivilege(Guid groupId, Guid userId)
         {
-            var record = new AzRecord(userId,
-                Constants.Action_EditLinkedGroups.ID,
-                AceType.Allow,
-                new GroupSecurityObject(groupId));
+            var record = CreateLinkedGroupEditingRecord(userId, groupId);
 
             AuthorizationManager.AddAce(record);
         }
 
         private void RemoveAdminRoomPrivilege(Guid groupId, Guid userId)
         {
-            var record = new AzRecord(userId,
-                Constants.Action_EditLinkedGroups.ID,
-                AceType.Allow,
-                new GroupSecurityObject(groupId));
+            var record = CreateLinkedGroupEditingRecord(userId, groupId);
 
             AuthorizationManager.RemoveAce(record);
         }
@@ -225,20 +276,20 @@ namespace ASC.Files.Core.Core
             FileStorageService.SetAceObject(aceCollection, false);
         }
 
-        private Guid GetLinkedGroupId(T folderId)
+        public Guid GetLinkedGroupId(T folderId)
         {
             var folder = FileStorageService.GetFolder(folderId);
 
             if (folder.FolderType != FolderType.Custom
                 && folder.FolderType != FolderType.CustomPrivacy)
-                throw new Exception("Entity is not virtual room");
+                return default(Guid);
 
             var ace = FileStorageService.
                 GetSharedInfo(new List<T>(), new List<T> { folderId })
                 .SingleOrDefault(i => i.SubjectGroup);
 
             if (ace == null)
-                throw new Exception("Virtual room deleted");
+                return default(Guid);
 
             return ace.SubjectId;
         }
@@ -253,35 +304,18 @@ namespace ASC.Files.Core.Core
             return record != null;
         }
 
-        private List<AceWrapper> GetSharedInfo(T folderId, Guid groupId)
+        private AzRecord CreateLinkedGroupEditingRecord(Guid userId, Guid groupId)
         {
-            var store = new Dictionary<Guid, AceWrapper>();
+            return new AzRecord(userId,
+                Constants.Action_EditLinkedGroups.ID,
+                AceType.Allow,
+                new GroupSecurityObject(groupId));
+        }
 
-            var sharedInfos = FileStorageService.GetSharedInfo(new List<T>(), new List<T> { folderId });
-
-            foreach (var info in sharedInfos)
-            {
-                if (info.SubjectGroup)
-                    continue;
-
-                store.Add(info.SubjectId, info);
-            }
-
-            var users = UserManager.GetUsersByGroup(groupId);
-
-            foreach (var user in users)
-            {
-                if (store.ContainsKey(user.ID))
-                    continue;
-
-                store.Add(user.ID, new AceWrapper
-                {
-                    SubjectId = user.ID,
-                    Share = FileShare.Read
-                });
-            }
-
-            return store.Values.ToList();
+        private void ErrorIfEmpty(Guid guid)
+        {
+            if (guid == Guid.Empty)
+                throw new Exception("Entity not found");
         }
     }
 }
