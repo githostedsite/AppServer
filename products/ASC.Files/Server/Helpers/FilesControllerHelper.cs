@@ -575,17 +575,6 @@ namespace ASC.Files.Helpers
 
         public IEnumerable<FileShareWrapper> SetFolderSecurityInfo(T folderId, IEnumerable<FileShareParams> share, bool notify, string sharingMessage)
         {
-            if (CoreBaseSettings.VDR)
-            {
-                var groupId = VirtualRoomService.GetLinkedGroupId(folderId);
-
-                if (groupId != Guid.Empty)
-                {
-                    VirtualRoomService.SetRoomSecurityInfo(folderId, share, notify, sharingMessage);
-                    return GetSecurityInfo(new List<T>(), new List<T> { folderId });
-                }
-            }
-
             return SetSecurityInfo(new List<T>(), new List<T> { folderId }, share, notify, sharingMessage);
         }
 
@@ -598,7 +587,7 @@ namespace ASC.Files.Helpers
 
                 if (CoreBaseSettings.VDR)
                 {
-                    filteredIds = VirtualRoomService.ProcessAces(folderIds, list);
+                    filteredIds = VirtualRoomService.ProcessAcesForRooms(folderIds, list);
                 }
 
                 var aceCollection = new AceCollection<T>
