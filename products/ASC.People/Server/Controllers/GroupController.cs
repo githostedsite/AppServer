@@ -26,6 +26,7 @@ namespace ASC.Employee.Core.Controllers
         private MessageService MessageService { get; }
 
         private UserManager UserManager { get; }
+        private CoreBaseSettings CoreBaseSettings { get; }
         private PermissionContext PermissionContext { get; }
         private MessageTarget MessageTarget { get; }
         private GroupWraperFullHelper GroupWraperFullHelper { get; }
@@ -36,7 +37,8 @@ namespace ASC.Employee.Core.Controllers
             UserManager userManager,
             PermissionContext permissionContext,
             MessageTarget messageTarget,
-            GroupWraperFullHelper groupWraperFullHelper)
+            GroupWraperFullHelper groupWraperFullHelper,
+            CoreBaseSettings coreBaseSettings)
         {
             ApiContext = apiContext;
             MessageService = messageService;
@@ -44,6 +46,7 @@ namespace ASC.Employee.Core.Controllers
             PermissionContext = permissionContext;
             MessageTarget = messageTarget;
             GroupWraperFullHelper = groupWraperFullHelper;
+            CoreBaseSettings = coreBaseSettings;
         }
 
         [Read]
@@ -161,7 +164,7 @@ namespace ASC.Employee.Core.Controllers
             var @group = GetGroupInfo(groupid);
             var groupWrapperFull = GroupWraperFullHelper.Get(group, false);
 
-            if (group.CategoryID == Constants.LinkedGroupCategoryId) // TODO: add VDR check
+            if (CoreBaseSettings.VDR && group.CategoryID == Constants.LinkedGroupCategoryId)
                 throw new Exception("Unable to delete linked group");
 
             UserManager.DeleteGroup(groupid);
