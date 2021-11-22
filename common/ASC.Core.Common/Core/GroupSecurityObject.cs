@@ -22,7 +22,7 @@ namespace ASC.Core
         public GroupSecurityObject(Guid groupId)
         {
             SecurityId = groupId;
-            ObjectType = typeof(Guid);
+            ObjectType = this.GetType();
         }
 
         public IEnumerable<IRole> GetObjectRoles(ISubject account, ISecurityObjectId objectId, SecurityCallContext callContext)
