@@ -1,8 +1,9 @@
 %define         debug_package %{nil}
+%define         _build_id_links none
 %global         product appserver
 %global         buildpath %{_var}/www/%{product}
-%global         sourcename AppServer-%GIT_BRANCH
-Name:           onlyoffice-appserver
+
+Name:           onlyoffice-%{product}
 Summary:        Business productivity tools.
 Version:        %version
 Release:        %release
@@ -14,7 +15,6 @@ ExclusiveArch:  x86_64
 AutoReq:        no
 AutoProv:       no
 License:        AGPLv3
-Source0:        https://github.com/ONLYOFFICE/%{product}/archive/%GIT_BRANCH.tar.gz
 BuildRequires:  nodejs >= 12.0
 BuildRequires:  yarn
 BuildRequires:  libgdiplus
@@ -47,9 +47,7 @@ App Server is a platform for building your own online office by connecting ONLYO
 %include package.spec
 
 %prep
-
 rm -rf %{_rpmdir}/%{_arch}/%{name}-*
-%setup -n %{sourcename}
 
 %include build.spec
 
@@ -60,12 +58,10 @@ rm -rf %{_rpmdir}/%{_arch}/%{name}-*
 %pre
 
 %pre common
-
 getent group onlyoffice >/dev/null || groupadd -r onlyoffice
 getent passwd onlyoffice >/dev/null || useradd -r -g onlyoffice -s /sbin/nologin onlyoffice
 
 %post 
-
 chmod +x %{_bindir}/%{product}-configuration.sh
 
 %preun
@@ -73,7 +69,6 @@ chmod +x %{_bindir}/%{product}-configuration.sh
 %postun
 
 %clean
-
 rm -rf %{buildroot}
 
 %changelog
