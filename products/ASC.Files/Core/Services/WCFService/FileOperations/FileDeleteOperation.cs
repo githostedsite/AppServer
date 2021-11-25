@@ -30,8 +30,10 @@ using System.Linq;
 using System.Threading;
 
 using ASC.Common;
+using ASC.Core;
 using ASC.Core.Tenants;
 using ASC.Files.Core;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.MessagingSystem;
 using ASC.Web.Files.Helpers;
@@ -126,7 +128,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFolders(IEnumerable<T> folderIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService) = scopeClass;
+            var (fileMarker, filesMessageService, linkedFolderHelper) = scopeClass;
             foreach (var folderId in folderIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -173,7 +175,19 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
                             if (FolderDao.IsEmpty(folder.ID))
                             {
-                                FolderDao.DeleteFolder(folder.ID);
+                                if (folder.FolderType == FolderType.Custom)
+                                {
+                                    var groupId = linkedFolderHelper.GetLinkedGroupId(folder);
+
+                                    FolderDao.DeleteFolder(folder.ID);
+
+                                    fileMarker.UserManager.DeleteGroup(groupId);
+                                }
+                                else
+                                {
+                                    FolderDao.DeleteFolder(folder.ID);
+                                }
+
                                 filesMessageService.Send(folder, _headers, MessageAction.FolderDeleted, folder.Title);
 
                                 ProcessedFolder(folderId);
@@ -190,7 +204,19 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             {
                                 if (immediately)
                                 {
-                                    FolderDao.DeleteFolder(folder.ID);
+                                    if (folder.FolderType == FolderType.Custom)
+                                    {
+                                        var groupId = linkedFolderHelper.GetLinkedGroupId(folder);
+
+                                        FolderDao.DeleteFolder(folder.ID);
+
+                                        fileMarker.UserManager.DeleteGroup(groupId);
+                                    }
+                                    else
+                                    {
+                                        FolderDao.DeleteFolder(folder.ID);
+                                    }
+
                                     filesMessageService.Send(folder, _headers, MessageAction.FolderDeleted, folder.Title);
                                 }
                                 else
@@ -211,7 +237,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFiles(IEnumerable<T> fileIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService) = scopeClass;
+            var (fileMarker, filesMessageService, _) = scopeClass;
             foreach (var fileId in fileIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -291,17 +317,22 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
     {
         private FileMarker FileMarker { get; }
         private FilesMessageService FilesMessageService { get; }
+        private LinkedFolderHelper LinkedFolderHelper { get; }
 
-        public FileDeleteOperationScope(FileMarker fileMarker, FilesMessageService filesMessageService)
+        public FileDeleteOperationScope(FileMarker fileMarker, FilesMessageService filesMessageService,
+            LinkedFolderHelper linkedFolderHelper)
         {
             FileMarker = fileMarker;
             FilesMessageService = filesMessageService;
+            LinkedFolderHelper = linkedFolderHelper;
         }
 
-        public void Deconstruct(out FileMarker fileMarker, out FilesMessageService filesMessageService)
+        public void Deconstruct(out FileMarker fileMarker, out FilesMessageService filesMessageService,
+            out LinkedFolderHelper linkedFolderHelper)
         {
             fileMarker = FileMarker;
             filesMessageService = FilesMessageService;
+            linkedFolderHelper = LinkedFolderHelper;
         }
     }
 }
