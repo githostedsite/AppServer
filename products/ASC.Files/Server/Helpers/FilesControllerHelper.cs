@@ -644,11 +644,11 @@ namespace ASC.Files.Helpers
         }
 
         #region VirtualRooms
-        public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy)
+        public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy, T parentId = default(T))
         {
             ErrorIfNotVDR();
 
-            var folder = VirtualRoomService.CreateRoom(title, privacy);
+            var folder = VirtualRoomService.CreateRoom(title, privacy, parentId);
 
             return FolderWrapperHelper.Get(folder);
         }
