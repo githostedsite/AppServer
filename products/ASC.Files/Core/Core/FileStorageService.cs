@@ -422,7 +422,8 @@ namespace ASC.Web.Files.Services.WCFService
             }
         }
 
-        public Folder<T> CreateNewRootFolder(string title, FolderType type, string bunchKeyData)
+        public Folder<T> CreateNewRootFolder(string title, FolderType type, string bunchKeyData,
+            T parentId = default(T))
         {
             if (string.IsNullOrEmpty(title)) throw new ArgumentException();
 
@@ -432,7 +433,7 @@ namespace ASC.Web.Files.Services.WCFService
             {
                 var newFolder = ServiceProvider.GetService<Folder<T>>();
                 newFolder.Title = title;
-                newFolder.FolderID = default(T);
+                newFolder.FolderID = parentId;
                 newFolder.FolderType = type;
                 newFolder.BunchKey = RootFoldersHelper.GetBunchKey(type, bunchKeyData);
 

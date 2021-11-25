@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using ASC.Api.Documents;
 using ASC.Common;
 using ASC.Common.Security.Authorizing;
 using ASC.Core;
@@ -21,7 +20,6 @@ namespace ASC.Files.Core.Core
     {
         private FileStorageService<T> FileStorageService { get; }
         private FileSecurityCommon FileSecurityCommon { get; }
-        private FileShareParamsHelper FileShareParamsHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
         private SecurityContext SecurityContext { get; }
         private UserManager UserManager { get; }
@@ -30,18 +28,16 @@ namespace ASC.Files.Core.Core
             UserManager userManager,
             AuthorizationManager authorizationManager,
             FileSecurityCommon fileSecurityCommon,
-            SecurityContext securityContext,
-            FileShareParamsHelper fileShareParamsHelper)
+            SecurityContext securityContext)
         {
             FileStorageService = storageService;
             UserManager = userManager;
             AuthorizationManager = authorizationManager;
             FileSecurityCommon = fileSecurityCommon;
             SecurityContext = securityContext;
-            FileShareParamsHelper = fileShareParamsHelper;
         }
 
-        public Folder<T> CreateRoom(string title, bool privacy)
+        public Folder<T> CreateRoom(string title, bool privacy, T parentId = default(T))
         {
             var group = UserManager.SaveGroupInfo(new GroupInfo
             {
@@ -50,7 +46,7 @@ namespace ASC.Files.Core.Core
             });
 
             var folder = FileStorageService.CreateNewRootFolder(title, privacy ? FolderType.CustomPrivacy
-                : FolderType.Custom, group.ID.ToString());
+                : FolderType.Custom, group.ID.ToString(), parentId);
 
             ShareRoomForGroup(folder.ID, group.ID);
 
@@ -65,7 +61,7 @@ namespace ASC.Files.Core.Core
 
             UserManager.DeleteGroup(groupId);
 
-            return FileStorageService.DeleteFolder("delete", folderId);
+            return FileStorageService.DeleteFolder("delete", folderId, immediately: true);
         }
 
         public Folder<T> RenameRoom(T folderId, string title)
