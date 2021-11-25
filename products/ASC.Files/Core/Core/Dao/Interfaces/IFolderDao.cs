@@ -234,10 +234,9 @@ namespace ASC.Files.Core
         /// <param name="data"></param>
         /// <param name="createIfNotExists"></param>
         /// <returns></returns>
-        T GetFolderID(string module, string bunch, string data, bool createIfNotExists, string title = null);
+        T GetFolderID(string module, string bunch, string data, bool createIfNotExists);
 
-        IEnumerable<T> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists, 
-            string title = null);
+        IEnumerable<T> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists);
 
         /// <summary>
         ///  Returns id folder "Shared Documents"
@@ -319,7 +318,7 @@ namespace ASC.Files.Core
         /// Only in TMFolderDao
         /// </summary>
         /// <returns></returns>
-        IEnumerable<T> GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
+        (IEnumerable<int>, IEnumerable<string>) GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
 
         /// <summary>
         /// Return id of related object
