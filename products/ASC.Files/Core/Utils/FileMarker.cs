@@ -91,7 +91,7 @@ namespace ASC.Web.Files.Utils
         private const string CacheKeyFormat = "MarkedAsNew/{0}/folder_{1}";
 
         private TenantManager TenantManager { get; }
-        private UserManager UserManager { get; }
+        public UserManager UserManager { get; }
         private IDaoFactory DaoFactory { get; }
         private GlobalFolder GlobalFolder { get; }
         private FileSecurity FileSecurity { get; }
