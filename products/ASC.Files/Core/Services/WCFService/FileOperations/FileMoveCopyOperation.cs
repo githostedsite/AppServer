@@ -209,6 +209,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
+                else if (folder.FolderType == FolderType.Custom)
+                {
+                    Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
+                }
                 else if (!Equals(folder.FolderID ?? default, toFolderId) || _resolveType == FileConflictResolveType.Duplicate)
                 {
                     try
