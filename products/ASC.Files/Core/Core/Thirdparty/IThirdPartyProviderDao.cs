@@ -122,13 +122,12 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public string GetFolderID(string module, string bunch, string data, bool createIfNotExists, string title = null)
+        public string GetFolderID(string module, string bunch, string data, bool createIfNotExists)
         {
             return null;
         }
 
-        public IEnumerable<string> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists,
-            string title = null)
+        public IEnumerable<string> GetFolderIDs(string module, string bunch, IEnumerable<string> data, bool createIfNotExists)
         {
             return new List<string>();
         }
@@ -184,9 +183,9 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public IEnumerable<string> GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
+        public (IEnumerable<int>, IEnumerable<string>) GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
         {
-            return null;
+            return (null, null);
         }
 
         public string GetBunchObjectID(string folderID)
@@ -301,12 +300,28 @@ namespace ASC.Files.Thirdparty
 
             InitFileEntry(folder);
 
-            folder.FolderType = FolderType.DEFAULT;
+            folder.FolderType = folder.RootFolderType == FolderType.Custom ? FolderType.Custom : FolderType.DEFAULT;
             folder.Shareable = false;
             folder.TotalFiles = 0;
             folder.TotalSubFolders = 0;
 
             return folder;
+        }
+
+        protected void SaveBunch(Folder<string> folder)
+        {
+            if (folder.FolderType == FolderType.Custom)
+            {
+                var toInsert = new DbFilesBunchObjects
+                {
+                    LeftNode = folder.ID.ToString(),
+                    RightNode = folder.BunchKey,
+                    TenantId = TenantID
+                };
+
+                FilesDbContext.BunchObjects.Add(toInsert);
+                FilesDbContext.SaveChanges();
+            }
         }
 
         protected Folder<string> GetErrorFolder(ErrorEntry entry)
