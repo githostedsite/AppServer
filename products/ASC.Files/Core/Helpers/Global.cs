@@ -520,9 +520,9 @@ namespace ASC.Web.Files.Classes
             return trashFolderId;
         }
 
-        public IEnumerable<int> GetFoldersCustom(IDaoFactory daoFactory)
+        public (IEnumerable<int>, IEnumerable<string>) GetFoldersCustom(IDaoFactory daoFactory)
         {
-            if (IsOutsider) return null;
+            if (IsOutsider) return (null, null);
 
             var userId = AuthContext.CurrentAccount.ID;
             IEnumerable<Guid> groupIDs;
@@ -538,7 +538,7 @@ namespace ASC.Web.Files.Classes
             }
 
             if (groupIDs == null || groupIDs.Any() == false)
-                return new List<int>();
+                return (new List<int>(), new List<string>());
 
             return daoFactory.GetFolderDao<int>().GetFolderIDsCustom(groupIDs);
         }
@@ -671,7 +671,7 @@ namespace ASC.Web.Files.Classes
         public int FolderRecent => GlobalFolder.GetFolderRecent(DaoFactory);
         public int FolderFavorites => GlobalFolder.GetFolderFavorites(DaoFactory);
         public int FolderTemplates => GlobalFolder.GetFolderTemplates(DaoFactory);
-        public IEnumerable<int> FoldersCustom => GlobalFolder.GetFoldersCustom(DaoFactory);
+        public (IEnumerable<int>, IEnumerable<string>) FoldersCustom => GlobalFolder.GetFoldersCustom(DaoFactory);
 
         public T GetFolderMy<T>()
         {
