@@ -193,8 +193,14 @@ namespace ASC.Files.Thirdparty.GoogleDrive
                 var parentDriveId = GetParentDriveId(driveFolder);
                 if (parentDriveId != null) ProviderInfo.CacheReset(parentDriveId, true);
 
-                return MakeId(driveFolder);
+                var id = MakeId(driveFolder);
+                folder.ID = id;
+
+                SaveBunch(folder);
+
+                return id;
             }
+
             return null;
         }
 
