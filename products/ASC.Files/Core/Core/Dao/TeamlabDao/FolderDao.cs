@@ -42,6 +42,7 @@ using ASC.Files.Core.EF;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Thirdparty;
+using ASC.Files.Core.Utils;
 using ASC.Files.Thirdparty.ProviderDao;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.Core.Search;
@@ -748,8 +749,8 @@ namespace ASC.Files.Core.Data
 
         public bool UseTrashForRemove(Folder<int> folder)
         {
-            return folder.RootFolderType != FolderType.TRASH 
-                && folder.RootFolderType != FolderType.Privacy 
+            return folder.RootFolderType != FolderType.TRASH
+                && folder.RootFolderType != FolderType.Privacy
                 && folder.FolderType != FolderType.BUNCH
                 && folder.FolderType != FolderType.Custom;
         }
@@ -1273,6 +1274,27 @@ namespace ASC.Files.Core.Data
                 .ToList();
 
             return q1.Union(q2);
+        }
+
+        public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId)
+        {
+            using var tx = FilesDbContext.Database.BeginTransaction();
+
+            var bunch = Query(FilesDbContext.BunchObjects)
+                .Where(r => r.RightNode.StartsWith($"files/{custom}") && r.LeftNode.StartsWith(provider))
+                .ToDictionary(r => BunchFoldersHelper.GetEntryId(r.LeftNode));
+
+            foreach (var item in entryIDs)
+            {
+                if (bunch.ContainsKey(item))
+                {
+                    bunch[item].LeftNode = BunchFoldersHelper.MakeFolderId(item, provider, providerId);
+                }
+
+                FilesDbContext.SaveChanges();
+            }
+
+            tx.Commit();
         }
 
         private string CreateKey(string module, string bunch, string data)

@@ -336,6 +336,8 @@ namespace ASC.Files.Core
         /// <returns></returns>
         Dictionary<string, string> GetBunchObjectIDs(List<T> folderIDs);
 
+        public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId);
+
         IEnumerable<(Folder<T>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to);
 
         IEnumerable<T> GetTenantsWithFeedsForFolders(DateTime fromTime);
