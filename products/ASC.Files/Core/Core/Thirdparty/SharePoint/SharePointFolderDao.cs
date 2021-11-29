@@ -77,30 +77,30 @@ namespace ASC.Files.Thirdparty.SharePoint
 
         public Folder<string> GetFolder(string folderId)
         {
-            return ProviderInfo.ToFolder(ProviderInfo.GetFolderById(folderId));
+            return ToFolder(ProviderInfo.GetFolderById(folderId));
         }
 
         public Folder<string> GetFolder(string title, string parentId)
         {
             return
-                ProviderInfo.ToFolder(
+                ToFolder(
                     ProviderInfo.GetFolderFolders(parentId)
                         .FirstOrDefault(item => item.Name.Equals(title, StringComparison.InvariantCultureIgnoreCase)));
         }
 
         public Folder<string> GetRootFolder(string folderId)
         {
-            return ProviderInfo.ToFolder(ProviderInfo.RootFolder);
+            return ToFolder(ProviderInfo.RootFolder);
         }
 
         public Folder<string> GetRootFolderByFile(string fileId)
         {
-            return ProviderInfo.ToFolder(ProviderInfo.RootFolder);
+            return ToFolder(ProviderInfo.RootFolder);
         }
 
         public List<Folder<string>> GetFolders(string parentId)
         {
-            return ProviderInfo.GetFolderFolders(parentId).Select(r => ProviderInfo.ToFolder(r)).ToList();
+            return ProviderInfo.GetFolderFolders(parentId).Select(r => ToFolder(r)).ToList();
         }
 
         public List<Folder<string>> GetFolders(string parentId, OrderBy orderBy, FilterType filterType, bool subjectGroup, Guid subjectID, string searchText, bool withSubfolders = false)
@@ -168,7 +168,7 @@ namespace ASC.Files.Thirdparty.SharePoint
             {
                 do
                 {
-                    path.Add(ProviderInfo.ToFolder(folder));
+                    path.Add(ToFolder(folder));
                 } while (folder != ProviderInfo.RootFolder && !(folder is SharePointFolderErrorEntry) &&
                          (folder = ProviderInfo.GetParentFolder(folder.ServerRelativeUrl)) != null);
             }
@@ -182,7 +182,7 @@ namespace ASC.Files.Thirdparty.SharePoint
             {
                 //Create with id
                 var savedfolder = ProviderInfo.CreateFolder(folder.ID);
-                var createdFolder =  ProviderInfo.ToFolder(savedfolder);
+                var createdFolder =  ToFolder(savedfolder);
 
                 SaveBunch(createdFolder);
 
@@ -196,7 +196,7 @@ namespace ASC.Files.Thirdparty.SharePoint
                 folder.Title = GetAvailableTitle(folder.Title, parentFolder, IsExist);
 
                 var newFolder = ProviderInfo.CreateFolder(parentFolder.ServerRelativeUrl + "/" + folder.Title);
-                var createdFolder = ProviderInfo.ToFolder(newFolder);
+                var createdFolder = ToFolder(newFolder);
 
                 SaveBunch(createdFolder);
 
@@ -301,7 +301,7 @@ namespace ASC.Files.Thirdparty.SharePoint
 
         public Folder<string> CopyFolder(string folderId, string toFolderId, CancellationToken? cancellationToken)
         {
-            return ProviderInfo.ToFolder(ProviderInfo.CopyFolder(folderId, toFolderId));
+            return ToFolder(ProviderInfo.CopyFolder(folderId, toFolderId));
         }
 
         public Folder<int> CopyFolder(string folderId, int toFolderId, CancellationToken? cancellationToken)
