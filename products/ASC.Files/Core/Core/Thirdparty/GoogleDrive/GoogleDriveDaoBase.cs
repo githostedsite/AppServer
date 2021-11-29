@@ -151,6 +151,8 @@ namespace ASC.Files.Thirdparty.GoogleDrive
             if (folder.ModifiedOn != DateTime.MinValue && folder.ModifiedOn.Kind == DateTimeKind.Utc)
                 folder.ModifiedOn = TenantUtil.DateTimeFromUtc(folder.ModifiedOn);
 
+            AddFolderType(folder);
+
             return folder;
         }
 

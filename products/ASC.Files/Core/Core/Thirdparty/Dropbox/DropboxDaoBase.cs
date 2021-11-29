@@ -136,6 +136,8 @@ namespace ASC.Files.Thirdparty.Dropbox
             if (folder.ModifiedOn != DateTime.MinValue && folder.ModifiedOn.Kind == DateTimeKind.Utc)
                 folder.ModifiedOn = TenantUtil.DateTimeFromUtc(folder.ModifiedOn);
 
+            AddFolderType(folder);
+
             return folder;
         }
 

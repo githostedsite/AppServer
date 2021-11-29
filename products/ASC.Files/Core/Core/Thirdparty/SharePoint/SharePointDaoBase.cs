@@ -34,6 +34,7 @@ using ASC.Common.Logging;
 using ASC.Core;
 using ASC.Core.Common.EF;
 using ASC.Core.Tenants;
+using ASC.Files.Core;
 using ASC.Files.Core.EF;
 using ASC.Web.Core.Files;
 using ASC.Web.Studio.Core;
@@ -153,6 +154,15 @@ namespace ASC.Files.Thirdparty.SharePoint
             var subFolders = ProviderInfo.GetFolderFolders(folderId).Select(x => ProviderInfo.MakeId(x.ServerRelativeUrl));
             var files = ProviderInfo.GetFolderFiles(folderId).Select(x => ProviderInfo.MakeId(x.ServerRelativeUrl));
             return subFolders.Concat(files);
+        }
+
+        protected Folder<string> ToFolder(Folder spointFolder)
+        {
+            var folder = ProviderInfo.ToFolder(spointFolder);
+
+            AddFolderType(folder);
+
+            return folder;
         }
     }
 }

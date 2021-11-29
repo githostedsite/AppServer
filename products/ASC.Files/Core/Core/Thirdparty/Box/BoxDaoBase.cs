@@ -144,6 +144,8 @@ namespace ASC.Files.Thirdparty.Box
             if (folder.ModifiedOn != DateTime.MinValue && folder.ModifiedOn.Kind == DateTimeKind.Utc)
                 folder.ModifiedOn = TenantUtil.DateTimeFromUtc(folder.ModifiedOn);
 
+            AddFolderType(folder);
+
             return folder;
         }
 

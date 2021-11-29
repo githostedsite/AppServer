@@ -130,6 +130,8 @@ namespace ASC.Files.Thirdparty.OneDrive
 
             folder.Title = MakeItemTitle(onedriveFolder);
 
+            AddFolderType(folder);
+
             return folder;
         }
 
