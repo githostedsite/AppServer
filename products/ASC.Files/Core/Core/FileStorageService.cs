@@ -48,6 +48,7 @@ using ASC.Data.Storage;
 using ASC.ElasticSearch;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
+using ASC.Files.Core.Data;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Services.NotifyService;
@@ -435,7 +436,7 @@ namespace ASC.Web.Files.Services.WCFService
                 newFolder.Title = title;
                 newFolder.FolderID = parentId;
                 newFolder.FolderType = type;
-                newFolder.BunchKey = RootFoldersHelper.GetBunchKey(type, bunchKeyData);
+                newFolder.BunchKey = BunchFoldersHelper.GetBunchKey(type, bunchKeyData);
 
                 var folderId = folderDao.SaveFolder(newFolder);
                 var folder = folderDao.GetFolder(folderId);
@@ -1265,7 +1266,8 @@ namespace ASC.Web.Files.Services.WCFService
             ErrorIf(!FilesSettingsHelper.EnableThirdParty, FilesCommonResource.ErrorMassage_SecurityException_Create);
 
             var lostFolderType = FolderType.USER;
-            var folderType = thirdPartyParams.Corporate ? FolderType.COMMON : FolderType.USER;
+            var folderType = thirdPartyParams.RoomsStorage ? FolderType.Custom :
+                thirdPartyParams.Corporate ? FolderType.COMMON : FolderType.USER;
 
             int curProviderId;
 
@@ -1327,7 +1329,21 @@ namespace ASC.Web.Files.Services.WCFService
                 FileMarker.MarkAsNew(folder);
             }
 
+            if (folderType == FolderType.Custom)
+                RestoreThirdPartyBunchObjects(folder);
+
             return folder;
+        }
+
+        public void RestoreThirdPartyBunchObjects(Folder<T> folder)
+        {
+            var folderDao = GetFolderDao();
+            var folderDaoInt = (FolderDao)DaoFactory.GetFolderDao<int>();
+
+            var folders = folderDao.GetFolders(folder.ID);
+
+            folderDaoInt.UpdateThirdPartyProviderBunch(folders.Select(f => BunchFoldersHelper.GetEntryId(f.ID.ToString())),
+                BunchFoldersHelper.GetProvider(folder.ID.ToString()), folder.ProviderId);
         }
 
         public object DeleteThirdParty(string providerId)
