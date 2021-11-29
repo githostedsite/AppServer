@@ -188,7 +188,13 @@ namespace ASC.Files.Thirdparty.Sharpbox
                 {
                     //Create with id
                     var savedfolder = ProviderInfo.Storage.CreateFolder(MakePath(folder.ID));
-                    return MakeId(savedfolder);
+
+                    var id = MakeId(savedfolder);
+                    folder.ID = id;
+
+                    SaveBunch(folder);
+
+                    return id;
                 }
                 if (folder.FolderID != null)
                 {
@@ -197,7 +203,12 @@ namespace ASC.Files.Thirdparty.Sharpbox
                     folder.Title = GetAvailableTitle(folder.Title, parentFolder, IsExist);
 
                     var newFolder = ProviderInfo.Storage.CreateFolder(folder.Title, parentFolder);
-                    return MakeId(newFolder);
+                    var id = MakeId(newFolder);
+                    folder.ID = id;
+
+                    SaveBunch(folder);
+
+                    return id;
                 }
             }
             catch (SharpBoxException e)

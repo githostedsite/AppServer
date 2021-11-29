@@ -182,7 +182,11 @@ namespace ASC.Files.Thirdparty.SharePoint
             {
                 //Create with id
                 var savedfolder = ProviderInfo.CreateFolder(folder.ID);
-                return ProviderInfo.ToFolder(savedfolder).ID;
+                var createdFolder =  ProviderInfo.ToFolder(savedfolder);
+
+                SaveBunch(createdFolder);
+
+                return createdFolder.ID;
             }
 
             if (folder.FolderID != null)
@@ -192,7 +196,11 @@ namespace ASC.Files.Thirdparty.SharePoint
                 folder.Title = GetAvailableTitle(folder.Title, parentFolder, IsExist);
 
                 var newFolder = ProviderInfo.CreateFolder(parentFolder.ServerRelativeUrl + "/" + folder.Title);
-                return ProviderInfo.ToFolder(newFolder).ID;
+                var createdFolder = ProviderInfo.ToFolder(newFolder);
+
+                SaveBunch(createdFolder);
+
+                return createdFolder.ID;
             }
 
             return null;

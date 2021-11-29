@@ -198,7 +198,12 @@ namespace ASC.Files.Thirdparty.Box
                 var parentFolderId = GetParentFolderId(boxFolder);
                 if (parentFolderId != null) ProviderInfo.CacheReset(parentFolderId);
 
-                return MakeId(boxFolder);
+                var id = MakeId(boxFolder);
+                folder.ID = id;
+
+                SaveBunch(folder);
+
+                return id;
             }
             return null;
         }

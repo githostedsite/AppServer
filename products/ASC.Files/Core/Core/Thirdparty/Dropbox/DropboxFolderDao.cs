@@ -199,7 +199,12 @@ namespace ASC.Files.Thirdparty.Dropbox
                 var parentFolderPath = GetParentFolderPath(dropboxFolder);
                 if (parentFolderPath != null) ProviderInfo.CacheReset(parentFolderPath);
 
-                return MakeId(dropboxFolder);
+                var id = MakeId(dropboxFolder);
+                folder.ID = id;
+
+                SaveBunch(folder);
+
+                return id;
             }
             return null;
         }

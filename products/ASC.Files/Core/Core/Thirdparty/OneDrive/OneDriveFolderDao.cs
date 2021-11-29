@@ -195,7 +195,12 @@ namespace ASC.Files.Thirdparty.OneDrive
                 var parentFolderId = GetParentFolderId(onedriveFolder);
                 if (parentFolderId != null) ProviderInfo.CacheReset(parentFolderId);
 
-                return MakeId(onedriveFolder);
+                var id = MakeId(onedriveFolder);
+                folder.ID = id;
+
+                SaveBunch(folder);
+
+                return id;
             }
             return null;
         }
