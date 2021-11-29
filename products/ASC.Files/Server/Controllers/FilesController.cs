@@ -326,6 +326,7 @@ namespace ASC.Api.Documents
         public IEnumerable<object> GetVirtualRooms()
         {
             var folderIds = GlobalFolderHelper.FoldersCustom;
+
             var foldersInt = folderIds.Item1.Select(id =>
                 FilesControllerHelperInt.GetFolder(id, Guid.Empty, FilterType.None, false));
             var foldersString = folderIds.Item2.Select(id =>
@@ -333,7 +334,9 @@ namespace ASC.Api.Documents
 
             var list = new List<object>();
             list.AddRange(foldersInt);
-            list.AddRange(foldersString);
+
+            try { list.AddRange(foldersString); }
+            catch { }
 
             return list;
         }
@@ -1901,6 +1904,7 @@ namespace ASC.Api.Documents
                 CustomerTitle = model.CustomerTitle,
                 ProviderId = model.ProviderId,
                 ProviderKey = model.ProviderKey,
+                RoomsStorage = model.IsRoomsStorage,
             };
 
             var folder = FileStorageService.SaveThirdParty(thirdPartyParams);
