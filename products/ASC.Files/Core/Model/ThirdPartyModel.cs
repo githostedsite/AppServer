@@ -7,6 +7,7 @@
         public string Password { get; set; }
         public string Token { get; set; }
         public bool IsCorporate { get; set; }
+        public bool IsRoomsStorage { get; set; }
         public string CustomerTitle { get; set; }
         public string ProviderKey { get; set; }
         public string ProviderId { get; set; }

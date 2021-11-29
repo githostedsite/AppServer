@@ -36,6 +36,7 @@ namespace ASC.Web.Files.Services.WCFService
         public AuthData AuthData { get; set; }
 
         public bool Corporate { get; set; }
+        public bool RoomsStorage { get; set; }
 
         [JsonPropertyName("customer_title")]
         public string CustomerTitle { get; set; }
