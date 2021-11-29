@@ -302,7 +302,7 @@ namespace ASC.Files.Thirdparty
 
             InitFileEntry(folder);
 
-            folder.FolderType = folder.RootFolderType == FolderType.Custom ? FolderType.Custom : FolderType.DEFAULT;
+            folder.FolderType = FolderType.DEFAULT;
             folder.Shareable = false;
             folder.TotalFiles = 0;
             folder.TotalSubFolders = 0;
@@ -324,6 +324,18 @@ namespace ASC.Files.Thirdparty
                 FilesDbContext.BunchObjects.Add(toInsert);
                 FilesDbContext.SaveChanges();
             }
+        }
+
+        protected void AddFolderType(Folder<string> folder)
+        {
+            if (folder.RootFolderType == FolderType.Custom && (folder.ID == PathPrefix
+                || folder.FolderID == PathPrefix))
+            {
+                folder.FolderType = FolderType.Custom;
+                return;
+            }
+
+            folder.FolderType = FolderType.DEFAULT;
         }
 
         protected Folder<string> GetErrorFolder(ErrorEntry entry)
