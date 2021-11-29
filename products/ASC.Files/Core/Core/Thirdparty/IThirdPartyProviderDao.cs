@@ -198,6 +198,8 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
+        public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId) { }
+
         public IEnumerable<(Folder<string>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to)
         {
             throw new NotImplementedException();
