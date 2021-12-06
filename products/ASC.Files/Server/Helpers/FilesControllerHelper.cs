@@ -20,7 +20,6 @@ using ASC.FederatedLogin.Helpers;
 using ASC.Files.Core;
 using ASC.Files.Core.Core;
 using ASC.Files.Core.Model;
-using ASC.Files.Core.Security;
 using ASC.Files.Model;
 using ASC.Web.Core.Files;
 using ASC.Web.Files.Classes;
