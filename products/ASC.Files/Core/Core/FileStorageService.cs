@@ -49,6 +49,7 @@ using ASC.ElasticSearch;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
 using ASC.Files.Core.Data;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Services.NotifyService;
@@ -436,7 +437,7 @@ namespace ASC.Web.Files.Services.WCFService
                 newFolder.Title = title;
                 newFolder.FolderID = parentId;
                 newFolder.FolderType = type;
-                newFolder.BunchKey = BunchFoldersHelper.GetBunchKey(type, bunchKeyData);
+                newFolder.BunchKey = BunchFoldersHelper.MakeBunchKey(type, bunchKeyData);
 
                 var folderId = folderDao.SaveFolder(newFolder);
                 var folder = folderDao.GetFolder(folderId);
@@ -1227,7 +1228,8 @@ namespace ASC.Web.Files.Services.WCFService
                             CustomerTitle = r.CustomerTitle,
                             Corporate = r.RootFolderType == FolderType.COMMON,
                             ProviderId = r.ID.ToString(),
-                            ProviderKey = r.ProviderKey
+                            ProviderKey = r.ProviderKey,
+                            RoomsStorage = r.RootFolderType == FolderType.Custom
                         }
                 );
             return new List<ThirdPartyParams>(resultList.ToList());
@@ -1330,20 +1332,20 @@ namespace ASC.Web.Files.Services.WCFService
             }
 
             if (folderType == FolderType.Custom)
-                RestoreThirdPartyBunchObjects(folder);
+                RestoreThirdPartyRootFolders(folder);
 
             return folder;
         }
 
-        public void RestoreThirdPartyBunchObjects(Folder<T> folder)
+        public void RestoreThirdPartyRootFolders(Folder<T> folder)
         {
             var folderDao = GetFolderDao();
-            var folderDaoInt = (FolderDao)DaoFactory.GetFolderDao<int>();
+            var folderDaoInt = DaoFactory.GetFolderDao<int>();
 
             var folders = folderDao.GetFolders(folder.ID);
 
-            folderDaoInt.UpdateThirdPartyProviderBunch(folders.Select(f => BunchFoldersHelper.GetEntryId(f.ID.ToString())),
-                BunchFoldersHelper.GetProvider(folder.ID.ToString()), folder.ProviderId);
+            folderDaoInt.UpdateThirdPartyProviderBunch(folders.Select(f => ThirdPartyHelper.GetEntryId(f.ID.ToString())),
+                ThirdPartyHelper.GetProvider(folder.ID.ToString()), folder.ProviderId);
         }
 
         public object DeleteThirdParty(string providerId)
