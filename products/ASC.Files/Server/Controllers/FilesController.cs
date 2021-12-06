@@ -41,7 +41,9 @@ using ASC.Core.Users;
 using ASC.FederatedLogin.Helpers;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Model;
+using ASC.Files.Core.Utils;
 using ASC.Files.Helpers;
 using ASC.Files.Model;
 using ASC.MessagingSystem;
@@ -164,6 +166,7 @@ namespace ASC.Api.Documents
         {
             var IsVisitor = UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsVisitor(UserManager);
             var IsOutsider = UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOutsider(UserManager);
+            var IsAdmin = UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsAdmin(UserManager);
             var resultIntIDs = new SortedSet<int>();
             var resultStringIDs = new SortedSet<string>();
 
@@ -234,10 +237,37 @@ namespace ASC.Api.Documents
                 }
             }
 
-            List<object> result = resultIntIDs.Select(r => (object)FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
+            var result = resultIntIDs.Select(r => 
+                (object)FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
 
-            if (CoreBaseSettings.VDR) result.AddRange(resultStringIDs.Select(r => FilesControllerHelperString.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)));
+            if (CoreBaseSettings.VDR && FilesSettingsHelper.EnableThirdParty)
+            {
+                if (IsAdmin)
+                {
+                    var thirdparty = FileStorageService.GetThirdPartyFolder((int)FolderType.Custom).ToList();
+                    var wrappersByProvider = thirdparty.Select(r => FilesControllerHelperString.GetFolder(((Folder<string>)r).ID, userIdOrGroupId,
+                        FilterType.FoldersOnly, false)).ToDictionary(r => r.Current.Id);
 
+                    var providerGroupIds = resultStringIDs.ToLookup(r => ThirdPartyHelper.GetFullProviderId(r));
+
+                    foreach (var wrapper in wrappersByProvider)
+                    {
+                        var ids = providerGroupIds[wrapper.Key].ToList() ?? new List<string>();
+
+                        if (!ids.Any()) continue;
+
+                        wrapper.Value.Folders = wrapper.Value.Folders.Where(f => ids.Contains(((FolderWrapper<string>)f).Id)).ToList();
+                    }
+
+                    result.AddRange(wrappersByProvider.Values);
+                }
+                else
+                {
+                    result.AddRange(resultStringIDs.Select(r =>
+                        FilesControllerHelperString.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)));
+                }
+            }
+                
             return result;
         }
 
@@ -298,30 +328,58 @@ namespace ASC.Api.Documents
             return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderCommon, userIdOrGroupId, filterType, withsubfolders);
         }
 
+        /// <summary>
+        /// Creates a root folder with an associated group (virtual room) in storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Detailed information about the virtual room</returns>
         [Create("room/{folderId:int}")]
         public FolderWrapper<int> CreateVirtualRoomFromBody(int folderId, [FromBody] CreateRoomModel model)
         {
             return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
         }
 
+        /// <summary>
+        /// Creates a root folder with an associated group (virtual room) in third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Detailed information about the virtual room</returns>
         [Create("room/{folderId}")]
         public FolderWrapper<string> CreateVirtualRoomFromBody(string folderId, [FromBody] CreateRoomModel model)
         {
             return FilesControllerHelperString.CreateVirtualRoom(model.Title, model.Privacy, folderId);
         }
 
+        /// <summary>
+        /// Rename the root folder and its associated group (virtual room) in storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Updated information on the virtual room</returns>
         [Update("room/{folderId:int}")]
         public FolderWrapper<int> RenameVirtualRoom(int folderId, [FromBody] CreateFolderModel model)
         {
             return FilesControllerHelperInt.RenameVirtualRoom(folderId, model.Title);
         }
 
+        /// <summary>
+        /// Rename the root folder and its associated group (virtual room) in third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Updated information on the virtual room</returns>
         [Update("room/{folderId}")]
         public FolderWrapper<string> RenameVirtualRoom(string folderId, [FromBody] CreateFolderModel model)
         {
             return FilesControllerHelperString.RenameVirtualRoom(folderId, model.Title);
         }
 
+        /// <summary>
+        /// Returns a list of detailed information about virtual rooms in all storages
+        /// </summary>
+        /// <returns>Virtual rooms with detailed content</returns>
         [Read("@rooms")]
         public IEnumerable<object> GetVirtualRooms()
         {
@@ -341,36 +399,70 @@ namespace ASC.Api.Documents
             return list;
         }
 
+        /// <summary>
+        /// Removes the root folder and its associated group (virtual room) from the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <returns>Delete operation information</returns>
         [Delete("room/{folderId:int}")]
         public IEnumerable<FileOperationWraper> DeleteVirtualRoom(int folderId)
         {
             return FilesControllerHelperInt.DeleteVirtualRoom(folderId);
         }
 
+        /// <summary>
+        /// Removes the root folder and its associated group (virtual room) from third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <returns>Delete operation information</returns>
         [Delete("room/{folderId}")]
         public IEnumerable<FileOperationWraper> DeleteVirtualRoom(string folderId)
         {
             return FilesControllerHelperString.DeleteVirtualRoom(folderId);
         }
 
+        /// <summary>
+        /// Adds a members to the group associated with the root folder (virtual room) located in the storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [Update("room/{folderId:int}/members")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoom(int folderId, [FromBody] MembersModel model)
         {
             return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
+        /// <summary>
+        /// Adds a members to the group associated with the root folder (virtual room) located in third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [Update("room/{folderId}/members")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoom(string folderId, [FromBody] MembersModel model)
         {
             return FilesControllerHelperString.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
+        /// <summary>
+        /// Removes users from the group associated with the root folder (virtual room) located in the storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [Delete("room/{folderId:int}/members")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(int folderId, [FromBody] MembersModel model)
         {
             return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
         }
 
+        /// <summary>
+        /// Removes users from the group associated with the root folder (virtual room) located in third-party storage
+        /// </summary>
+        /// <param name="folderID"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [Delete("room/{folderId}/members")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(string folderID, [FromBody] MembersModel model)
         {
