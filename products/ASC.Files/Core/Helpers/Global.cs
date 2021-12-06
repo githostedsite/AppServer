@@ -520,12 +520,20 @@ namespace ASC.Web.Files.Classes
             return trashFolderId;
         }
 
+        internal readonly IDictionary<string, (IEnumerable<int>, IEnumerable<string>)> VirtualRoomsCache =
+            new ConcurrentDictionary<string, (IEnumerable<int>, IEnumerable<string>)>();
+
         public (IEnumerable<int>, IEnumerable<string>) GetFoldersCustom(IDaoFactory daoFactory)
         {
             if (IsOutsider) return (null, null);
 
             var userId = AuthContext.CurrentAccount.ID;
             IEnumerable<Guid> groupIDs;
+
+            var cacheKey = string.Format("rooms/{0}", AuthContext.CurrentAccount.ID);
+
+            if (VirtualRoomsCache.TryGetValue(cacheKey, out var virtualRoomsIds))
+                return virtualRoomsIds;
 
             if (FileSecurityCommon.IsAdministrator(userId))
             {
@@ -540,7 +548,10 @@ namespace ASC.Web.Files.Classes
             if (groupIDs == null || groupIDs.Any() == false)
                 return (new List<int>(), new List<string>());
 
-            return daoFactory.GetFolderDao<int>().GetFolderIDsCustom(groupIDs);
+            var roomIds = daoFactory.GetFolderDao<int>().GetFolderIDsCustom(groupIDs);
+            VirtualRoomsCache[cacheKey] = roomIds;
+
+            return roomIds;
         }
 
         protected internal void SetFolderTrash(object value)
