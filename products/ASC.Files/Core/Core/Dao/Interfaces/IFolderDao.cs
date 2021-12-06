@@ -335,6 +335,7 @@ namespace ASC.Files.Core
         /// <param name="folderIDs"></param>
         /// <returns></returns>
         Dictionary<string, string> GetBunchObjectIDs(List<T> folderIDs);
+        public void DeleteBunchObjects(string module, FolderType folderType, IEnumerable<string> data);
 
         public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId);
 
