@@ -251,6 +251,8 @@ namespace ASC.Files.Thirdparty.Dropbox
                 FilesDbContext.ThirdpartyIdMapping.RemoveRange(mappingToDelete);
                 FilesDbContext.SaveChanges();
 
+                DeleteBunchObject(id);
+
                 tx.Commit();
             }
 

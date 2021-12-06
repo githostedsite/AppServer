@@ -14,6 +14,7 @@ using ASC.Files.Core;
 using ASC.Files.Core.EF;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Thirdparty;
+using ASC.Files.Core.Utils;
 using ASC.Security.Cryptography;
 using ASC.Web.Core.Files;
 using ASC.Web.Files.Services.DocumentService;
@@ -198,6 +199,8 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
+        public void DeleteBunchObjects(string module, FolderType folderType, IEnumerable<string> data) { }
+
         public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId) { }
 
         public IEnumerable<(Folder<string>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to)
@@ -324,6 +327,15 @@ namespace ASC.Files.Thirdparty
                 FilesDbContext.BunchObjects.Add(toInsert);
                 FilesDbContext.SaveChanges();
             }
+        }
+
+        protected void DeleteBunchObject(string folderId)
+        {
+            var bunchToDelete = Query(FilesDbContext.BunchObjects)
+                .Where(r => r.LeftNode == folderId.ToString());
+
+            FilesDbContext.RemoveRange(bunchToDelete);
+            FilesDbContext.SaveChanges();
         }
 
         protected void AddFolderType(Folder<string> folder)

@@ -240,6 +240,8 @@ namespace ASC.Files.Thirdparty.GoogleDrive
                 FilesDbContext.ThirdpartyIdMapping.RemoveRange(mappingToDelete);
                 FilesDbContext.SaveChanges();
 
+                DeleteBunchObject(id);
+
                 tx.Commit();
             }
 

@@ -247,6 +247,8 @@ namespace ASC.Files.Thirdparty.SharePoint
                 FilesDbContext.ThirdpartyIdMapping.RemoveRange(mappingToDelete);
                 FilesDbContext.SaveChanges();
 
+                DeleteBunchObject(folderId);
+
                 tx.Commit();
             }
             ProviderInfo.DeleteFolder(folderId);

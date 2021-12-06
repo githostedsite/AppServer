@@ -250,6 +250,8 @@ namespace ASC.Files.Thirdparty.Box
                 FilesDbContext.ThirdpartyIdMapping.RemoveRange(mappingToDelete);
                 FilesDbContext.SaveChanges();
 
+                DeleteBunchObject(id);
+
                 tx.Commit();
             }
 

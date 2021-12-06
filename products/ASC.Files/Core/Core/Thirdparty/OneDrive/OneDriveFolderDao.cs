@@ -247,6 +247,8 @@ namespace ASC.Files.Thirdparty.OneDrive
                 FilesDbContext.ThirdpartyIdMapping.RemoveRange(mappingToDelete);
                 FilesDbContext.SaveChanges();
 
+                DeleteBunchObject(id);
+
                 tx.Commit();
             }
 
