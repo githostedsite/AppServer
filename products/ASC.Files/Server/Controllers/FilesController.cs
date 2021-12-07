@@ -349,6 +349,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns>Detailed information about the virtual room</returns>
         [Create("room")]
+        [Consumes("application/x-www-form-urlencoded")]
         public FolderWrapper<int> CreateVirtualRoomFromForm([FromForm] CreateRoomModel model)
         {
             ErrorIfNotVDR();
@@ -377,6 +378,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns>Detailed information about the virtual room</returns>
         [Create("room/{folderId}")]
+        [Consumes("application/x-www-form-urlencoded")]
         public FolderWrapper<string> CreateVirtualRoomFromForm(string folderId, [FromForm] CreateRoomModel model)
         {
             ErrorIfNotVDR();
@@ -405,6 +407,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns>Updated information on the virtual room</returns>
         [Update("room/{folderId:int}")]
+        [Consumes("application/x-www-form-urlencoded")]
         public FolderWrapper<int> RenameVirtualRoomFromForm(int folderId, [FromForm] CreateRoomModel model)
         {
             ErrorIfNotVDR();
@@ -433,6 +436,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns>Updated information on the virtual room</returns>
         [Update("room/{folderId}")]
+        [Consumes("application/x-www-form-urlencoded")]
         public FolderWrapper<string> RenameVirtualRoomFromForm(string folderId, [FromForm] CreateFolderModel model)
         {
             ErrorIfNotVDR();
@@ -484,6 +488,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Update("room/{folderId:int}/members")]
+        [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromForm(int folderId, [FromForm] MembersModel model)
         {
             return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
@@ -508,6 +513,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Update("room/{folderId}/members")]
+        [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromForm(string folderId, [FromForm] MembersModel model)
         {
             return FilesControllerHelperString.AddMembersIntoRoom(folderId, model.UsersIds);
@@ -532,6 +538,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Delete("room/{folderId:int}/members")]
+        [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromForm(int folderId, [FromForm] MembersModel model)
         {
             return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
@@ -556,6 +563,7 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Delete("room/{folderId}/members")]
+        [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromForm(string folderID, [FromForm] MembersModel model)
         {
             return FilesControllerHelperString.RemoveMembersFromRoom(folderID, model.UsersIds);
