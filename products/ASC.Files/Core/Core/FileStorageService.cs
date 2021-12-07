@@ -1344,7 +1344,7 @@ namespace ASC.Web.Files.Services.WCFService
 
             var folders = folderDao.GetFolders(folder.ID);
 
-            folderDaoInt.UpdateThirdPartyProviderBunch(folders.Select(f => ThirdPartyHelper.GetEntryId(f.ID.ToString())),
+            folderDaoInt.UpdateThirdPartyRootFolders(folders.Select(f => ThirdPartyHelper.GetEntryId(f.ID.ToString())),
                 ThirdPartyHelper.GetProvider(folder.ID.ToString()), folder.ProviderId);
         }
 
