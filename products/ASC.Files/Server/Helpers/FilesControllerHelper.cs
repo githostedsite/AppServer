@@ -645,8 +645,6 @@ namespace ASC.Files.Helpers
         #region VirtualRooms
         public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy, T parentId = default(T))
         {
-            ErrorIfNotVDR();
-
             var folder = VirtualRoomService.CreateRoom(title, privacy, parentId);
 
             return FolderWrapperHelper.Get(folder);
@@ -654,8 +652,6 @@ namespace ASC.Files.Helpers
 
         public FolderWrapper<T> RenameVirtualRoom(T folderId, string title)
         {
-            ErrorIfNotVDR();
-
             var folder = VirtualRoomService.RenameRoom(folderId, title);
 
             return FolderWrapperHelper.Get(folder);
@@ -663,8 +659,6 @@ namespace ASC.Files.Helpers
 
         public IEnumerable<FileShareWrapper> AddMembersIntoRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
-            ErrorIfNotVDR();
-
             VirtualRoomService.AddMembersIntoRoom(folderId, usersIDs);
 
             return GetSecurityInfo(new List<T>(), new List<T> { folderId });
@@ -672,8 +666,6 @@ namespace ASC.Files.Helpers
 
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
-            ErrorIfNotVDR();
-
             VirtualRoomService.RemoveMembersFromRoom(folderId, usersIDs);
 
             return GetSecurityInfo(new List<T>(), new List<T> { folderId });
@@ -750,12 +742,6 @@ namespace ASC.Files.Helpers
             }
 
             return model.File;
-        }
-
-        private void ErrorIfNotVDR()
-        {
-            if (!CoreBaseSettings.VDR)
-                throw new NotSupportedException("Not available in current delivery");
         }
     }
 }
