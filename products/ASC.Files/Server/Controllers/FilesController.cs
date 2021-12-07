@@ -253,7 +253,7 @@ namespace ASC.Api.Documents
             {
                 if (IsAdmin)
                 {
-                    var thirdparty = FileStorageService.GetThirdPartyFolder((int)FolderType.Custom);
+                    var thirdparty = FileStorageService.GetThirdPartyFolder((int)FolderType.VirtualRoom);
                     var wrappers = thirdparty.Select(r => FilesControllerHelperString.GetFolder(((Folder<string>)r).ID, userIdOrGroupId,
                          FilterType.FoldersOnly, false)).ToList();
 
@@ -399,28 +399,6 @@ namespace ASC.Api.Documents
             catch { }
 
             return list;
-        }
-
-        /// <summary>
-        /// Removes the root folder and its associated group (virtual room) from the server
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <returns>Delete operation information</returns>
-        [Delete("room/{folderId:int}")]
-        public IEnumerable<FileOperationWraper> DeleteVirtualRoom(int folderId)
-        {
-            return FilesControllerHelperInt.DeleteVirtualRoom(folderId);
-        }
-
-        /// <summary>
-        /// Removes the root folder and its associated group (virtual room) from third-party storage
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <returns>Delete operation information</returns>
-        [Delete("room/{folderId}")]
-        public IEnumerable<FileOperationWraper> DeleteVirtualRoom(string folderId)
-        {
-            return FilesControllerHelperString.DeleteVirtualRoom(folderId);
         }
 
         /// <summary>
