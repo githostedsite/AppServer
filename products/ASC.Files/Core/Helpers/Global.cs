@@ -520,6 +520,24 @@ namespace ASC.Web.Files.Classes
             return trashFolderId;
         }
 
+        internal static readonly IDictionary<string, int> ArchiveFolderCache = 
+            new ConcurrentDictionary<string, int>(); /*Use SYNCHRONIZED for cross thread blocks*/
+
+        public int GetFolderArchive(IDaoFactory daoFactory)
+        {
+            if (!Global.IsAdministrator) return default;
+
+            var cacheKey = string.Format("archive/{0}", TenantManager.GetCurrentTenant().TenantId);
+
+            if (!ArchiveFolderCache.TryGetValue(cacheKey, out var archiveFolderId))
+            {
+                archiveFolderId = AuthContext.IsAuthenticated ? daoFactory.GetFolderDao<int>().GetFolderIDArchive(true) : default;
+                ArchiveFolderCache[cacheKey] = archiveFolderId;
+            }
+
+            return archiveFolderId;
+        }
+
         internal readonly IDictionary<string, (IEnumerable<int>, IEnumerable<string>)> VirtualRoomsCache =
             new ConcurrentDictionary<string, (IEnumerable<int>, IEnumerable<string>)>();
 
@@ -682,6 +700,7 @@ namespace ASC.Web.Files.Classes
         public int FolderRecent => GlobalFolder.GetFolderRecent(DaoFactory);
         public int FolderFavorites => GlobalFolder.GetFolderFavorites(DaoFactory);
         public int FolderTemplates => GlobalFolder.GetFolderTemplates(DaoFactory);
+        public int FolderArchive => GlobalFolder.GetFolderArchive(DaoFactory);
         public (IEnumerable<int>, IEnumerable<string>) FoldersCustom => GlobalFolder.GetFoldersCustom(DaoFactory);
 
         public T GetFolderMy<T>()

@@ -314,9 +314,17 @@ namespace ASC.Files.Core
         T GetFolderIDProjects(bool createIfNotExists);
 
         /// <summary>
-        /// Returns ids folder "Custom"
+        /// Returns ids folder "Archive"
+        /// </summary>
+        /// <param name="createIfNotExists"></param>
+        /// <returns></returns>
+        T GetFolderIDArchive(bool createIfNotExists);
+
+        /// <summary>
+        /// Returns virtual rooms ids
         /// Only in TMFolderDao
         /// </summary>
+        /// <param name="groupIDs"></param>
         /// <returns></returns>
         (IEnumerable<int>, IEnumerable<string>) GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
 
@@ -337,7 +345,7 @@ namespace ASC.Files.Core
         Dictionary<string, string> GetBunchObjectIDs(List<T> folderIDs);
         public void DeleteBunchObjects(string module, FolderType folderType, IEnumerable<string> data);
 
-        public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId);
+        public void UpdateThirdPartyRootFolders(IEnumerable<string> entryIDs, string provider, int providerId);
 
         IEnumerable<(Folder<T>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to);
 

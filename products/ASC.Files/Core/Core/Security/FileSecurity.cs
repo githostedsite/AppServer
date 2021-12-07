@@ -378,6 +378,7 @@ namespace ASC.Files.Core.Security
                      f.RootFolderType == FolderType.Templates ||
                      f.RootFolderType == FolderType.Privacy ||
                      f.RootFolderType == FolderType.Projects ||
+                     f.RootFolderType == FolderType.Archive ||
                      f.RootFolderType == FolderType.Custom;
 
             var isVisitor = user.IsVisitor(UserManager);
@@ -517,8 +518,16 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
+                    if (e.RootFolderType == FolderType.Archive && FileSecurityCommon.IsAdministrator(userId))
+                    {
+                        // administrator in Archive has all right
+                        result.Add(e);
+                        continue;
+                    }
+
                     if (e.RootFolderType == FolderType.Custom && FileSecurityCommon.IsAdministrator(userId))
                     {
+                        // administrator has all rights for all virtual rooms
                         result.Add(e);
                         continue;
                     }

@@ -189,6 +189,11 @@ namespace ASC.Files.Thirdparty
             return (null, null);
         }
 
+        public string GetFolderIDArchive(bool createIfNotExists)
+        {
+            return null;
+        }
+
         public string GetBunchObjectID(string folderID)
         {
             return null;
@@ -201,7 +206,7 @@ namespace ASC.Files.Thirdparty
 
         public void DeleteBunchObjects(string module, FolderType folderType, IEnumerable<string> data) { }
 
-        public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId) { }
+        public void UpdateThirdPartyRootFolders(IEnumerable<string> entryIDs, string provider, int providerId) { }
 
         public IEnumerable<(Folder<string>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to)
         {

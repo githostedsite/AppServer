@@ -165,8 +165,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 Folder<T> rootFrom = null;
                 if (0 < Folders.Count) rootFrom = FolderDao.GetRootFolder(Folders[0]);
                 if (0 < Files.Count) rootFrom = FolderDao.GetRootFolderByFile(Files[0]);
-                if (rootFrom != null && rootFrom.FolderType == FolderType.TRASH) throw new InvalidOperationException("Can not copy from Trash.");
-                if (toFolder.RootFolderType == FolderType.TRASH) throw new InvalidOperationException("Can not copy to Trash.");
+                if (rootFrom != null && (rootFrom.FolderType == FolderType.TRASH || rootFrom.FolderType == FolderType.Archive))
+                    throw new InvalidOperationException($"Can not copy from {rootFrom.Title}");
+                if (toFolder.RootFolderType == FolderType.TRASH || toFolder.RootFolderType == FolderType.Archive)
+                    throw new InvalidOperationException($"Can not copy to {toFolder.Title}");
             }
 
             var needToMark = new List<FileEntry<TTo>>();
@@ -209,7 +211,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
-                else if (folder.FolderType == FolderType.Custom)
+                else if (folder.FolderType == FolderType.Custom && toFolder.FolderType != FolderType.Archive)
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
@@ -336,6 +338,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 fileMarker.RemoveMarkAsNewForAll(folder);
 
                                 var newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
+
                                 newFolder = folderDao.GetFolder(newFolderId);
 
                                 if (folder.RootFolderType != FolderType.USER)

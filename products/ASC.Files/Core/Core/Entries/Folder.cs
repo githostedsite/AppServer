@@ -46,6 +46,7 @@ namespace ASC.Files.Core
         Privacy = 13,
         Custom = 14,
         CustomPrivacy = 15,
+        Archive = 16,
     }
 
     public interface IFolder

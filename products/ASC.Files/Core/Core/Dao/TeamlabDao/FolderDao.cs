@@ -70,6 +70,7 @@ namespace ASC.Files.Core.Data
         private const string trash = "trash";
         private const string projects = "projects";
         private const string custom = "custom";
+        private const string archive = "archive";
 
         private FactoryIndexerFolder FactoryIndexer { get; }
         private GlobalSpace GlobalSpace { get; }
@@ -988,6 +989,10 @@ namespace ASC.Files.Core.Data
                         folder.FolderType = FolderType.Projects;
                         folder.Title = projects;
                         break;
+                    case archive:
+                        folder.FolderType = FolderType.Archive;
+                        folder.Title = archive;
+                        break;
                     default:
                         folder.FolderType = FolderType.BUNCH;
                         folder.Title = key;
@@ -1183,6 +1188,9 @@ namespace ASC.Files.Core.Data
                 case FolderType.Projects:
                     result.Title = FilesUCResource.ProjectFiles;
                     break;
+                case FolderType.Archive:
+                    result.Title = FilesUCResource.Archive;
+                    break;
                 case FolderType.BUNCH:
                     try
                     {
@@ -1234,6 +1242,11 @@ namespace ASC.Files.Core.Data
                 .ToDictionary(r => r.LeftNode, r => r.RightNode);
         }
 
+        public int GetFolderIDArchive(bool createIfNotExists)
+        {
+            return (this as IFolderDao<int>).GetFolderID(FileConstant.ModuleId, archive, null, createIfNotExists);
+        }
+
         public IEnumerable<(Folder<int>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to)
         {
             var q1 = FilesDbContext.Folders
@@ -1277,7 +1290,7 @@ namespace ASC.Files.Core.Data
             return q1.Union(q2);
         }
 
-        public void UpdateThirdPartyProviderBunch(IEnumerable<string> entryIDs, string provider, int providerId)
+        public void UpdateThirdPartyRootFolders(IEnumerable<string> entryIDs, string provider, int providerId)
         {
             using var tx = FilesDbContext.Database.BeginTransaction();
 
