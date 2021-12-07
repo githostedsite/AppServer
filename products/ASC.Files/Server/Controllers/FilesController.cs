@@ -333,12 +333,26 @@ namespace ASC.Api.Documents
         /// <summary>
         /// Creates a root folder with an associated group (virtual room) in storage on the server
         /// </summary>
-        /// <param name="folderId"></param>
         /// <param name="model"></param>
         /// <returns>Detailed information about the virtual room</returns>
-        [Create("room/{folderId:int}")]
-        public FolderWrapper<int> CreateVirtualRoomFromBody(int folderId, [FromBody] CreateRoomModel model)
+        [Create("room")]
+        public FolderWrapper<int> CreateVirtualRoomFromBody([FromBody] CreateRoomModel model)
         {
+            ErrorIfNotVDR();
+
+            return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
+        }
+
+        /// <summary>
+        /// Creates a root folder with an associated group (virtual room) in storage on the server
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Detailed information about the virtual room</returns>
+        [Create("room")]
+        public FolderWrapper<int> CreateVirtualRoomFromForm([FromForm] CreateRoomModel model)
+        {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
         }
 
@@ -351,6 +365,22 @@ namespace ASC.Api.Documents
         [Create("room/{folderId}")]
         public FolderWrapper<string> CreateVirtualRoomFromBody(string folderId, [FromBody] CreateRoomModel model)
         {
+            ErrorIfNotVDR();
+
+            return FilesControllerHelperString.CreateVirtualRoom(model.Title, model.Privacy, folderId);
+        }
+
+        /// <summary>
+        /// Creates a root folder with an associated group (virtual room) in third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Detailed information about the virtual room</returns>
+        [Create("room/{folderId}")]
+        public FolderWrapper<string> CreateVirtualRoomFromForm(string folderId, [FromForm] CreateRoomModel model)
+        {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperString.CreateVirtualRoom(model.Title, model.Privacy, folderId);
         }
 
@@ -361,8 +391,24 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns>Updated information on the virtual room</returns>
         [Update("room/{folderId:int}")]
-        public FolderWrapper<int> RenameVirtualRoom(int folderId, [FromBody] CreateFolderModel model)
+        public FolderWrapper<int> RenameVirtualRoomFromBody(int folderId, [FromBody] CreateFolderModel model)
         {
+            ErrorIfNotVDR();
+
+            return FilesControllerHelperInt.RenameVirtualRoom(folderId, model.Title);
+        }
+
+        /// <summary>
+        /// Rename the root folder and its associated group (virtual room) in storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Updated information on the virtual room</returns>
+        [Update("room/{folderId:int}")]
+        public FolderWrapper<int> RenameVirtualRoomFromForm(int folderId, [FromForm] CreateRoomModel model)
+        {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperInt.RenameVirtualRoom(folderId, model.Title);
         }
 
@@ -373,8 +419,24 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns>Updated information on the virtual room</returns>
         [Update("room/{folderId}")]
-        public FolderWrapper<string> RenameVirtualRoom(string folderId, [FromBody] CreateFolderModel model)
+        public FolderWrapper<string> RenameVirtualRoomFromBody(string folderId, [FromBody] CreateFolderModel model)
         {
+            ErrorIfNotVDR();
+
+            return FilesControllerHelperString.RenameVirtualRoom(folderId, model.Title);
+        }
+
+        /// <summary>
+        /// Rename the root folder and its associated group (virtual room) in third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>Updated information on the virtual room</returns>
+        [Update("room/{folderId}")]
+        public FolderWrapper<string> RenameVirtualRoomFromForm(string folderId, [FromForm] CreateFolderModel model)
+        {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperString.RenameVirtualRoom(folderId, model.Title);
         }
 
@@ -385,6 +447,8 @@ namespace ASC.Api.Documents
         [Read("@rooms")]
         public IEnumerable<object> GetVirtualRooms()
         {
+            ErrorIfNotVDR();
+
             var folderIds = GlobalFolderHelper.FoldersCustom;
 
             var foldersInt = folderIds.Item1.Select(id =>
@@ -408,7 +472,19 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Update("room/{folderId:int}/members")]
-        public IEnumerable<FileShareWrapper> AddMembersIntoRoom(int folderId, [FromBody] MembersModel model)
+        public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromBody(int folderId, [FromBody] MembersModel model)
+        {
+            return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
+        }
+
+        /// <summary>
+        /// Adds a members to the group associated with the root folder (virtual room) located in the storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [Update("room/{folderId:int}/members")]
+        public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromForm(int folderId, [FromForm] MembersModel model)
         {
             return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
         }
@@ -420,7 +496,19 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Update("room/{folderId}/members")]
-        public IEnumerable<FileShareWrapper> AddMembersIntoRoom(string folderId, [FromBody] MembersModel model)
+        public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromBody(string folderId, [FromBody] MembersModel model)
+        {
+            return FilesControllerHelperString.AddMembersIntoRoom(folderId, model.UsersIds);
+        }
+
+        /// <summary>
+        /// Adds a members to the group associated with the root folder (virtual room) located in third-party storage
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [Update("room/{folderId}/members")]
+        public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromForm(string folderId, [FromForm] MembersModel model)
         {
             return FilesControllerHelperString.AddMembersIntoRoom(folderId, model.UsersIds);
         }
@@ -432,7 +520,19 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Delete("room/{folderId:int}/members")]
-        public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(int folderId, [FromBody] MembersModel model)
+        public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromBody(int folderId, [FromBody] MembersModel model)
+        {
+            return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
+        }
+
+        /// <summary>
+        /// Removes users from the group associated with the root folder (virtual room) located in the storage on the server
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [Delete("room/{folderId:int}/members")]
+        public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromForm(int folderId, [FromForm] MembersModel model)
         {
             return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
         }
@@ -444,7 +544,19 @@ namespace ASC.Api.Documents
         /// <param name="model"></param>
         /// <returns></returns>
         [Delete("room/{folderId}/members")]
-        public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(string folderID, [FromBody] MembersModel model)
+        public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromBody(string folderID, [FromBody] MembersModel model)
+        {
+            return FilesControllerHelperString.RemoveMembersFromRoom(folderID, model.UsersIds);
+        }
+
+        /// <summary>
+        /// Removes users from the group associated with the root folder (virtual room) located in third-party storage
+        /// </summary>
+        /// <param name="folderID"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [Delete("room/{folderId}/members")]
+        public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromForm(string folderID, [FromForm] MembersModel model)
         {
             return FilesControllerHelperString.RemoveMembersFromRoom(folderID, model.UsersIds);
         }
@@ -2448,6 +2560,12 @@ namespace ASC.Api.Documents
                 version = dsVersion,
                 docServiceUrlApi = url,
             };
+        }
+
+        private void ErrorIfNotVDR()
+        {
+            if (!CoreBaseSettings.VDR)
+                throw new NotSupportedException("Not available in current delivery");
         }
 
         #region wordpress
