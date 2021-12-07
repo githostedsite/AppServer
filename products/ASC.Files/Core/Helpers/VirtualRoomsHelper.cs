@@ -11,7 +11,7 @@ namespace ASC.Files.Core.Helpers
     [Scope]
     public class VirtualRoomsHelper
     {
-        public FileSharing FileSharing { get; set; }
+        private FileSharing FileSharing { get; }
 
         public VirtualRoomsHelper(FileSharing fileSharing)
         {
@@ -20,8 +20,8 @@ namespace ASC.Files.Core.Helpers
 
         public Guid GetLinkedGroupId<T>(Folder<T> folder)
         {
-            if (folder.FolderType != FolderType.Custom
-                && folder.FolderType != FolderType.CustomPrivacy)
+            if (folder.FolderType != FolderType.VirtualRoom
+                && folder.FolderType != FolderType.PrivacyVirtualRoom)
                 return default(Guid);
 
             var ace = FileSharing.
@@ -42,7 +42,11 @@ namespace ASC.Files.Core.Helpers
 
             foreach (var wrapper in wrappersByProvider)
             {
-                if (!virtualRoomsIDsByProviderId.Contains(wrapper.Key)) continue;
+                if (!virtualRoomsIDsByProviderId.Contains(wrapper.Key))
+                {
+                    wrapper.Value.Folders = new List<FileEntryWrapper>();
+                    continue;
+                };
 
                 var ids = virtualRoomsIDsByProviderId[wrapper.Key];
                 wrapper.Value.Folders = wrapper.Value.Folders.Where(f => ids.Contains(((FolderWrapper<string>)f).Id)).ToList();
