@@ -80,6 +80,7 @@ namespace ASC.Api.Documents
         private FilesControllerHelper<string> FilesControllerHelperString { get; }
         private FilesControllerHelper<int> FilesControllerHelperInt { get; }
         private FileStorageService<int> FileStorageServiceInt { get; }
+        private VirtualRoomsHelper VirtualRoomsHelper { get; }
         private GlobalFolderHelper GlobalFolderHelper { get; }
         private FilesSettingsHelper FilesSettingsHelper { get; }
         private FilesLinkUtility FilesLinkUtility { get; }
@@ -109,6 +110,7 @@ namespace ASC.Api.Documents
             FilesControllerHelper<int> filesControllerHelperInt,
             FileStorageService<string> fileStorageService,
             FileStorageService<int> fileStorageServiceInt,
+            VirtualRoomsHelper virtualRoomsHelper,
             GlobalFolderHelper globalFolderHelper,
             FilesSettingsHelper filesSettingsHelper,
             FilesLinkUtility filesLinkUtility,
@@ -152,6 +154,7 @@ namespace ASC.Api.Documents
             ProductEntryPoint = productEntryPoint;
             TenantManager = tenantManager;
             FileUtility = fileUtility;
+            VirtualRoomsHelper = virtualRoomsHelper;
         }
 
         [Read("info")]
@@ -222,8 +225,14 @@ namespace ASC.Api.Documents
                 resultIntIDs.Add((int)GlobalFolderHelper.FolderTrash);
             }
 
-            if (CoreBaseSettings.VDR)
+            if (CoreBaseSettings.VDR && !IsVisitor && !CoreBaseSettings.Personal)
             {
+                if (IsAdmin)
+                {
+                    var archiveFolderId = GlobalFolderHelper.FolderArchive;
+                    resultIntIDs.Add(archiveFolderId);
+                }
+
                 var foldersIds = GlobalFolderHelper.FoldersCustom;
 
                 foreach (var id in foldersIds.Item1)
@@ -237,34 +246,27 @@ namespace ASC.Api.Documents
                 }
             }
 
-            var result = resultIntIDs.Select(r => 
+            var result = resultIntIDs.Select(r =>
                 (object)FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
 
             if (CoreBaseSettings.VDR && FilesSettingsHelper.EnableThirdParty)
             {
                 if (IsAdmin)
                 {
-                    var thirdparty = FileStorageService.GetThirdPartyFolder((int)FolderType.Custom).ToList();
-                    var wrappersByProvider = thirdparty.Select(r => FilesControllerHelperString.GetFolder(((Folder<string>)r).ID, userIdOrGroupId,
-                        FilterType.FoldersOnly, false)).ToDictionary(r => r.Current.Id);
+                    var thirdparty = FileStorageService.GetThirdPartyFolder((int)FolderType.Custom);
+                    var wrappers = thirdparty.Select(r => FilesControllerHelperString.GetFolder(((Folder<string>)r).ID, userIdOrGroupId,
+                         FilterType.FoldersOnly, false)).ToList();
 
-                    var providerGroupIds = resultStringIDs.ToLookup(r => ThirdPartyHelper.GetFullProviderId(r));
-
-                    foreach (var wrapper in wrappersByProvider)
-                    {
-                        var ids = providerGroupIds[wrapper.Key].ToList() ?? new List<string>();
-
-                        if (!ids.Any()) continue;
-
-                        wrapper.Value.Folders = wrapper.Value.Folders.Where(f => ids.Contains(((FolderWrapper<string>)f).Id)).ToList();
-                    }
-
-                    result.AddRange(wrappersByProvider.Values);
+                    result.AddRange(VirtualRoomsHelper.FilterThirdPartyStorage(wrappers, resultStringIDs));
                 }
                 else
                 {
-                    result.AddRange(resultStringIDs.Select(r =>
+                    try
+                    {
+                        result.AddRange(resultStringIDs.Select(r =>
                         FilesControllerHelperString.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)));
+                    }
+                    catch { }
                 }
             }
                 
