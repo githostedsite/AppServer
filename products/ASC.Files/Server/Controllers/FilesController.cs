@@ -478,6 +478,8 @@ namespace ASC.Api.Documents
         [Update("room/{folderId:int}/members")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromBody(int folderId, [FromBody] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
@@ -491,6 +493,8 @@ namespace ASC.Api.Documents
         [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromForm(int folderId, [FromForm] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperInt.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
@@ -503,6 +507,8 @@ namespace ASC.Api.Documents
         [Update("room/{folderId}/members")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromBody(string folderId, [FromBody] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperString.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
@@ -516,6 +522,8 @@ namespace ASC.Api.Documents
         [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> AddMembersIntoRoomFromForm(string folderId, [FromForm] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperString.AddMembersIntoRoom(folderId, model.UsersIds);
         }
 
@@ -528,6 +536,8 @@ namespace ASC.Api.Documents
         [Delete("room/{folderId:int}/members")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromBody(int folderId, [FromBody] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
         }
 
@@ -541,6 +551,8 @@ namespace ASC.Api.Documents
         [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromForm(int folderId, [FromForm] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperInt.RemoveMembersFromRoom(folderId, model.UsersIds);
         }
 
@@ -553,6 +565,8 @@ namespace ASC.Api.Documents
         [Delete("room/{folderId}/members")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromBody(string folderID, [FromBody] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperString.RemoveMembersFromRoom(folderID, model.UsersIds);
         }
 
@@ -566,6 +580,8 @@ namespace ASC.Api.Documents
         [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileShareWrapper> RemoveMembersFromRoomFromForm(string folderID, [FromForm] MembersModel model)
         {
+            ErrorIfNotVDR();
+
             return FilesControllerHelperString.RemoveMembersFromRoom(folderID, model.UsersIds);
         }
 
