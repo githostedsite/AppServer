@@ -661,15 +661,6 @@ namespace ASC.Files.Helpers
             return FolderWrapperHelper.Get(folder);
         }
 
-        public IEnumerable<FileOperationWraper> DeleteVirtualRoom(T folderId)
-        {
-            ErrorIfNotVDR();
-
-            var operations = VirtualRoomService.DeleteRoom(folderId);
-
-            return operations.Select(o => FileOperationWraperHelper.Get(o));
-        }
-
         public IEnumerable<FileShareWrapper> AddMembersIntoRoom(T folderId, IEnumerable<Guid> usersIDs)
         {
             ErrorIfNotVDR();

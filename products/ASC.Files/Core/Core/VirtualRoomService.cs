@@ -4,11 +4,12 @@ using System.Linq;
 
 using ASC.Common;
 using ASC.Common.Security.Authorizing;
+using ASC.Common.Web;
 using ASC.Core;
 using ASC.Core.Users;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Security;
 using ASC.Web.Files.Services.WCFService;
-using ASC.Web.Files.Services.WCFService.FileOperations;
 
 using Constants = ASC.Core.Users.Constants;
 using SecurityContext = ASC.Core.SecurityContext;
@@ -20,6 +21,7 @@ namespace ASC.Files.Core.Core
     {
         private FileStorageService<T> FileStorageService { get; }
         private FileSecurityCommon FileSecurityCommon { get; }
+        private VirtualRoomsHelper VirtualRoomsHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
         private SecurityContext SecurityContext { get; }
         private UserManager UserManager { get; }
@@ -28,13 +30,15 @@ namespace ASC.Files.Core.Core
             UserManager userManager,
             AuthorizationManager authorizationManager,
             FileSecurityCommon fileSecurityCommon,
-            SecurityContext securityContext)
+            SecurityContext securityContext,
+            VirtualRoomsHelper virtualRoomsHelper)
         {
             FileStorageService = storageService;
             UserManager = userManager;
             AuthorizationManager = authorizationManager;
             FileSecurityCommon = fileSecurityCommon;
             SecurityContext = securityContext;
+            VirtualRoomsHelper = virtualRoomsHelper;
         }
 
         public Folder<T> CreateRoom(string title, bool privacy, T parentId = default(T))
@@ -45,28 +49,18 @@ namespace ASC.Files.Core.Core
                 CategoryID = Constants.LinkedGroupCategoryId
             });
 
-            var folder = FileStorageService.CreateNewRootFolder(title, privacy ? FolderType.CustomPrivacy
-                : FolderType.Custom, group.ID.ToString(), parentId);
+            var folder = FileStorageService.CreateNewRootFolder(title, privacy ? FolderType.PrivacyVirtualRoom
+                : FolderType.VirtualRoom, group.ID.ToString(), parentId);
 
             ShareRoomForGroup(folder.ID, group.ID);
 
             return folder;
         }
 
-        public List<FileOperationResult> DeleteRoom(T folderId)
-        {
-            var groupId = GetLinkedGroupId(folderId);
-
-            ErrorIfEmpty(groupId);
-
-            UserManager.DeleteGroup(groupId);
-
-            return FileStorageService.DeleteFolder("delete", folderId, immediately: true);
-        }
-
         public Folder<T> RenameRoom(T folderId, string title)
         {
-            var groupId = GetLinkedGroupId(folderId);
+            var folder = FileStorageService.GetFolder(folderId);
+            var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
 
             ErrorIfEmpty(groupId);
 
@@ -74,14 +68,15 @@ namespace ASC.Files.Core.Core
             group.Name = title;
 
             UserManager.SaveGroupInfo(group);
-            var folder = FileStorageService.FolderRename(folderId, title);
+            var renamedFolder = FileStorageService.FolderRename(folderId, title);
 
-            return folder;
+            return renamedFolder;
         }
 
         public void AddMembersIntoRoom(T folderId, IEnumerable<Guid> userIDs)
         {
-            var groupId = GetLinkedGroupId(folderId);
+            var folder = FileStorageService.GetFolder(folderId);
+            var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
 
             ErrorIfEmpty(groupId);
 
@@ -95,7 +90,8 @@ namespace ASC.Files.Core.Core
 
         public void RemoveMembersFromRoom(T folderId, IEnumerable<Guid> userIDs)
         {
-            var groupId = GetLinkedGroupId(folderId);
+            var folder = FileStorageService.GetFolder(folderId);
+            var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
 
             ErrorIfEmpty(groupId);
 
@@ -145,7 +141,8 @@ namespace ASC.Files.Core.Core
 
             foreach (var folderId in folderIds)
             {
-                var groupId = GetLinkedGroupId(folderId);
+                var folder = FileStorageService.GetFolder(folderId);
+                var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
 
                 if (groupId == Guid.Empty)
                 {
@@ -220,24 +217,6 @@ namespace ASC.Files.Core.Core
             FileStorageService.SetAceObject(aceCollection, false);
         }
 
-        public Guid GetLinkedGroupId(T folderId)
-        {
-            var folder = FileStorageService.GetFolder(folderId);
-
-            if (folder.FolderType != FolderType.Custom
-                && folder.FolderType != FolderType.CustomPrivacy)
-                return default(Guid);
-
-            var ace = FileStorageService.
-                GetSharedInfo(new List<T>(), new List<T> { folderId })
-                .SingleOrDefault(i => i.SubjectGroup);
-
-            if (ace == null)
-                return default(Guid);
-
-            return ace.SubjectId;
-        }
-
         private bool IsRoomAdministartor(Guid userId, Guid groupId)
         {
             var record = AuthorizationManager.GetAces(userId,
@@ -259,7 +238,7 @@ namespace ASC.Files.Core.Core
         private void ErrorIfEmpty(Guid guid)
         {
             if (guid == Guid.Empty)
-                throw new Exception("Entity not found");
+                throw new ItemNotFoundException("Virtual room not found");
         }
     }
 }
