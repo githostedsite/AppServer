@@ -211,7 +211,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
-                else if (folder.FolderType == FolderType.Custom && toFolder.FolderType != FolderType.Archive)
+                else if (folder.FolderType == FolderType.VirtualRoom && toFolder.FolderType != FolderType.Archive)
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }

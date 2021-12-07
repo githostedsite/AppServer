@@ -184,7 +184,7 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public (IEnumerable<int>, IEnumerable<string>) GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
+        public (IEnumerable<int>, IEnumerable<string>) GetRoomsIDs(IEnumerable<Guid> groupIDs)
         {
             return (null, null);
         }
@@ -320,7 +320,7 @@ namespace ASC.Files.Thirdparty
 
         protected void SaveBunch(Folder<string> folder)
         {
-            if (folder.FolderType == FolderType.Custom)
+            if (folder.FolderType == FolderType.VirtualRoom)
             {
                 var toInsert = new DbFilesBunchObjects
                 {
@@ -345,10 +345,10 @@ namespace ASC.Files.Thirdparty
 
         protected void AddFolderType(Folder<string> folder)
         {
-            if (folder.RootFolderType == FolderType.Custom && (folder.ID == PathPrefix
+            if (folder.RootFolderType == FolderType.VirtualRoom && (folder.ID == PathPrefix
                 || folder.FolderID == PathPrefix))
             {
-                folder.FolderType = FolderType.Custom;
+                folder.FolderType = FolderType.VirtualRoom;
                 return;
             }
 

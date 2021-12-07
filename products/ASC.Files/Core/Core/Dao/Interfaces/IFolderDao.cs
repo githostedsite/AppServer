@@ -326,7 +326,7 @@ namespace ASC.Files.Core
         /// </summary>
         /// <param name="groupIDs"></param>
         /// <returns></returns>
-        (IEnumerable<int>, IEnumerable<string>) GetFolderIDsCustom(IEnumerable<Guid> groupIDs);
+        (IEnumerable<int>, IEnumerable<string>) GetRoomsIDs(IEnumerable<Guid> groupIDs);
 
         /// <summary>
         /// Return id of related object

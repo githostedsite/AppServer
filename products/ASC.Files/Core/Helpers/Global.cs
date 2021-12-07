@@ -89,6 +89,7 @@ namespace ASC.Web.Files.Classes
                         GlobalFolder.TemplatesFolderCache.Clear();
                         GlobalFolder.PrivacyFolderCache.Clear();
                         GlobalFolder.TrashFolderCache.Clear();
+                        GlobalFolder.ArchiveFolderCache.Clear();
                     }
                     catch (Exception e)
                     {
@@ -538,20 +539,12 @@ namespace ASC.Web.Files.Classes
             return archiveFolderId;
         }
 
-        internal readonly IDictionary<string, (IEnumerable<int>, IEnumerable<string>)> VirtualRoomsCache =
-            new ConcurrentDictionary<string, (IEnumerable<int>, IEnumerable<string>)>();
-
-        public (IEnumerable<int>, IEnumerable<string>) GetFoldersCustom(IDaoFactory daoFactory)
+        public (IEnumerable<int>, IEnumerable<string>) GetRooms(IDaoFactory daoFactory)
         {
             if (IsOutsider) return (null, null);
 
             var userId = AuthContext.CurrentAccount.ID;
             IEnumerable<Guid> groupIDs;
-
-            var cacheKey = string.Format("rooms/{0}", AuthContext.CurrentAccount.ID);
-
-            if (VirtualRoomsCache.TryGetValue(cacheKey, out var virtualRoomsIds))
-                return virtualRoomsIds;
 
             if (FileSecurityCommon.IsAdministrator(userId))
             {
@@ -566,10 +559,7 @@ namespace ASC.Web.Files.Classes
             if (groupIDs == null || groupIDs.Any() == false)
                 return (new List<int>(), new List<string>());
 
-            var roomIds = daoFactory.GetFolderDao<int>().GetFolderIDsCustom(groupIDs);
-            VirtualRoomsCache[cacheKey] = roomIds;
-
-            return roomIds;
+            return daoFactory.GetFolderDao<int>().GetRoomsIDs(groupIDs);
         }
 
         protected internal void SetFolderTrash(object value)
@@ -701,7 +691,7 @@ namespace ASC.Web.Files.Classes
         public int FolderFavorites => GlobalFolder.GetFolderFavorites(DaoFactory);
         public int FolderTemplates => GlobalFolder.GetFolderTemplates(DaoFactory);
         public int FolderArchive => GlobalFolder.GetFolderArchive(DaoFactory);
-        public (IEnumerable<int>, IEnumerable<string>) FoldersCustom => GlobalFolder.GetFoldersCustom(DaoFactory);
+        public (IEnumerable<int>, IEnumerable<string>) FoldersCustom => GlobalFolder.GetRooms(DaoFactory);
 
         public T GetFolderMy<T>()
         {

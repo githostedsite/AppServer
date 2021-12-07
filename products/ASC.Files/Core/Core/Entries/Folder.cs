@@ -44,8 +44,8 @@ namespace ASC.Files.Core
         Recent = 11,
         Templates = 12,
         Privacy = 13,
-        Custom = 14,
-        CustomPrivacy = 15,
+        VirtualRoom = 14,
+        PrivacyVirtualRoom = 15,
         Archive = 16,
     }
 

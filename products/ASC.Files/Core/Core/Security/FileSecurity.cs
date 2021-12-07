@@ -379,7 +379,7 @@ namespace ASC.Files.Core.Security
                      f.RootFolderType == FolderType.Privacy ||
                      f.RootFolderType == FolderType.Projects ||
                      f.RootFolderType == FolderType.Archive ||
-                     f.RootFolderType == FolderType.Custom;
+                     f.RootFolderType == FolderType.VirtualRoom;
 
             var isVisitor = user.IsVisitor(UserManager);
 
@@ -525,7 +525,7 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
-                    if (e.RootFolderType == FolderType.Custom && FileSecurityCommon.IsAdministrator(userId))
+                    if (e.RootFolderType == FolderType.VirtualRoom && FileSecurityCommon.IsAdministrator(userId))
                     {
                         // administrator has all rights for all virtual rooms
                         result.Add(e);
@@ -570,7 +570,7 @@ namespace ASC.Files.Core.Security
                             ? DefaultMyShare
                         : e.RootFolderType == FolderType.Privacy
                             ? DefaultPrivacyShare
-                            : e.RootFolderType == FolderType.Custom
+                            : e.RootFolderType == FolderType.VirtualRoom
                             ? FileShare.Restrict
                             : DefaultCommonShare;
 

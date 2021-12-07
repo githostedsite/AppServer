@@ -140,7 +140,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
                 else if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.BUNCH
-                    && folder.FolderType != FolderType.Custom)
+                    && folder.FolderType != FolderType.VirtualRoom)
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_DeleteFolder;
                 }
@@ -159,7 +159,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                     {
                         if (ProviderDao != null)
                         {
-                            if (folder.FolderType == FolderType.Custom)
+                            if (folder.FolderType == FolderType.VirtualRoom)
                             {
                                 var folders = FolderDao.GetFolders(folderId);
                                 var groupIds = folders.Select(f => linkedFolderHelper.GetLinkedGroupId(f))
@@ -172,7 +172,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 }
 
                                 var folderDaoInt = scope.ServiceProvider.GetService<IFolderDao<int>>();
-                                folderDaoInt.DeleteBunchObjects("files", FolderType.Custom, 
+                                folderDaoInt.DeleteBunchObjects("files", FolderType.VirtualRoom, 
                                     groupIds.Select(g => g.ToString()));
                             }
 
@@ -192,7 +192,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
                             if (FolderDao.IsEmpty(folder.ID))
                             {
-                                if (folder.FolderType == FolderType.Custom)
+                                if (folder.FolderType == FolderType.VirtualRoom)
                                 {
                                     DeleteLinkedFolder(folder, fileMarker.UserManager, linkedFolderHelper,
                                         authManager);
@@ -218,7 +218,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             {
                                 if (immediately)
                                 {
-                                    if (folder.FolderType == FolderType.Custom)
+                                    if (folder.FolderType == FolderType.VirtualRoom)
                                     {
                                         DeleteLinkedFolder(folder, fileMarker.UserManager,
                                             linkedFolderHelper, authManager);

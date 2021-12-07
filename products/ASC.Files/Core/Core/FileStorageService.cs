@@ -48,7 +48,6 @@ using ASC.Data.Storage;
 using ASC.ElasticSearch;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
-using ASC.Files.Core.Data;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
@@ -72,6 +71,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
+using Constants = ASC.Core.Users.Constants;
 using FileShare = ASC.Files.Core.Security.FileShare;
 using UrlShortener = ASC.Web.Core.Utility.UrlShortener;
 
@@ -1229,7 +1229,7 @@ namespace ASC.Web.Files.Services.WCFService
                             Corporate = r.RootFolderType == FolderType.COMMON,
                             ProviderId = r.ID.ToString(),
                             ProviderKey = r.ProviderKey,
-                            RoomsStorage = r.RootFolderType == FolderType.Custom
+                            RoomsStorage = r.RootFolderType == FolderType.VirtualRoom
                         }
                 );
             return new List<ThirdPartyParams>(resultList.ToList());
@@ -1268,7 +1268,7 @@ namespace ASC.Web.Files.Services.WCFService
             ErrorIf(!FilesSettingsHelper.EnableThirdParty, FilesCommonResource.ErrorMassage_SecurityException_Create);
 
             var lostFolderType = FolderType.USER;
-            var folderType = thirdPartyParams.RoomsStorage ? FolderType.Custom :
+            var folderType = thirdPartyParams.RoomsStorage ? FolderType.VirtualRoom :
                 thirdPartyParams.Corporate ? FolderType.COMMON : FolderType.USER;
 
             int curProviderId;
@@ -1331,7 +1331,7 @@ namespace ASC.Web.Files.Services.WCFService
                 FileMarker.MarkAsNew(folder);
             }
 
-            if (folderType == FolderType.Custom)
+            if (folderType == FolderType.VirtualRoom)
                 RestoreThirdPartyRootFolders(folder);
 
             return folder;

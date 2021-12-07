@@ -69,7 +69,7 @@ namespace ASC.Files.Core.Data
         private const string privacy = "privacy";
         private const string trash = "trash";
         private const string projects = "projects";
-        private const string custom = "custom";
+        private const string virtualroom = "virtualroom";
         private const string archive = "archive";
 
         private FactoryIndexerFolder FactoryIndexer { get; }
@@ -353,7 +353,7 @@ namespace ASC.Files.Core.Data
                 FilesDbContext.SaveChanges();
 
                 if (folder.FolderType == FolderType.DEFAULT || folder.FolderType == FolderType.BUNCH
-                    || folder.FolderType == FolderType.Custom)
+                    || folder.FolderType == FolderType.VirtualRoom)
                 {
                     FactoryIndexer.IndexAsync(newFolder);
                 }
@@ -388,7 +388,7 @@ namespace ASC.Files.Core.Data
 
                 FilesDbContext.SaveChanges();
 
-                if (folder.FolderType == FolderType.Custom)
+                if (folder.FolderType == FolderType.VirtualRoom)
                 {
                     var toInsert = new DbFilesBunchObjects
                     {
@@ -754,7 +754,7 @@ namespace ASC.Files.Core.Data
             return folder.RootFolderType != FolderType.TRASH
                 && folder.RootFolderType != FolderType.Privacy
                 && folder.FolderType != FolderType.BUNCH
-                && folder.FolderType != FolderType.Custom;
+                && folder.FolderType != FolderType.VirtualRoom;
         }
 
         public bool UseRecursiveOperation(int folderId, string toRootFolderId)
@@ -1063,9 +1063,9 @@ namespace ASC.Files.Core.Data
             return (this as IFolderDao<int>).GetFolderID(FileConstant.ModuleId, privacy, (userId ?? AuthContext.CurrentAccount.ID).ToString(), createIfNotExists);
         }
 
-        public (IEnumerable<int>, IEnumerable<string>) GetFolderIDsCustom(IEnumerable<Guid> groupIDs)
+        public (IEnumerable<int>, IEnumerable<string>) GetRoomsIDs(IEnumerable<Guid> groupIDs)
         {
-            var keys = groupIDs.Select(id => string.Format("{0}/{1}/{2}", FileConstant.ModuleId, custom, id)).ToArray();
+            var keys = groupIDs.Select(id => string.Format("{0}/{1}/{2}", FileConstant.ModuleId, virtualroom, id)).ToArray();
 
             var folderIdsDictionary = Query(FilesDbContext.BunchObjects)
                 .AsNoTracking()
@@ -1295,7 +1295,7 @@ namespace ASC.Files.Core.Data
             using var tx = FilesDbContext.Database.BeginTransaction();
 
             var bunch = Query(FilesDbContext.BunchObjects)
-                .Where(r => r.RightNode.StartsWith($"files/{custom}") && r.LeftNode.StartsWith(provider))
+                .Where(r => r.RightNode.StartsWith($"files/{virtualroom}") && r.LeftNode.StartsWith(provider))
                 .ToDictionary(r => ThirdPartyHelper.GetEntryId(r.LeftNode));
 
             foreach (var item in entryIDs)
