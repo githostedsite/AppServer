@@ -323,7 +323,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         }
 
         private void DeleteLinkedFolder(Folder<T> folder, UserManager userManager, 
-            LinkedFolderHelper linkedFolderHelper, AuthorizationManager authorizationManager)
+            VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager)
         {
             var groupId = linkedFolderHelper.GetLinkedGroupId(folder);
 
@@ -339,11 +339,11 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
     {
         private FileMarker FileMarker { get; }
         private FilesMessageService FilesMessageService { get; }
-        private LinkedFolderHelper LinkedFolderHelper { get; }
+        private VirtualRoomsHelper LinkedFolderHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
 
         public FileDeleteOperationScope(FileMarker fileMarker, FilesMessageService filesMessageService,
-            LinkedFolderHelper linkedFolderHelper, AuthorizationManager authorizationManager)
+            VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager)
         {
             FileMarker = fileMarker;
             FilesMessageService = filesMessageService;
@@ -352,7 +352,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         }
 
         public void Deconstruct(out FileMarker fileMarker, out FilesMessageService filesMessageService,
-            out LinkedFolderHelper linkedFolderHelper, out AuthorizationManager authorizationManager)
+            out VirtualRoomsHelper linkedFolderHelper, out AuthorizationManager authorizationManager)
         {
             fileMarker = FileMarker;
             filesMessageService = FilesMessageService;
