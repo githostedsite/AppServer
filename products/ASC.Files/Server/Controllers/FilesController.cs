@@ -331,6 +331,20 @@ namespace ASC.Api.Documents
         }
 
         /// <summary>
+        /// Returns the detailed list of folders located in the 'Archive' section
+        /// </summary>
+        /// <short>
+        /// Archive folder
+        /// </short>
+        /// <category>Folders</category>
+        /// <returns>Archive folder contents</returns>
+        [Read("@archive")]
+        public FolderContentWrapper<int> GetArchiveFolder(Guid userIdOrGroupId, FilterType filterType, bool withsubfolders)
+        {
+            return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderArchive, userIdOrGroupId, filterType, withsubfolders);
+        }
+
+        /// <summary>
         /// Creates a root folder with an associated group (virtual room) in storage on the server
         /// </summary>
         /// <param name="model"></param>
