@@ -509,12 +509,6 @@ namespace ASC.Core
             if (Constants.LostUser.ID == userId || Constants.LostGroupInfo.ID == groupId) return;
             PermissionContext.DemandPermissions(Constants.Action_EditGroups);
 
-            if (CoreBaseSettings.VDR)
-            {
-                var group = GetGroupInfo(groupId);
-                if (group.CategoryID == Constants.LinkedGroupCategoryId) return;
-            } 
-
             UserService.RemoveUserGroupRef(Tenant.TenantId, userId, groupId, UserGroupRefType.Contains);
 
             ResetGroupCache(userId);
