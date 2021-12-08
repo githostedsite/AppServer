@@ -81,6 +81,11 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
+        public Task<Stream> GetThumbnailAsync(File<string> file)
+        {
+            return null;
+        }
+
         public virtual Stream GetFileStream(File<string> file)
         {
             return null;
