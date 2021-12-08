@@ -249,6 +249,7 @@ namespace ASC.Web.Files.Utils
                 entry != null
                 && ((entry.RootFolderType == FolderType.COMMON && Global.IsAdministrator) 
                 || (entry.RootFolderType == FolderType.VirtualRoom && (Global.IsAdministrator || FileSecurity.CanEdit(entry)))
+                    || (entry.RootFolderType == FolderType.Archive && Global.IsAdministrator)
                     || !UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)
                         && (entry.RootFolderType == FolderType.USER
                             && (Equals(entry.RootFolderId, GlobalFolderHelper.FolderMy) || FileSecurity.CanEdit(entry))
