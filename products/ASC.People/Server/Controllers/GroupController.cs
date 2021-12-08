@@ -164,7 +164,8 @@ namespace ASC.Employee.Core.Controllers
             var @group = GetGroupInfo(groupid);
             var groupWrapperFull = GroupWraperFullHelper.Get(group, false);
 
-            if (CoreBaseSettings.VDR && group.CategoryID == Constants.LinkedGroupCategoryId)
+            if (CoreBaseSettings.VDR && group.CategoryID == Constants.LinkedGroupCategoryId &&
+                group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
                 throw new Exception("Unable to delete linked group");
 
             UserManager.DeleteGroup(groupid);
@@ -297,7 +298,8 @@ namespace ASC.Employee.Core.Controllers
 
         private void RemoveUserFromDepartment(Guid userId, GroupInfo @group)
         {
-            if (!UserManager.UserExists(userId)) return;
+            if (!UserManager.UserExists(userId) && group.CategoryID == Constants.LinkedGroupCategoryId
+                && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
 
             var user = UserManager.GetUsers(userId);
             UserManager.RemoveUserFromGroup(user.ID, @group.ID);
@@ -306,7 +308,8 @@ namespace ASC.Employee.Core.Controllers
 
         private void TransferUserToDepartment(Guid userId, GroupInfo group, bool setAsManager)
         {
-            if (!UserManager.UserExists(userId) && userId != Guid.Empty) return;
+            if (!UserManager.UserExists(userId) && userId != Guid.Empty
+                && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
 
             if (setAsManager)
             {
