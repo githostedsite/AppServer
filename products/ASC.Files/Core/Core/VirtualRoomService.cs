@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 
 using ASC.Common;
 using ASC.Common.Security.Authorizing;
@@ -65,6 +66,9 @@ namespace ASC.Files.Core.Core
             ErrorIfEmpty(groupId);
 
             var group = UserManager.GetGroupInfo(groupId);
+
+            ErrorIfArchive(group);
+
             group.Name = title;
 
             UserManager.SaveGroupInfo(group);
@@ -80,6 +84,10 @@ namespace ASC.Files.Core.Core
 
             ErrorIfEmpty(groupId);
 
+            var group = UserManager.GetGroupInfo(groupId);
+
+            ErrorIfArchive(group);
+
             foreach (var id in userIDs)
             {
                 if (!UserManager.UserExists(id)) continue;
@@ -94,6 +102,10 @@ namespace ASC.Files.Core.Core
             var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
 
             ErrorIfEmpty(groupId);
+
+            var group = UserManager.GetGroupInfo(groupId);
+
+            ErrorIfArchive(group);
 
             var objectId = new GroupSecurityObject(groupId);
             var result = new List<Guid>();
@@ -149,6 +161,11 @@ namespace ASC.Files.Core.Core
                     result.Add(folderId);
                     continue;
                 }
+
+                var group = UserManager.GetGroupInfo(groupId);
+
+                if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
+                    continue;
 
                 foreach (var ace in aces)
                 {
@@ -239,6 +256,12 @@ namespace ASC.Files.Core.Core
         {
             if (guid == Guid.Empty)
                 throw new ItemNotFoundException("Virtual room not found");
+        }
+
+        private void ErrorIfArchive(GroupInfo group)
+        {
+            if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
+                throw new SecurityException("Cannot edit archived virtual room");
         }
     }
 }
