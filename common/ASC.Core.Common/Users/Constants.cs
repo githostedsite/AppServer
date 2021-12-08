@@ -82,6 +82,7 @@ namespace ASC.Core.Users
 
         public static readonly Guid SysGroupCategoryId = new Guid("{7717039D-FBE9-45ad-81C1-68A1AA10CE1F}");
         public static readonly Guid LinkedGroupCategoryId = new Guid("{9FFA8F4D-182F-4158-9E46-134F4C2B146C}");
+        public static readonly Guid ArchivedLinkedGroupCategoryId = new Guid("{2306850E-CD6F-4384-9471-EC7E248E57FF}");
 
         public static readonly GroupInfo GroupEveryone = new GroupInfo(SysGroupCategoryId)
         {
