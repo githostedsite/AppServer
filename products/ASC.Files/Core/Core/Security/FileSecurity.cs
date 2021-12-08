@@ -532,14 +532,9 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
-                    if (shares == null)
-                    {
-                        shares = GetShares(entries).Join(subjects, r => r.Subject, s => s, (r, s) => r).ToList();
-                        // shares ordered by level
-                    }
                     if (subjects == null)
                     {
-                        subjects = GetUserSubjects(userId);
+                        subjects = GetUserSubjects(userId, Constants.LinkedGroupCategoryId);
                         if (shares == null)
                         {
                             shares = GetShares(entries);
