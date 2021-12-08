@@ -30,8 +30,11 @@ using System.Linq;
 using System.Text.Json;
 
 using ASC.Common;
+using ASC.Core;
 using ASC.Core.Tenants;
+using ASC.Core.Users;
 using ASC.Files.Core;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.MessagingSystem;
 using ASC.Web.Core.Files;
@@ -129,10 +132,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
         protected override void Do(IServiceScope scope)
         {
-            if (DaoFolderId != 0)
-            {
-                Do(scope, DaoFolderId);
-            }
+            Do(scope, DaoFolderId);
 
             if (!string.IsNullOrEmpty(ThirdpartyFolderId))
             {
@@ -186,7 +186,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             if (folderIds.Count == 0) return needToMark;
 
             var scopeClass = scope.ServiceProvider.GetService<FileMoveCopyOperationScope>();
-            var (filesMessageService, fileMarker, _, _, _) = scopeClass;
+            var (filesMessageService, fileMarker, _, _, _, userManager, virtualRoomsHelper) = scopeClass;
             var folderDao = scope.ServiceProvider.GetService<IFolderDao<TTo>>();
 
             var toFolderId = toFolder.ID;
@@ -339,6 +339,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
                                 var newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
 
+                                ArchiveVirtualRoom(folder, virtualRoomsHelper, userManager);
+
                                 newFolder = folderDao.GetFolder(newFolderId);
 
                                 if (folder.RootFolderType != FolderType.USER)
@@ -380,7 +382,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             if (fileIds.Count == 0) return needToMark;
 
             var scopeClass = scope.ServiceProvider.GetService<FileMoveCopyOperationScope>();
-            var (filesMessageService, fileMarker, fileUtility, global, entryManager) = scopeClass;
+            var (filesMessageService, fileMarker, fileUtility, global, entryManager, _, _) = scopeClass;
             var fileDao = scope.ServiceProvider.GetService<IFileDao<TTo>>();
             var fileTracker = scope.ServiceProvider.GetService<FileTrackerHelper>();
 
@@ -595,6 +597,18 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             return needToMark;
         }
 
+        private void ArchiveVirtualRoom(Folder<T> folder, VirtualRoomsHelper virtualRoomsHelper, UserManager userManager)
+        {
+            if (folder.FolderType == FolderType.VirtualRoom)
+            {
+                var groupId = virtualRoomsHelper.GetLinkedGroupId(folder);
+                var group = userManager.GetGroupInfo(groupId);
+
+                group.CategoryID = Constants.ArchivedLinkedGroupCategoryId;
+                userManager.SaveGroupInfo(group);
+            }
+        }
+
         private bool WithError(IServiceScope scope, IEnumerable<File<T>> files, out string error)
         {
             var entryManager = scope.ServiceProvider.GetService<EntryManager>();
@@ -630,23 +644,30 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private FileUtility FileUtility { get; }
         private Global Global { get; }
         private EntryManager EntryManager { get; }
+        private UserManager UserManager => FileMarker.UserManager;
+        private VirtualRoomsHelper VirtualRoomsHelper { get; }
 
-        public FileMoveCopyOperationScope(FilesMessageService filesMessageService, FileMarker fileMarker, FileUtility fileUtility, Global global, EntryManager entryManager)
+        public FileMoveCopyOperationScope(FilesMessageService filesMessageService, FileMarker fileMarker, FileUtility fileUtility, Global global, EntryManager entryManager,
+            VirtualRoomsHelper virtualRoomsHelper)
         {
             FilesMessageService = filesMessageService;
             FileMarker = fileMarker;
             FileUtility = fileUtility;
             Global = global;
             EntryManager = entryManager;
+            VirtualRoomsHelper = virtualRoomsHelper;
         }
 
-        public void Deconstruct(out FilesMessageService filesMessageService, out FileMarker fileMarker, out FileUtility fileUtility, out Global global, out EntryManager entryManager)
+        public void Deconstruct(out FilesMessageService filesMessageService, out FileMarker fileMarker, out FileUtility fileUtility, out Global global, out EntryManager entryManager,
+            out UserManager userManager, out VirtualRoomsHelper virtualRoomsHelper)
         {
             filesMessageService = FilesMessageService;
             fileMarker = FileMarker;
             fileUtility = FileUtility;
             global = Global;
             entryManager = EntryManager;
+            userManager = UserManager;
+            virtualRoomsHelper = VirtualRoomsHelper;
         }
     }
 }
