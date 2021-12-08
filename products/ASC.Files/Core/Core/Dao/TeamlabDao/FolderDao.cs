@@ -504,7 +504,7 @@ namespace ASC.Files.Core.Data
             {
                 var folder = GetFolder(folderId);
 
-                if (folder.FolderType != FolderType.DEFAULT)
+                if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.VirtualRoom)
                     throw new ArgumentException("It is forbidden to move the System folder.", "folderId");
 
                 var recalcFolders = new List<int> { toFolderId };
