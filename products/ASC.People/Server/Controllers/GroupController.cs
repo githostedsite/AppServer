@@ -164,7 +164,7 @@ namespace ASC.Employee.Core.Controllers
             var @group = GetGroupInfo(groupid);
             var groupWrapperFull = GroupWraperFullHelper.Get(group, false);
 
-            if (CoreBaseSettings.VDR && group.CategoryID == Constants.LinkedGroupCategoryId &&
+            if (CoreBaseSettings.VDR && group.CategoryID == Constants.LinkedGroupCategoryId ||
                 group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
                 throw new Exception("Unable to delete linked group");
 
