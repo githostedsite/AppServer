@@ -128,7 +128,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFolders(IEnumerable<T> folderIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, linkedFolderHelper, authManager) = scopeClass;
+            var (fileMarker, filesMessageService, linkedFolderHelper, authManager, userManager) = scopeClass;
             foreach (var folderId in folderIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -167,7 +167,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
                                 foreach (var group in groupIds)
                                 {
-                                    fileMarker.UserManager.DeleteGroup(group);
+                                    userManager.DeleteGroup(group);
                                     authManager.RemoveAllAces(new GroupSecurityObject(group));
                                 }
 
@@ -194,7 +194,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             {
                                 if (folder.FolderType == FolderType.VirtualRoom)
                                 {
-                                    DeleteLinkedFolder(folder, fileMarker.UserManager, linkedFolderHelper,
+                                    DeleteLinkedFolder(folder, userManager, linkedFolderHelper,
                                         authManager);
                                 }
                                 else
@@ -220,7 +220,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 {
                                     if (folder.FolderType == FolderType.VirtualRoom)
                                     {
-                                        DeleteLinkedFolder(folder, fileMarker.UserManager,
+                                        DeleteLinkedFolder(folder, userManager,
                                             linkedFolderHelper, authManager);
                                     }
                                     else
@@ -248,7 +248,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFiles(IEnumerable<T> fileIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, _, _) = scopeClass;
+            var (fileMarker, filesMessageService, _, _, _) = scopeClass;
             foreach (var fileId in fileIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -341,6 +341,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private FilesMessageService FilesMessageService { get; }
         private VirtualRoomsHelper LinkedFolderHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
+        private UserManager UserManager => FileMarker.UserManager;
 
         public FileDeleteOperationScope(FileMarker fileMarker, FilesMessageService filesMessageService,
             VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager)
@@ -352,12 +353,14 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         }
 
         public void Deconstruct(out FileMarker fileMarker, out FilesMessageService filesMessageService,
-            out VirtualRoomsHelper linkedFolderHelper, out AuthorizationManager authorizationManager)
+            out VirtualRoomsHelper linkedFolderHelper, out AuthorizationManager authorizationManager, 
+            out UserManager userManager)
         {
             fileMarker = FileMarker;
             filesMessageService = FilesMessageService;
             linkedFolderHelper = LinkedFolderHelper;
             authorizationManager = AuthorizationManager;
+            userManager = UserManager;
         }
     }
 }
