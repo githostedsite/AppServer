@@ -132,7 +132,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
         protected override void Do(IServiceScope scope)
         {
-            Do(scope, DaoFolderId);
+            if (DaoFolderId != 0)
+            {
+                Do(scope, DaoFolderId);
+            }
 
             if (!string.IsNullOrEmpty(ThirdpartyFolderId))
             {
