@@ -470,9 +470,11 @@ namespace ASC.Api.Documents
             var folderIds = GlobalFolderHelper.FoldersCustom;
 
             var foldersInt = folderIds.Item1.Select(id =>
-                FilesControllerHelperInt.GetFolder(id, Guid.Empty, FilterType.None, false));
+                FilesControllerHelperInt.GetFolder(id, Guid.Empty, FilterType.None, false))
+                .Where(f => f.Current.RootFolderType != FolderType.Archive);
             var foldersString = folderIds.Item2.Select(id =>
-                FilesControllerHelperString.GetFolder(id, Guid.Empty, FilterType.None, false));
+                FilesControllerHelperString.GetFolder(id, Guid.Empty, FilterType.None, false))
+                .Where(f => f.Current.RootFolderType != FolderType.Archive);
 
             var list = new List<object>();
             list.AddRange(foldersInt);
