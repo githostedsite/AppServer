@@ -753,8 +753,7 @@ namespace ASC.Files.Core.Data
         {
             return folder.RootFolderType != FolderType.TRASH
                 && folder.RootFolderType != FolderType.Privacy
-                && folder.FolderType != FolderType.BUNCH
-                && folder.FolderType != FolderType.VirtualRoom;
+                && folder.FolderType != FolderType.BUNCH;
         }
 
         public bool UseRecursiveOperation(int folderId, string toRootFolderId)
