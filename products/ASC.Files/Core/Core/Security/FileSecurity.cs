@@ -82,6 +82,16 @@ namespace ASC.Files.Core.Security
             get { return FileShare.Restrict; }
         }
 
+        public FileShare DefaultVirtualRoomShare
+        {
+            get { return FileShare.Restrict; }
+        }
+
+        public FileShare DefaultArchiveShare
+        {
+            get { return FileShare.Restrict; }
+        }
+
         private UserManager UserManager { get; }
         private TenantManager TenantManager { get; }
         private AuthContext AuthContext { get; }
@@ -518,9 +528,10 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
-                    if (e.RootFolderType == FolderType.Archive && FileSecurityCommon.IsAdministrator(userId))
+                    if (e.RootFolderType == FolderType.Archive && (action == FilesSecurityActions.Read 
+                        || action == FilesSecurityActions.Delete) && FileSecurityCommon.IsAdministrator(userId))
                     {
-                        // administrator in Archive has all right
+                        
                         result.Add(e);
                         continue;
                     }
@@ -578,7 +589,9 @@ namespace ASC.Files.Core.Security
                         : e.RootFolderType == FolderType.Privacy
                             ? DefaultPrivacyShare
                             : e.RootFolderType == FolderType.VirtualRoom
-                            ? FileShare.Restrict
+                            ? DefaultVirtualRoomShare
+                            : e.RootFolderType == FolderType.Archive
+                            ? DefaultArchiveShare 
                             : DefaultCommonShare;
 
                     e.Access = ace != null ? ace.Share : defaultShare;
