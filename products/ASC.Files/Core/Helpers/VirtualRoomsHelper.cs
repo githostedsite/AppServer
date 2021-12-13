@@ -5,6 +5,9 @@ using ASC.Common;
 using ASC.Web.Files.Utils;
 using System.Linq;
 using ASC.Api.Documents;
+using ASC.Core;
+using Microsoft.AspNetCore.Identity;
+using ASC.Core.Users;
 
 namespace ASC.Files.Core.Helpers
 {
@@ -53,6 +56,26 @@ namespace ASC.Files.Core.Helpers
             }
 
             return wrappersByProvider.Values;
+        }
+
+        public void ArchiveLinkedGroup<T>(Folder<T> folder, UserManager userManager)
+        {
+            SetLinkedGroupCategory(Constants.ArchivedLinkedGroupCategoryId,
+                folder, userManager);
+        }
+
+        public void UnarchiveLinkedGroup<T>(Folder<T> folder, UserManager userManager)
+        {
+            SetLinkedGroupCategory(Constants.LinkedGroupCategoryId,
+                folder, userManager);
+        }
+
+        private void SetLinkedGroupCategory<T>(Guid categoryId, Folder<T> folder, UserManager userManager)
+        {
+            var groupId = GetLinkedGroupId(folder);
+            var group = userManager.GetGroupInfo(groupId);
+            group.CategoryID = categoryId;
+            userManager.SaveGroupInfo(group);
         }
     }
 }
