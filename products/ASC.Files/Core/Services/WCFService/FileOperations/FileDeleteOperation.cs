@@ -32,6 +32,7 @@ using System.Threading;
 using ASC.Common;
 using ASC.Core;
 using ASC.Core.Tenants;
+using ASC.Core.Users;
 using ASC.Files.Core;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
@@ -83,6 +84,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
     class FileDeleteOperation<T> : FileOperation<FileDeleteOperationData<T>, T>
     {
         private int _trashId;
+        private int _archiveId;
         private readonly bool _ignoreException;
         private readonly bool _immediately;
         private readonly IDictionary<string, StringValues> _headers;
@@ -106,6 +108,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         {
             var folderDao = scope.ServiceProvider.GetService<IFolderDao<int>>();
             _trashId = folderDao.GetFolderIDTrash(true);
+            _archiveId = folderDao.GetFolderIDArchive(true);
 
             Folder<T> root = null;
             if (0 < Folders.Count)
@@ -128,7 +131,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFolders(IEnumerable<T> folderIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, linkedFolderHelper, authManager, userManager) = scopeClass;
+            var (fileMarker, filesMessageService, virtualRoomsHelper, authManager, userManager) = scopeClass;
             foreach (var folderId in folderIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -162,7 +165,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             if (folder.FolderType == FolderType.VirtualRoom)
                             {
                                 var folders = FolderDao.GetFolders(folderId);
-                                var groupIds = folders.Select(f => linkedFolderHelper.GetLinkedGroupId(f))
+                                var groupIds = folders.Select(f => virtualRoomsHelper.GetLinkedGroupId(f))
                                     .Where(id => id != Guid.Empty).ToArray();
 
                                 foreach (var group in groupIds)
@@ -194,7 +197,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             {
                                 if (folder.FolderType == FolderType.VirtualRoom)
                                 {
-                                    DeleteLinkedFolder(folder, userManager, linkedFolderHelper,
+                                    DeleteLinkedFolder(folder, userManager, virtualRoomsHelper,
                                         authManager);
                                 }
                                 else
@@ -221,7 +224,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                     if (folder.FolderType == FolderType.VirtualRoom)
                                     {
                                         DeleteLinkedFolder(folder, userManager,
-                                            linkedFolderHelper, authManager);
+                                            virtualRoomsHelper, authManager);
                                     }
                                     else
                                     {
@@ -232,7 +235,16 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 }
                                 else
                                 {
-                                    FolderDao.MoveFolder(folder.ID, _trashId, CancellationToken);
+                                    if (folder.FolderType == FolderType.VirtualRoom)
+                                    {
+                                        virtualRoomsHelper.ArchiveLinkedGroup(folder, userManager);
+                                        FolderDao.MoveFolder(folder.ID, _archiveId, CancellationToken);
+                                    }
+                                    else
+                                    {
+                                        FolderDao.MoveFolder(folder.ID, _trashId, CancellationToken);
+                                    }
+
                                     filesMessageService.Send(folder, _headers, MessageAction.FolderMovedToTrash, folder.Title);
                                 }
 
@@ -331,6 +343,15 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
             userManager.DeleteGroup(groupId);
             authorizationManager.RemoveAllAces(new GroupSecurityObject(groupId));
+        }
+
+        private void ArchiveLinkedGoup(Folder<T> folder, VirtualRoomsHelper virtualRoomsHelper, UserManager userManager)
+        {
+            var groupId = virtualRoomsHelper.GetLinkedGroupId(folder);
+            var group = userManager.GetGroupInfo(groupId);
+
+            group.CategoryID = Constants.ArchivedLinkedGroupCategoryId;
+            userManager.SaveGroupInfo(group);
         }
     }
 
