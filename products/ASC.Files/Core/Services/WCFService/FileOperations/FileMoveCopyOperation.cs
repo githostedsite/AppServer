@@ -132,10 +132,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
         protected override void Do(IServiceScope scope)
         {
-            if (DaoFolderId != 0)
-            {
-                Do(scope, DaoFolderId);
-            }
+            Do(scope, DaoFolderId);
 
             if (!string.IsNullOrEmpty(ThirdpartyFolderId))
             {
@@ -153,7 +150,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             Result += string.Format("folder_{0}{1}", DaoFolderId, SPLIT_CHAR);
 
             //TODO: check on each iteration?
-            var toFolder = folderDao.GetFolder(tto);
+            var toFolder = DaoFolderId == 0 ? new Folder<TTo>() : folderDao.GetFolder(tto);
             if (toFolder == null) return;
             if (!FilesSecurity.CanCreate(toFolder)) throw new System.Security.SecurityException(FilesCommonResource.ErrorMassage_SecurityException_Create);
 
@@ -205,6 +202,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
+                else if (folder.FolderType != FolderType.VirtualRoom && toFolder.ID.Equals(default(T)))
+                {
+                    Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
+                }
                 else if (!FilesSecurity.CanRead(folder))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_ReadFolder;
@@ -214,7 +215,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
-                else if (folder.FolderType == FolderType.VirtualRoom && toFolder.FolderType != FolderType.Archive)
+                else if (folder.FolderType == FolderType.VirtualRoom && toFolder.FolderType != FolderType.Archive
+                    && !toFolder.ID.Equals(default(T)))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
@@ -342,7 +344,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
                                 var newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
 
-                                ArchiveVirtualRoom(folder, virtualRoomsHelper, userManager);
+                                if (folder.RootFolderType == FolderType.Archive)
+                                    virtualRoomsHelper.UnarchiveLinkedGroup(folder, userManager);
 
                                 newFolder = folderDao.GetFolder(newFolderId);
 
@@ -598,18 +601,6 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             }
 
             return needToMark;
-        }
-
-        private void ArchiveVirtualRoom(Folder<T> folder, VirtualRoomsHelper virtualRoomsHelper, UserManager userManager)
-        {
-            if (folder.FolderType == FolderType.VirtualRoom)
-            {
-                var groupId = virtualRoomsHelper.GetLinkedGroupId(folder);
-                var group = userManager.GetGroupInfo(groupId);
-
-                group.CategoryID = Constants.ArchivedLinkedGroupCategoryId;
-                userManager.SaveGroupInfo(group);
-            }
         }
 
         private bool WithError(IServiceScope scope, IEnumerable<File<T>> files, out string error)
