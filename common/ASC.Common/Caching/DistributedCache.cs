@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 using ASC.Common.Logging;
@@ -18,18 +17,15 @@ namespace ASC.Common.Caching
     }
 
 
-    [Scope]
+    [Singletone]
     public class DistributedCache
     {
-        public readonly IDistributedCache cache;
-        public readonly IDictionary<string, object> localCache;
-
-        private ILog _logger;
+        private readonly IDistributedCache cache;
+        private readonly ILog _logger;
 
         public DistributedCache(IDistributedCache cache, IOptionsMonitor<ILog> options)
         {
             this.cache = cache;
-            localCache = new Dictionary<string, object>();
             _logger = options.Get("ASC.Web.Api");
 
             _logger.Info("DistributedCache loaded.");
@@ -39,7 +35,6 @@ namespace ASC.Common.Caching
         {
             var sw = Stopwatch.StartNew();
 
-            if (localCache.ContainsKey(key)) return (T)localCache[key];
 
             var binaryData = cache.Get(key);
 
@@ -53,8 +48,6 @@ namespace ASC.Common.Caching
 
                     var result = parser.ParseFrom(binaryData);
                     result.CustomDeSer();
-
-                    localCache.Add(key, result);
 
                     sw1.Stop();
                     _logger.Info($"DistributedCache: Key {key} parsed in {sw1.Elapsed.TotalMilliseconds} ms.");
