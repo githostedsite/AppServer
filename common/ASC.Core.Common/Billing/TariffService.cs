@@ -48,14 +48,11 @@ namespace ASC.Core.Billing
     [Scope]
     public class TariffServiceStorage
     {
-        public ICache Cache { get; }
-        public DistributedCache DistributedCache { get; }
+        public DistributedCache Cache { get; }
 
-        public TariffServiceStorage(ICacheNotify<TariffCacheItem> notify, ICache cache,
-            DistributedCache distributedCache)
+        public TariffServiceStorage(ICacheNotify<TariffCacheItem> notify, DistributedCache distributedCache)
         {
-            Cache = cache;
-            DistributedCache = distributedCache;
+            Cache = distributedCache;
 
             //TODO: Change code of WCF -> not supported in .NET standard/.Net Core
             /*try
@@ -126,7 +123,6 @@ namespace ASC.Core.Billing
             int.TryParse(Configuration["core:payment:delay"], out var paymentDelay);
             options.PaymentDelay = paymentDelay;
             options.Cache = TariffServiceStorage.Cache;
-            options.DistributedCache = TariffServiceStorage.DistributedCache;
 
             options.QuotaService = QuotaService.Value;
             options.TenantService = TenantService.Value;
@@ -140,8 +136,7 @@ namespace ASC.Core.Billing
         private static readonly TimeSpan DEFAULT_CACHE_EXPIRATION = TimeSpan.FromMinutes(5);
         private static readonly TimeSpan STANDALONE_CACHE_EXPIRATION = TimeSpan.FromMinutes(15);
 
-        internal ICache Cache { get; set; }
-        internal DistributedCache DistributedCache { get; set; }
+        internal DistributedCache Cache { get; set; }
         internal ILog Log { get; set; }
         internal IQuotaService QuotaService { get; set; }
         internal ITenantService TenantService { get; set; }
@@ -195,7 +190,6 @@ namespace ASC.Core.Billing
             PaymentDelay = paymentDelay;
 
             Cache = TariffServiceStorage.Cache;
-            DistributedCache = TariffServiceStorage.DistributedCache;
             LazyCoreDbContext = new Lazy<CoreDbContext>(() => coreDbContextManager.Value);
             var range = (Configuration["core.payment-user-range"] ?? "").Split('-');
             if (!int.TryParse(range[0], out ACTIVE_USERS_MIN))
@@ -427,32 +421,32 @@ namespace ASC.Core.Billing
             return null;
         }
 
-        public IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(params string[] productIds)
-        {
-            if (productIds == null)
-            {
-                throw new ArgumentNullException("productIds");
-            }
-            try
-            {
-                var key = "biling-prices" + string.Join(",", productIds);
-                var result = Cache.Get<IDictionary<string, Dictionary<string, decimal>>>(key);
-                if (result == null)
-                {
-                    var client = GetBillingClient();
-                    result = client.GetProductPriceInfo(productIds);
-                    Cache.Insert(key, result, DateTime.Now.AddHours(1));
-                }
-                return result;
-            }
-            catch (Exception error)
-            {
-                LogError(error);
-                return productIds
-                    .Select(p => new { ProductId = p, Prices = new Dictionary<string, decimal>() })
-                    .ToDictionary(e => e.ProductId, e => e.Prices);
-            }
-        }
+        //public IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(params string[] productIds)
+        //{
+        //    if (productIds == null)
+        //    {
+        //        throw new ArgumentNullException("productIds");
+        //    }
+        //    try
+        //    {
+        //        var key = "biling-prices" + string.Join(",", productIds);
+        //        var result = Cache.Get<IDictionary<string, Dictionary<string, decimal>>>(key);
+        //        if (result == null)
+        //        {
+        //            var client = GetBillingClient();
+        //            result = client.GetProductPriceInfo(productIds);
+        //            Cache.Insert(key, result, DateTime.Now.AddHours(1));
+        //        }
+        //        return result;
+        //    }
+        //    catch (Exception error)
+        //    {
+        //        LogError(error);
+        //        return productIds
+        //            .Select(p => new { ProductId = p, Prices = new Dictionary<string, decimal>() })
+        //            .ToDictionary(e => e.ProductId, e => e.Prices);
+        //    }
+        //}
 
 
         public string GetButton(int tariffId, string partnerId)

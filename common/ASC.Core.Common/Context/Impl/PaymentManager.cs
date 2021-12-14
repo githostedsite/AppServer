@@ -82,10 +82,10 @@ namespace ASC.Core
             return tariffService.GetPayments(tenant);
         }
 
-        public IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(params string[] productIds)
-        {
-            return tariffService.GetProductPriceInfo(productIds);
-        }
+        //public IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(params string[] productIds)
+        //{
+        //    return tariffService.GetProductPriceInfo(productIds);
+        //}
 
 
         public Uri GetShoppingUri(int quotaId, bool forCurrentTenant = true, string affiliateId = null, string currency = null, string language = null, string customerId = null, string quantity = null)

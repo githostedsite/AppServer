@@ -46,7 +46,7 @@ namespace ASC.Core.Billing
 
         Uri GetShoppingUri(int? tenant, int quotaId, string affiliateId, string currency = null, string language = null, string customerId = null, string quantity = null);
 
-        IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(params string[] productIds);
+        //IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(params string[] productIds);
 
         string GetButton(int tariffId, string partnerId);
 

@@ -336,15 +336,15 @@ namespace ASC.Core
             return defaultQuota;
         }
 
-        public IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(bool all = true)
-        {
-            var productIds = GetTenantQuotas(all)
-                .Select(p => p.AvangateId)
-                .Where(id => !string.IsNullOrEmpty(id))
-                .Distinct()
-                .ToArray();
-            return TariffService.GetProductPriceInfo(productIds);
-        }
+        //public IDictionary<string, Dictionary<string, decimal>> GetProductPriceInfo(bool all = true)
+        //{
+        //    var productIds = GetTenantQuotas(all)
+        //        .Select(p => p.AvangateId)
+        //        .Where(id => !string.IsNullOrEmpty(id))
+        //        .Distinct()
+        //        .ToArray();
+        //    return TariffService.GetProductPriceInfo(productIds);
+        //}
 
         public TenantQuota SaveTenantQuota(TenantQuota quota)
         {
