@@ -177,7 +177,7 @@ namespace ASC.Files.Thirdparty.Box
             CheckToken(token, id);
 
             boxStorage.Open(token);
-            return boxStorage;
+            return Storage = boxStorage;
         }
 
         private void CheckToken(OAuth20Token token, int id)

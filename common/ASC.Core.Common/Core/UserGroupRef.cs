@@ -28,64 +28,23 @@ using System;
 using System.Diagnostics;
 
 using ASC.Common.Caching;
-using ASC.Core.Caching;
 
 namespace ASC.Core
 {
     [DebuggerDisplay("{UserId} - {GroupId}")]
-    public sealed partial class UserGroupRef
+    public sealed partial class UserGroupRef : ICustomSer<UserGroupRef>
     {
         public Guid UserId { get; set; }
 
         public Guid GroupId { get; set; }
 
-        public bool Removed
-        {
-            get 
-            {  
-                return RemovedProto;
-            }
-            set 
-            {  
-                RemovedProto = value; 
-            }
-        }
+        public bool Removed { get; set; }
 
-        public DateTime LastModified
-        {
-            get
-            {
-                return DateTime.FromBinary(LastModifiedProto);
-            }
-            set
-            {
-                LastModifiedProto = value.Ticks;
-            }
-        }
+        public DateTime LastModified { get; set; }
 
-        public UserGroupRefType RefType
-        {
-            get
-            {
-                return (UserGroupRefType)RefTypeProto;
-            }
-            set
-            {
-                RefTypeProto = (int)value;
-            }
-        }
+        public UserGroupRefType RefType { get; set; }
 
-        public int Tenant
-        {
-            get
-            {
-                return TenantProto;
-            }
-            set
-            {
-                TenantProto = value;
-            }
-        }
+        public int Tenant { get; set; }
 
         //public UserGroupRef()
         //{
@@ -106,6 +65,26 @@ namespace ASC.Core
         public string CreateKey()
         {
             return CreateKey(Tenant, UserId, GroupId, RefType);
+        }
+
+        public void CustomDeSer()
+        {
+            Removed = RemovedProto;
+            UserId = UserIdProto.FromByteString();
+            GroupId = GroupIdProto.FromByteString();
+            LastModified = LastModifiedProto.ToDateTime();
+            RefType = (UserGroupRefType)RefTypeProto;
+            Tenant = TenantProto;
+        }
+
+        public void CustomSer()
+        {
+            RemovedProto = Removed;
+            UserIdProto = UserId.ToByteString();
+            GroupIdProto = GroupId.ToByteString();
+            LastModifiedProto = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(LastModified.ToUniversalTime());
+            RefTypeProto = (int)RefType;
+            TenantProto = Tenant;
         }
 
         //public override int GetHashCode()

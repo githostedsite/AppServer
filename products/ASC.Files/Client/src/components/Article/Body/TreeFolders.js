@@ -2,7 +2,6 @@ import React from "react";
 import TreeMenu from "@appserver/components/tree-menu";
 import TreeNode from "@appserver/components/tree-menu/sub-components/tree-node";
 import styled from "styled-components";
-//import equal from "fast-deep-equal/react";
 import { FolderType, ShareAccessRights } from "@appserver/common/constants";
 import toastr from "studio/toastr";
 
@@ -11,9 +10,12 @@ import { ReactSVG } from "react-svg";
 import ExpanderDownIcon from "../../../../../../../public/images/expander-down.react.svg";
 import ExpanderRightIcon from "../../../../../../../public/images/expander-right.react.svg";
 import commonIconsStyles from "@appserver/components/utils/common-icons-style";
+import withLoader from "../../../HOCs/withLoader";
+import Loaders from "@appserver/common/components/Loaders";
 
 import { observer, inject } from "mobx-react";
 import { runInAction } from "mobx";
+import { withTranslation } from "react-i18next";
 
 const backgroundDragColor = "#EFEFB2";
 const backgroundDragEnterColor = "#F8F7BF";
@@ -79,7 +81,7 @@ class TreeFolders extends React.Component {
         iconUrl = "/static/images/catalog.user.react.svg";
         break;
       case FolderType.SHARE:
-        iconUrl = "/static/images/catalog.shared.react.svg";
+        iconUrl = "/static/images/catalog.share.react.svg";
         break;
       case FolderType.COMMON:
         iconUrl = "/static/images/catalog.portfolio.react.svg";
@@ -120,10 +122,10 @@ class TreeFolders extends React.Component {
         iconUrl = "/static/images/cloud.services.onedrive.react.svg";
         break;
       case "kDrive":
-        iconUrl = "/static/images/catalog.folder.react.svg";
+        iconUrl = "/static/images/cloud.services.kdrive.react.svg";
         break;
       case "Yandex":
-        iconUrl = "/static/images/catalog.folder.react.svg";
+        iconUrl = "/static/images/cloud.services.yandex.react.svg";
         break;
       case "NextCloud":
         iconUrl = "/static/images/cloud.services.nextcloud.react.svg";
@@ -132,7 +134,7 @@ class TreeFolders extends React.Component {
         iconUrl = "/static/images/catalog.folder.react.svg";
         break;
       case "WebDav":
-        iconUrl = "/static/images/catalog.folder.react.svg";
+        iconUrl = "/static/images/cloud.services.webdav.react.svg";
         break;
       default:
         break;
@@ -209,17 +211,19 @@ class TreeFolders extends React.Component {
       const provider = item.providerKey;
 
       const serviceFolder = !!item.providerKey;
-      let className = `tree-drag tree-id_${item.id}`;
 
       if (withoutProvider && provider) return;
 
-      if (dragging) className += " dragging";
+      let value = "";
+      if (dragging) value = `${item.id} dragging`;
+
       if ((item.folders && item.folders.length > 0) || serviceFolder) {
         return (
           <TreeNode
             id={item.id}
             key={item.id}
-            className={className}
+            className={`tree-drag ${item.folderClassName}`}
+            data-value={value}
             title={item.title}
             icon={this.getFolderIcon(item)}
             dragging={dragging}
@@ -249,7 +253,8 @@ class TreeFolders extends React.Component {
         <TreeNode
           id={item.id}
           key={item.id}
-          className={className}
+          className={`tree-drag ${item.folderClassName}`}
+          data-value={value}
           title={item.title}
           needTopMargin={item.rootFolderType === FolderType.TRASH}
           dragging={dragging}
@@ -431,6 +436,7 @@ class TreeFolders extends React.Component {
     const {
       selectedKeys,
       isLoading,
+      setIsLoading,
       onSelect,
       dragging,
       expandedKeys,
@@ -443,7 +449,7 @@ class TreeFolders extends React.Component {
       <StyledTreeMenu
         className="files-tree-menu"
         checkable={false}
-        draggable
+        draggable={dragging}
         disabled={isLoading}
         multiple={false}
         showIcon
@@ -478,9 +484,9 @@ export default inject(
     { useDefaultSelectedKeys, selectedKeys }
   ) => {
     const {
-      filter,
       selection,
       setIsLoading,
+      isLoading,
       dragging,
       setDragging,
     } = filesStore;
@@ -507,10 +513,10 @@ export default inject(
       myId: myFolderId,
       commonId: commonFolderId,
       isPrivacy: isPrivacyFolder,
-      filter,
       draggableItems: dragging ? selection : null,
       expandedKeys,
       treeFolders,
+      isLoading,
       selectedKeys: useDefaultSelectedKeys
         ? treeFoldersStore.selectedKeys
         : selectedKeys,
@@ -523,4 +529,8 @@ export default inject(
       getSubfolders,
     };
   }
-)(observer(TreeFolders));
+)(
+  withTranslation(["Home", "Common"])(
+    withLoader(observer(TreeFolders))(<Loaders.TreeFolders />)
+  )
+);

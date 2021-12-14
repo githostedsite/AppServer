@@ -91,7 +91,6 @@ class UpdateUserForm extends React.Component {
 
     this.openAvatarEditor = this.openAvatarEditor.bind(this);
     this.openAvatarEditorPage = this.openAvatarEditorPage.bind(this);
-    this.onSaveAvatar = this.onSaveAvatar.bind(this);
     this.onCloseAvatarEditor = this.onCloseAvatarEditor.bind(this);
     this.onLoadFileAvatar = this.onLoadFileAvatar.bind(this);
 
@@ -101,12 +100,37 @@ class UpdateUserForm extends React.Component {
     this.onSelectGroups = this.onSelectGroups.bind(this);
     this.onRemoveGroup = this.onRemoveGroup.bind(this);
 
+    this.handleWindowBeforeUnload = this.handleWindowBeforeUnload.bind(this);
+
     this.mainFieldsContainerRef = React.createRef();
   }
 
   componentDidMount() {
     this.props.setIsEditTargetUser(true);
+
+    this.unblock = this.props.history.block((targetLocation) => {
+      if (this.props.isEdit) {
+        this.props.setIsVisibleDataLossDialog(true);
+        return false;
+      }
+
+      return true;
+    });
+
+    window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
   }
+
+  componentWillUnmount() {
+    this.unblock();
+    window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
+  }
+
+  handleWindowBeforeUnload = (e) => {
+    if (this.props.isEdit) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  };
 
   componentDidUpdate(prevProps, prevState) {
     if (this.props.match.params.userId !== prevProps.match.params.userId) {
@@ -213,8 +237,19 @@ class UpdateUserForm extends React.Component {
   }
 
   onInputChange(event) {
+    const { userFormValidation } = this.props;
     var stateCopy = Object.assign({}, this.state);
-    stateCopy.profile[event.target.name] = event.target.value;
+    const value = event.target.value;
+    const title = event.target.name;
+
+    if (!value.match(userFormValidation)) {
+      stateCopy.errors[title] = true;
+    } else {
+      if (this.state.errors[title]) stateCopy.errors[title] = false;
+    }
+
+    stateCopy.profile[title] = value;
+
     this.setState(stateCopy);
     this.setIsEdit();
   }
@@ -253,21 +288,30 @@ class UpdateUserForm extends React.Component {
     this.setIsEdit();
   }
 
+  scrollToErrorForm = () => {
+    const element = this.mainFieldsContainerRef.current;
+    const parent = element.closest(".scroll-body");
+    (parent || window).scrollTo(0, element.offsetTop);
+  };
   validate() {
-    const { profile } = this.state;
-    const errors = {
+    const { profile, errors } = this.state;
+
+    if (errors.firstName || errors.lastName) {
+      this.scrollToErrorForm();
+      return;
+    }
+
+    const errorsObj = {
       firstName: !profile.firstName.trim(),
       lastName: !profile.lastName.trim(),
     };
-    const hasError = errors.firstName || errors.lastName;
+    const hasError = errorsObj.firstName || errorsObj.lastName;
 
     if (hasError) {
-      const element = this.mainFieldsContainerRef.current;
-      const parent = element.closest(".scroll-body");
-      (parent || window).scrollTo(0, element.offsetTop);
+      this.scrollToErrorForm();
     }
 
-    this.setState({ errors: errors });
+    this.setState({ errors: errorsObj });
     return !hasError;
   }
 
@@ -317,6 +361,8 @@ class UpdateUserForm extends React.Component {
       profile,
       personal,
     } = this.props;
+
+    this.unblock();
 
     if (personal) {
       history.push(combineUrl(AppServerConfig.proxyURL, "/my"));
@@ -419,6 +465,9 @@ class UpdateUserForm extends React.Component {
     data.append("Autosave", false);
     loadAvatar(this.state.profile.id, data)
       .then((response) => {
+        if (!response.success && response.message) {
+          throw response.message;
+        }
         var img = new Image();
         img.onload = function () {
           _this.setState({ isLoading: false });
@@ -452,7 +501,6 @@ class UpdateUserForm extends React.Component {
     this.setState({ isLoading: true });
     const { profile, setAvatarMax, personal } = this.props;
 
-    console.log("profile", profile);
     if (isUpdate) {
       createThumbnailsAvatar(profile.id, {
         x: Math.round(result.x * avatar.defaultWidth - result.width / 2),
@@ -556,6 +604,8 @@ class UpdateUserForm extends React.Component {
     this.setIsEdit();
   }
 
+  onSaveClick = () => this.setState({ isLoading: true });
+
   render() {
     const {
       isLoading,
@@ -575,6 +625,7 @@ class UpdateUserForm extends React.Component {
       isSelf,
       language,
       personal,
+      isTabletView,
     } = this.props;
     const {
       guestCaption,
@@ -584,8 +635,12 @@ class UpdateUserForm extends React.Component {
       groupCaption,
     } = customNames;
 
+    const maxLabelWidth = "140px";
+
     const pattern = getUserContactsPattern();
     const contacts = getUserContacts(profile.contacts);
+    const notEmptyFirstName = Boolean(profile.firstName.trim());
+    const notEmptyLastName = Boolean(profile.lastName.trim());
     //TODO: inject guestsCaption in 'ProfileTypePopupHelper' key instead of hardcoded 'Guests'
     const tooltipTypeContent = (
       <>
@@ -676,7 +731,6 @@ class UpdateUserForm extends React.Component {
               source={this.props.avatarMax || profile.avatarMax}
               userName={profile.displayName}
               editing={true}
-              editLabel={t("Common:EditAvatar")}
               editAction={
                 isMobile ? this.openAvatarEditorPage : this.openAvatarEditor
               }
@@ -685,7 +739,7 @@ class UpdateUserForm extends React.Component {
               image={this.state.avatar.image}
               visible={this.state.visibleAvatarEditor}
               onClose={this.onCloseAvatarEditor}
-              onSave={this.onSaveAvatar}
+              onSave={this.onSaveClick}
               onLoadFile={this.onLoadFileAvatar}
               headerLabel={t("EditPhoto")}
               selectNewPhotoLabel={t("Translations:selectNewPhotoLabel")}
@@ -701,7 +755,11 @@ class UpdateUserForm extends React.Component {
               saveButtonLoading={this.state.isLoading}
             />
           </AvatarContainer>
-          <MainFieldsContainer ref={this.mainFieldsContainerRef}>
+          <MainFieldsContainer
+            ref={this.mainFieldsContainerRef}
+            noSelect
+            {...(!isTabletView && { marginBottom: "32px" })}
+          >
             <TextChangeField
               labelText={`${t("Common:Email")}:`}
               inputName="email"
@@ -732,6 +790,7 @@ class UpdateUserForm extends React.Component {
                 </Text>
               }
               dataDialog={dialogsDataset.changeEmail}
+              maxLabelWidth={maxLabelWidth}
             />
             <TextChangeField
               labelText={`${t("Common:Password")}:`}
@@ -742,6 +801,7 @@ class UpdateUserForm extends React.Component {
               buttonOnClick={this.toggleDialogsVisible}
               buttonTabIndex={2}
               dataDialog={dialogsDataset.changePassword}
+              maxLabelWidth={maxLabelWidth}
             />
             {/*TODO: uncomment this after added phone form */}
             {/* <TextChangeField
@@ -753,11 +813,15 @@ class UpdateUserForm extends React.Component {
               buttonOnClick={this.toggleDialogsVisible}
               buttonTabIndex={3}
               dataDialog={dialogsDataset.changePhone}
+              maxLabelWidth={maxLabelWidth}
             /> */}
             <TextField
               isRequired={true}
               hasError={errors.firstName}
               labelText={`${t("FirstName")}:`}
+              {...(notEmptyFirstName && {
+                errorMessage: t("ErrorInvalidUserFirstName"),
+              })}
               inputName="firstName"
               inputValue={profile.firstName}
               inputIsDisabled={isLoading}
@@ -765,10 +829,14 @@ class UpdateUserForm extends React.Component {
               inputAutoFocussed={!isMobile}
               inputTabIndex={4}
               maxLength={50}
+              maxLabelWidth={maxLabelWidth}
             />
             <TextField
               isRequired={true}
               hasError={errors.lastName}
+              {...(notEmptyLastName && {
+                errorMessage: t("ErrorInvalidUserLastName"),
+              })}
               labelText={`${t("Common:LastName")}:`}
               inputName="lastName"
               inputValue={profile.lastName}
@@ -776,6 +844,7 @@ class UpdateUserForm extends React.Component {
               inputOnChange={this.onInputChange}
               inputTabIndex={5}
               maxLength={50}
+              maxLabelWidth={maxLabelWidth}
             />
             <DateField
               calendarHeaderContent={`${t("CalendarSelectDate")}:`}
@@ -788,6 +857,7 @@ class UpdateUserForm extends React.Component {
               inputOnChange={this.onBirthdayDateChange}
               inputTabIndex={6}
               locale={language}
+              maxLabelWidth={maxLabelWidth}
             />
             <RadioField
               labelText={`${t("Translations:Sex")}:`}
@@ -799,6 +869,7 @@ class UpdateUserForm extends React.Component {
               ]}
               radioIsDisabled={isLoading}
               radioOnChange={this.onInputChange}
+              maxLabelWidth={maxLabelWidth}
             />
             {!personal && (
               <RadioField
@@ -815,6 +886,7 @@ class UpdateUserForm extends React.Component {
                 radioOnChange={this.onUserTypeChange}
                 tooltipContent={tooltipTypeContent}
                 helpButtonHeaderContent={t("Common:Type")}
+                maxLabelWidth={maxLabelWidth}
               />
             )}
             {!personal && (
@@ -832,6 +904,7 @@ class UpdateUserForm extends React.Component {
                   profile.birthday ? new Date(profile.birthday) : new Date()
                 }
                 locale={language}
+                maxLabelWidth={maxLabelWidth}
               />
             )}
             <TextField
@@ -841,6 +914,7 @@ class UpdateUserForm extends React.Component {
               inputIsDisabled={isLoading}
               inputOnChange={this.onInputChange}
               inputTabIndex={8}
+              maxLabelWidth={maxLabelWidth}
             />
             {!personal && (
               <TextField
@@ -850,6 +924,7 @@ class UpdateUserForm extends React.Component {
                 inputIsDisabled={isLoading || !isAdmin}
                 inputOnChange={this.onInputChange}
                 inputTabIndex={9}
+                maxLabelWidth={maxLabelWidth}
               />
             )}
             {!isMy && !personal && (
@@ -866,12 +941,16 @@ class UpdateUserForm extends React.Component {
                 selectorSelectAllText={t("Common:SelectAll")}
                 selectorOnSearchGroups={this.onSearchGroups}
                 selectorOnSelectGroups={this.onSelectGroups}
+                maxLabelWidth={maxLabelWidth}
               />
             )}
           </MainFieldsContainer>
         </MainContainer>
         {!personal && (
-          <InfoFieldContainer headerText={t("Translations:Comments")}>
+          <InfoFieldContainer
+            headerText={t("Translations:Comments")}
+            marginBottom={"42px"}
+          >
             <Textarea
               placeholder={t("WriteComment")}
               name="notes"
@@ -882,7 +961,10 @@ class UpdateUserForm extends React.Component {
             />
           </InfoFieldContainer>
         )}
-        <InfoFieldContainer headerText={t("ContactInformation")}>
+        <InfoFieldContainer
+          headerText={t("ContactInformation")}
+          marginBottom={"42px"}
+        >
           <ContactsField
             pattern={pattern.contact}
             contacts={contacts.contact}
@@ -894,7 +976,10 @@ class UpdateUserForm extends React.Component {
             onItemRemove={this.onContactsItemRemove}
           />
         </InfoFieldContainer>
-        <InfoFieldContainer headerText={t("Translations:SocialProfiles")}>
+        <InfoFieldContainer
+          headerText={t("Translations:SocialProfiles")}
+          {...(isTabletView && { marginBottom: "36px" })}
+        >
           <ContactsField
             pattern={pattern.social}
             contacts={contacts.social}
@@ -979,6 +1064,8 @@ export default withRouter(
     isEditTargetUser: peopleStore.targetUserStore.isEditTargetUser,
     personal: auth.settingsStore.personal,
     setUserIsUpdate: auth.userStore.setUserIsUpdate,
+    userFormValidation: auth.settingsStore.userFormValidation,
+    isTabletView: auth.settingsStore.isTabletView,
   }))(
     observer(
       withTranslation(["ProfileAction", "Common", "Translations"])(

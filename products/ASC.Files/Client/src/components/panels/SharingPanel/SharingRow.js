@@ -3,11 +3,10 @@ import IconButton from "@appserver/components/icon-button";
 import Link from "@appserver/components/link";
 import Row from "@appserver/components/row";
 import Text from "@appserver/components/text";
-import toastr from "studio/toastr";
+import toastr from "@appserver/components/toast/toastr";
 import copy from "copy-to-clipboard";
 import LinkRow from "./linkRow";
 import AccessComboBox from "./AccessComboBox";
-//import equal from "fast-deep-equal/react";
 import { getAccessIcon } from "../../../helpers/files-helpers";
 import { ReactSVG } from "react-svg";
 import { objectToGetParams } from "@appserver/common/utils";
@@ -57,7 +56,7 @@ class SharingRow extends React.Component {
         body,
       });
 
-    window.open(mailtoLink);
+    window.open(mailtoLink, "_self");
   };
 
   onShareTwitter = () => {
@@ -70,7 +69,7 @@ class SharingRow extends React.Component {
         text: shareLink,
       });
 
-    window.open(twitterLink);
+    window.open(twitterLink, "", "width=1000,height=670");
   };
 
   // onShareFacebook = () => {
@@ -251,7 +250,7 @@ class SharingRow extends React.Component {
                     ))}
                   {isOwner ? (
                     <Text className="sharing_panel-remove-icon" color="#A3A9AE">
-                      {t("Owner")}
+                      {t("Common:Owner")}
                     </Text>
                   ) : id === isMyId ? (
                     <Text

@@ -49,7 +49,7 @@ namespace ASC.Core.Caching
 
         internal bool QuotaCacheEnabled { get; }
 
-        public QuotaServiceCache(IConfiguration Configuration, 
+        public QuotaServiceCache(IConfiguration Configuration,
             DistributedCache cache)
         {
             if (Configuration["core:enable-quota-cache"] == null)
@@ -168,7 +168,7 @@ namespace ASC.Core.Caching
             Service.SetTenantQuotaRow(row, exchange);
 
             var rows = FindTenantQuotaRows(row.Tenant).ToList();
-            var pastRow = rows.SingleOrDefault(r => r.Tenant == row.Tenant);
+            var pastRow = rows.SingleOrDefault(r => r.Tenant == row.Tenant && r.Path == row.Path);
 
             if (pastRow != null) rows.Remove(pastRow);
 

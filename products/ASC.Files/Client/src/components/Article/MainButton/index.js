@@ -49,7 +49,7 @@ class ArticleMainButtonContent extends React.Component {
 
   onFileChange = (e) => {
     const { startUpload, t } = this.props;
-    this.goToHomePage();
+    //this.goToHomePage();
     startUpload(e.target.files, null, t);
   };
 
@@ -79,44 +79,45 @@ class ArticleMainButtonContent extends React.Component {
         isDisabled={isDisabled ? isDisabled : !canCreate}
         isDropdown={true}
         text={t("Common:Actions")}
+        className="files_main-button"
       >
         <DropDownItem
-          className="main-button_drop-down"
+          className="main-button_drop-down main-button_new-document"
           icon="images/actions.documents.react.svg"
           label={t("NewDocument")}
           onClick={this.onCreate}
           data-format="docx"
         />
         <DropDownItem
-          className="main-button_drop-down"
+          className="main-button_drop-down main-button_new-spreadsheet"
           icon="images/spreadsheet.react.svg"
           label={t("NewSpreadsheet")}
           onClick={this.onCreate}
           data-format="xlsx"
         />
         <DropDownItem
-          className="main-button_drop-down"
+          className="main-button_drop-down main-button_new-presentation"
           icon="images/actions.presentation.react.svg"
           label={t("NewPresentation")}
           onClick={this.onCreate}
           data-format="pptx"
         />
         <DropDownItem
-          className="main-button_drop-down"
+          className="main-button_drop-down main-button_new-folder"
           icon="images/catalog.folder.react.svg"
           label={t("NewFolder")}
           onClick={this.onCreate}
         />
         <DropDownItem isSeparator />
         <DropDownItem
-          className="main-button_drop-down"
+          className="main-button_drop-down main-button_upload-files"
           icon="images/actions.upload.react.svg"
           label={t("UploadFiles")}
           onClick={this.onUploadFileClick}
         />
         {!isMobile && (
           <DropDownItem
-            className="main-button_drop-down"
+            className="main-button_drop-down main-button_upload-folders"
             icon="images/actions.upload.react.svg"
             label={t("UploadFolder")}
             disabled={isPrivacy}
@@ -171,9 +172,7 @@ export default inject(({ filesStore, uploadDataStore, treeFoldersStore }) => {
 })(
   withRouter(
     withTranslation(["Article", "Common"])(
-      withLoader(observer(ArticleMainButtonContent))(
-        <Loaders.Rectangle width="217px" />
-      )
+      withLoader(observer(ArticleMainButtonContent))(<Loaders.MainButton />)
     )
   )
 );

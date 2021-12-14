@@ -201,7 +201,7 @@ namespace ASC.Core
         public string AuthenticateMe(IAccount account, List<Claim> additionalClaims = null)
         {
             AuthenticateMeWithoutCookie(account, additionalClaims);
-            
+
             string cookie = null;
 
             if (account is IUserAccount)
@@ -239,7 +239,7 @@ namespace ASC.Core
                 }
 
                 // for LDAP users only
-                if (u.Sid != null)
+                if (!string.IsNullOrEmpty(u.Sid))
                 {
                     if (!TenantManager.GetTenantQuota(tenant.TenantId).Ldap)
                     {

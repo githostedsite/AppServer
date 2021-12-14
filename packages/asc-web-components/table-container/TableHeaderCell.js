@@ -1,7 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
 import Text from "../text";
-import Link from "../link";
 import IconButton from "../icon-button";
 import globalColors from "../utils/globalColors";
 import { StyledTableHeaderCell } from "./StyledTableContainer";
@@ -13,57 +12,55 @@ const TableHeaderCell = ({
   resizable,
   sortBy,
   sorted,
+  defaultSize,
 }) => {
-  const { options, title, enable, active, minWidth } = column;
+  const { title, enable, active, minWidth } = column;
 
-  const isActive = column.sortBy === sortBy || active;
+  const isActive = (sortBy && column.sortBy === sortBy) || active;
 
   const onClick = (e) => {
-    column.onClick(column.sortBy, e);
+    column.onClick && column.onClick(column.sortBy, e);
+  };
+
+  const onIconClick = (e) => {
+    column.onIconClick();
+    e.stopPropagation();
   };
 
   return (
     <StyledTableHeaderCell
       sorted={sorted}
       isActive={isActive}
+      showIcon={column.onClick}
       className="table-container_header-cell"
-      id={`column_${index + 1}`}
+      id={`column_${index}`}
       data-enable={enable}
       data-min-width={minWidth}
+      data-default-size={defaultSize}
+      onClick={onClick}
     >
       <div className="table-container_header-item">
-        {column.onClick ? (
-          <div className="header-container-text-wrapper">
-            <Link
-              onClick={onClick}
-              fontWeight={600}
-              color={globalColors.gray}
-              className="header-container-text"
-              data={options}
-              noHover
-            >
-              {enable ? title : ""}
-            </Link>
-
-            <IconButton
-              onClick={column.onIconClick ? column.onIconClick : onClick}
-              iconName="/static/images/folder arrow.react.svg"
-              className="header-container-text-icon"
-              size="small"
-            />
-          </div>
-        ) : (
+        <div className="header-container-text-wrapper">
           <Text
             fontWeight={600}
-            color={globalColors.gray}
+            color={isActive ? globalColors.grayMain : globalColors.gray}
             className="header-container-text"
           >
             {enable ? title : ""}
           </Text>
-        )}
+
+          <IconButton
+            onClick={column.onIconClick ? onIconClick : onClick}
+            iconName="/static/images/sort.desc.react.svg"
+            className="header-container-text-icon"
+            size="small"
+            hoverColor="#657077"
+            color={isActive ? globalColors.grayMain : globalColors.gray}
+          />
+        </div>
         {resizable && (
           <div
-            data-column={`${index + 1}`}
+            data-column={`${index}`}
             className="resize-handle not-selectable"
             onMouseDown={onMouseDown}
           />
@@ -80,6 +77,7 @@ TableHeaderCell.propTypes = {
   resizable: PropTypes.bool,
   sorted: PropTypes.bool,
   sortBy: PropTypes.string,
+  defaultSize: PropTypes.number,
 };
 
 export default TableHeaderCell;

@@ -46,6 +46,8 @@ const EditingWrapper = styled.div`
       border-bottom: 1px solid #eceef1;
       padding-bottom: 4px;
       margin-top: 4px;
+
+      /* margin-left: -4px; */
     `}
 
   ${(props) =>
@@ -57,7 +59,12 @@ const EditingWrapper = styled.div`
   }
   .edit-text {
     height: 32px;
-    font-size: 15px;
+    font-size: ${(props) =>
+      props.viewAs === "table"
+        ? "13px"
+        : props.viewAs === "tile"
+        ? "14px"
+        : "15px"};
     outline: 0 !important;
     font-weight: 600;
     margin: 0;
@@ -102,7 +109,7 @@ const EditingWrapper = styled.div`
   }
 
   .is-edit {
-    margin-top: 4px;
+    /* margin-top: 4px; */
   }
 `;
 
@@ -113,7 +120,7 @@ const EditingWrapperComponent = (props) => {
     renameTitle,
     onClickUpdateItem,
     cancelUpdateItem,
-    isLoading,
+    //isLoading,
     viewAs,
     elementIcon,
   } = props;
@@ -122,10 +129,14 @@ const EditingWrapperComponent = (props) => {
 
   const [OkIconIsHovered, setIsHoveredOk] = useState(false);
   const [CancelIconIsHovered, setIsHoveredCancel] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const onKeyUpUpdateItem = (e) => {
+    if (isLoading) return;
+
     var code = e.keyCode || e.which;
     if (code === 13) {
+      if (!isLoading) setIsLoading(true);
       return onClickUpdateItem(e);
     }
     //if (code === 27) return cancelUpdateItem(e);
@@ -144,6 +155,11 @@ const EditingWrapperComponent = (props) => {
   };
 
   const onFocus = (e) => e.target.select();
+  const onBlur = (e) => {
+    if (e.relatedTarget && e.relatedTarget.classList.contains("edit-button"))
+      return false;
+    onClickUpdateItem(e, false);
+  };
 
   return (
     <EditingWrapper viewAs={viewAs}>
@@ -159,6 +175,7 @@ const EditingWrapperComponent = (props) => {
         onKeyPress={onKeyUpUpdateItem}
         onKeyDown={onEscapeKeyPress}
         onFocus={onFocus}
+        onBlur={onBlur}
         isDisabled={isLoading}
         data-itemid={itemId}
         withBorder={!isTable}

@@ -48,21 +48,22 @@ namespace ASC.Files.Service
                     config.SetBasePath(path);
                     var env = hostContext.Configuration.GetValue("ENVIRONMENT", "Production");
                     config
-                        .AddInMemoryCollection(new Dictionary<string, string>
-                            {
-                                {"pathToConf", path }
-                            }
-                        )
                         .AddJsonFile("appsettings.json")
                         .AddJsonFile($"appsettings.{env}.json", true)
                         .AddJsonFile($"appsettings.services.json", true)
                         .AddJsonFile("storage.json")
                         .AddJsonFile("notify.json")
+                        .AddJsonFile($"notify.{env}.json", true)
                         .AddJsonFile("kafka.json")
                         .AddJsonFile($"kafka.{env}.json", true)
                         .AddJsonFile("elastic.json", true)
                         .AddEnvironmentVariables()
-                        .AddCommandLine(args);
+                        .AddCommandLine(args)
+                        .AddInMemoryCollection(new Dictionary<string, string>
+                            {
+                                {"pathToConf", path }
+                            }
+                        );
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
@@ -73,8 +74,20 @@ namespace ASC.Files.Service
                     diHelper.TryAdd(typeof(ICacheNotify<>), typeof(KafkaCache<>));
 
                     diHelper.RegisterProducts(hostContext.Configuration, hostContext.HostingEnvironment.ContentRootPath);
-                    services.AddHostedService<ServiceLauncher>();
-                    diHelper.TryAdd<ServiceLauncher>();
+
+                    if (!bool.TryParse(hostContext.Configuration["disable_elastic"], out var disableElastic))
+                    {
+                        disableElastic = false;
+                    }
+
+                    if (!disableElastic)
+                    {
+                        services.AddHostedService<ServiceLauncher>();
+                        diHelper.TryAdd<ServiceLauncher>();
+                        //diHelper.TryAdd<FileConverter>();
+                        diHelper.TryAdd<FactoryIndexerFile>();
+                        diHelper.TryAdd<FactoryIndexerFolder>();
+                    }
 
                     services.AddHostedService<FeedAggregatorService>();
                     diHelper.TryAdd<FeedAggregatorService>();
@@ -82,9 +95,6 @@ namespace ASC.Files.Service
                     services.AddHostedService<Launcher>();
                     diHelper.TryAdd<Launcher>();
 
-                    //diHelper.TryAdd<FileConverter>();
-                    diHelper.TryAdd<FactoryIndexerFile>();
-                    diHelper.TryAdd<FactoryIndexerFolder>();
                 })
                 .ConfigureContainer<ContainerBuilder>((context, builder) =>
                 {

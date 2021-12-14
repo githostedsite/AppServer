@@ -209,7 +209,7 @@ class SectionBodyContent extends React.PureComponent {
   };
   loginCallback = (profile) => {
     const { setProviders, t } = this.props;
-    linkOAuth(profile.Serialized).then((resp) => {
+    linkOAuth(profile).then((resp) => {
       getAuthProviders().then((providers) => {
         setProviders(providers);
         toastr.success(t("ProviderSuccessfullyConnected"));
@@ -267,7 +267,7 @@ class SectionBodyContent extends React.PureComponent {
         return (
           <React.Fragment key={`${item.provider}ProviderItem`}>
             <div>
-              {item.provider === "Facebook" ? (
+              {item.provider === "facebook" ? (
                 <FacebookButton
                   noHover={true}
                   iconName={icon}

@@ -58,16 +58,24 @@ class ArticleMainButtonContent extends React.Component {
 
   render() {
     //console.log("People ArticleMainButtonContent render");
-    const { t, homepage, userCaption, guestCaption, groupCaption } = this.props;
+    const {
+      t,
+      isAdmin,
+      homepage,
+      userCaption,
+      guestCaption,
+      groupCaption,
+    } = this.props;
 
     const { dialogVisible } = this.state;
 
-    return (
+    return isAdmin ? (
       <>
         <MainButton
           isDisabled={false}
           isDropdown={true}
           text={t("Common:Actions")}
+          className="people_main-button"
         >
           <DropDownItem
             icon={combineUrl(
@@ -77,6 +85,7 @@ class ArticleMainButtonContent extends React.Component {
             )}
             label={userCaption}
             onClick={this.goToEmployeeCreate}
+            className="main-button_create-user"
           />
 
           <DropDownItem
@@ -87,6 +96,7 @@ class ArticleMainButtonContent extends React.Component {
             )}
             label={guestCaption}
             onClick={this.goToGuestCreate}
+            className="main-button_create-guest"
           />
           <DropDownItem
             icon={combineUrl(
@@ -96,6 +106,7 @@ class ArticleMainButtonContent extends React.Component {
             )}
             label={groupCaption}
             onClick={this.goToGroupCreate}
+            className="main-button_create-group"
           />
           <DropDownItem isSeparator />
           <DropDownItem
@@ -105,6 +116,7 @@ class ArticleMainButtonContent extends React.Component {
             )}
             label={t("Translations:InviteLinkTitle")}
             onClick={this.onInvitationDialogClick}
+            className="main-button_invitation-link"
           />
           {/* <DropDownItem
               icon="images/plane.react.svg"
@@ -131,21 +143,29 @@ class ArticleMainButtonContent extends React.Component {
           />
         )}
       </>
+    ) : (
+      <></>
     );
   }
 }
 
 export default withRouter(
-  inject(({ auth }) => ({
-    homepage: config.homepage,
-    userCaption: auth.settingsStore.customNames.userCaption,
-    guestCaption: auth.settingsStore.customNames.guestCaption,
-    groupCaption: auth.settingsStore.customNames.groupCaption,
-  }))(
+  inject(({ auth }) => {
+    const {
+      userCaption,
+      guestCaption,
+      groupCaption,
+    } = auth.settingsStore.customNames;
+    return {
+      isAdmin: auth.isAdmin,
+      homepage: config.homepage,
+      userCaption,
+      guestCaption,
+      groupCaption,
+    };
+  })(
     withTranslation(["Article", "Common", "Translations"])(
-      withLoader(observer(ArticleMainButtonContent))(
-        <Loaders.Rectangle width="217px" />
-      )
+      withLoader(observer(ArticleMainButtonContent))(<Loaders.MainButton />)
     )
   )
 );

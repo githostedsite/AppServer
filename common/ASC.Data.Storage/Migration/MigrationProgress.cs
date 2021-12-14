@@ -1,7 +1,7 @@
 ﻿
 using ASC.Common.Caching;
 
-namespace ASC.Migration
+namespace ASC.Protos.Migration
 {
     public partial class MigrationProgress : ICustomSer<MigrationProgress>
     {

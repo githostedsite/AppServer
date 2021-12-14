@@ -1,9 +1,11 @@
 import styled from "styled-components";
 import { mobile } from "../utils/device";
+import NoUserSelect from "../utils/commonStyles";
 
 const EmptyContentBody = styled.div`
   margin: 0 auto;
   padding: 64px 0;
+  grid-template-columns: 150px 1fr;
 
   display: grid;
   grid-template-areas:
@@ -19,6 +21,7 @@ const EmptyContentBody = styled.div`
   .ec-image {
     grid-area: img;
     margin: 0 0 0 auto;
+    ${NoUserSelect}
   }
 
   .ec-header {

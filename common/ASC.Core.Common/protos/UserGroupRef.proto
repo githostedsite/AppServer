@@ -1,5 +1,5 @@
 ﻿syntax = "proto3";
-
+import "google/protobuf/timestamp.proto";
 package ASC.Core;
 
 message UserGroupRef {
@@ -7,7 +7,7 @@ message UserGroupRef {
     bytes GroupIdProto  = 2;
     bool RemovedProto  = 3;
     int32 RefTypeProto  = 7;
-    int64 LastModifiedProto  = 5;
+    google.protobuf.Timestamp LastModifiedProto  = 5;
     int32 TenantProto  = 6;
 }
 

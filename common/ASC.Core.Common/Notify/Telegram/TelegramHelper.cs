@@ -138,14 +138,14 @@ namespace ASC.Core.Common.Notify
 
             var buf = id.Concat(d).ToArray();
 
-            using var sha = new SHA256CryptoServiceProvider();
+            using var sha = SHA256.Create();
             return Convert.ToBase64String(sha.ComputeHash(buf))
                 .Replace('+', '-').Replace('/', '_').Replace("=", ""); // make base64 url safe
         }
 
         private string GetLink(string token)
         {
-            var tgProvider = (ITelegramLoginProvider)ConsumerFactory.GetByKey("Telegram");
+            var tgProvider = (ITelegramLoginProvider)ConsumerFactory.GetByKey("telegram");
             var botname = tgProvider == null ? default : tgProvider.TelegramBotName;
             if (string.IsNullOrEmpty(botname)) return null;
 

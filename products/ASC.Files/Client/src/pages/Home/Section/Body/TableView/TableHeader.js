@@ -2,16 +2,16 @@ import React from "react";
 import TableHeader from "@appserver/components/table-container/TableHeader";
 import { inject, observer } from "mobx-react";
 import { withTranslation } from "react-i18next";
-import { FilterType } from "@appserver/common/constants";
-import DropDownItem from "@appserver/components/drop-down-item";
 
-const TABLE_COLUMNS = "filesTableColumns";
+const TABLE_VERSION = "2";
+const TABLE_COLUMNS = `filesTableColumns_ver-${TABLE_VERSION}`;
+const COLUMNS_SIZE = `filesColumnsSize_ver-${TABLE_VERSION}`;
 
 class FilesTableHeader extends React.Component {
   constructor(props) {
     super(props);
 
-    const { t, withContent } = props;
+    const { t, withContent, personal, userId } = props;
 
     const defaultColumns = [
       {
@@ -73,15 +73,27 @@ class FilesTableHeader extends React.Component {
         key: "Share",
         title: "",
         enable: withContent,
-        defaultSize: 80,
+        defaultSize: 120,
         resizable: false,
       },
     ];
 
-    const columns = this.getColumns(defaultColumns);
+    personal && defaultColumns.splice(1, 1);
 
-    this.state = { columns };
+    const storageColumns = localStorage.getItem(`${TABLE_COLUMNS}=${userId}`);
+    const splitColumns = storageColumns && storageColumns.split(",");
+    const columns = this.getColumns(defaultColumns, splitColumns);
+    const resetColumnsSize =
+      (splitColumns && splitColumns.length !== columns.length) || !splitColumns;
+    const tableColumns = columns.map((c) => c.enable && c.key);
+    this.setTableColumns(tableColumns);
+
+    this.state = { columns, resetColumnsSize };
   }
+
+  setTableColumns = (tableColumns) => {
+    localStorage.setItem(`${TABLE_COLUMNS}=${this.props.userId}`, tableColumns);
+  };
 
   componentDidUpdate(prevProps) {
     const { columns } = this.state;
@@ -94,13 +106,10 @@ class FilesTableHeader extends React.Component {
     }
   }
 
-  getColumns = (defaultColumns) => {
-    const storageColumns = localStorage.getItem(TABLE_COLUMNS);
+  getColumns = (defaultColumns, splitColumns) => {
     const columns = [];
 
-    if (storageColumns) {
-      const splitColumns = storageColumns.split(",");
-
+    if (splitColumns) {
       for (let col of defaultColumns) {
         const column = splitColumns.find((key) => key === col.key);
         column ? (col.enable = true) : (col.enable = false);
@@ -123,7 +132,7 @@ class FilesTableHeader extends React.Component {
     this.setState({ columns });
 
     const tableColumns = columns.map((c) => c.enable && c.key);
-    localStorage.setItem(TABLE_COLUMNS, tableColumns);
+    this.setTableColumns(tableColumns);
   };
 
   onFilter = (sortBy) => {
@@ -141,136 +150,49 @@ class FilesTableHeader extends React.Component {
     fetchFiles(selectedFolderId, newFilter).finally(() => setIsLoading(false));
   };
 
-  onChange = (checked) => {
-    this.props.setSelected(checked ? "all" : "none");
-  };
-
-  onSelect = (e) => {
-    const key = e.currentTarget.dataset.key;
-    this.props.setSelected(key);
-  };
-
-  setSelected = (checked) => {
-    this.props.setSelected && this.props.setSelected(checked ? "all" : "none");
-  };
-
   render() {
-    const {
-      t,
-      containerRef,
-      isHeaderVisible,
-      isHeaderChecked,
-      isHeaderIndeterminate,
-      getHeaderMenu,
-      filter,
-      sectionWidth,
-    } = this.props;
-
+    const { containerRef, filter, sectionWidth, userId } = this.props;
     const { sortBy, sortOrder } = filter;
-
-    const { columns } = this.state;
-
-    const checkboxOptions = (
-      <>
-        <DropDownItem label={t("All")} data-key="all" onClick={this.onSelect} />
-        <DropDownItem
-          label={t("Translations:Folders")}
-          data-key={FilterType.FoldersOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("Common:Documents")}
-          data-key={FilterType.DocumentsOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("Translations:Presentations")}
-          data-key={FilterType.PresentationsOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("Translations:Spreadsheets")}
-          data-key={FilterType.SpreadsheetsOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("Images")}
-          data-key={FilterType.ImagesOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("Media")}
-          data-key={FilterType.MediaOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("Archives")}
-          data-key={FilterType.ArchiveOnly}
-          onClick={this.onSelect}
-        />
-        <DropDownItem
-          label={t("AllFiles")}
-          data-key={FilterType.FilesOnly}
-          onClick={this.onSelect}
-        />
-      </>
-    );
+    const { columns, resetColumnsSize } = this.state;
 
     return (
       <TableHeader
-        checkboxSize="32px"
         sorted={sortOrder === "descending"}
         sortBy={sortBy}
-        setSelected={this.setSelected}
         containerRef={containerRef}
         columns={columns}
-        columnStorageName="filesColumnsSize"
+        columnStorageName={`${COLUMNS_SIZE}=${userId}`}
         sectionWidth={sectionWidth}
-        isHeaderVisible={isHeaderVisible}
-        checkboxOptions={checkboxOptions}
-        onChange={this.onChange}
-        isChecked={isHeaderChecked}
-        isIndeterminate={isHeaderIndeterminate}
-        headerMenu={getHeaderMenu(t)}
+        resetColumnsSize={resetColumnsSize}
       />
     );
   }
 }
 
 export default inject(
-  ({
-    filesStore,
-    filesActionsStore,
-    selectedFolderStore,
-    treeFoldersStore,
-  }) => {
+  ({ auth, filesStore, selectedFolderStore, treeFoldersStore }) => {
     const {
-      setSelected,
       isHeaderVisible,
-      isHeaderIndeterminate,
-      isHeaderChecked,
       setIsLoading,
       filter,
       fetchFiles,
       canShare,
     } = filesStore;
-    const { getHeaderMenu } = filesActionsStore;
     const { isPrivacyFolder } = treeFoldersStore;
 
     const withContent = canShare || (canShare && isPrivacyFolder && isDesktop);
+    const { personal } = auth.settingsStore;
 
     return {
       isHeaderVisible,
-      isHeaderIndeterminate,
-      isHeaderChecked,
       filter,
       selectedFolderId: selectedFolderStore.id,
       withContent,
+      personal,
 
-      setSelected,
       setIsLoading,
       fetchFiles,
-      getHeaderMenu,
+      userId: auth.userStore.user.id,
     };
   }
 )(

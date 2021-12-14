@@ -28,7 +28,9 @@ const SectionBodyContent = (props) => {
     moveDragItems,
     viewAs,
     setSelection,
-    setViewAs,
+    setBufferSelection,
+    tooltipPageX,
+    tooltipPageY,
   } = props;
 
   useEffect(() => {
@@ -63,12 +65,22 @@ const SectionBodyContent = (props) => {
     if (
       e.target.closest(".scroll-body") &&
       !e.target.closest(".files-item") &&
-      !e.target.closest(".not-selectable")
-    )
+      !e.target.closest(".not-selectable") &&
+      !e.target.closest(".table-container_group-menu")
+    ) {
       setSelection([]);
+      setBufferSelection(null);
+    }
   };
 
   const onMouseMove = (e) => {
+    if (
+      Math.abs(e.pageX - tooltipPageX) < 5 &&
+      Math.abs(e.pageY - tooltipPageY) < 5
+    ) {
+      return false;
+    }
+
     if (!dragging) {
       document.body.classList.add("drag-cursor");
       setDragging(true);
@@ -116,18 +128,10 @@ const SectionBodyContent = (props) => {
     document.body.classList.remove("drag-cursor");
 
     const treeElem = e.target.closest(".tree-drag");
-    const treeClassList = treeElem && treeElem.classList;
-    const isDragging = treeElem && treeClassList.contains("dragging");
-
-    let index = null;
-    for (let i in treeClassList) {
-      if (treeClassList[i] === "dragging") {
-        index = i - 1;
-        break;
-      }
-    }
-
-    const treeValue = isDragging ? treeClassList[index].split("_")[1] : null;
+    const treeDataValue = treeElem?.dataset?.value;
+    const splitValue = treeDataValue && treeDataValue.split(" ");
+    const isDragging = splitValue && splitValue.includes("dragging");
+    const treeValue = isDragging ? splitValue[0] : null;
 
     const elem = e.target.closest(".droppable");
     const title = elem && elem.dataset.title;
@@ -205,7 +209,7 @@ export default inject(
   }) => {
     const {
       fileActionStore,
-      filesList,
+      isEmptyFilesList,
       dragging,
       setDragging,
       viewAs,
@@ -213,7 +217,9 @@ export default inject(
       startDrag,
       setStartDrag,
       setSelection,
-      setViewAs,
+      tooltipPageX,
+      tooltipPageY,
+      setBufferSelection,
     } = filesStore;
 
     return {
@@ -221,7 +227,7 @@ export default inject(
       startDrag,
       setStartDrag,
       fileActionId: fileActionStore.id,
-      isEmptyFilesList: filesList.length <= 0,
+      isEmptyFilesList,
       setDragging,
       startDrag,
       setStartDrag,
@@ -231,7 +237,9 @@ export default inject(
       moveDragItems: filesActionsStore.moveDragItems,
       viewAs,
       setSelection,
-      setViewAs,
+      setBufferSelection,
+      tooltipPageX,
+      tooltipPageY,
     };
   }
 )(
