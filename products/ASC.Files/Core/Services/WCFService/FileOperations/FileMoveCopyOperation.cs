@@ -349,7 +349,11 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
                                 newFolder = folderDao.GetFolder(newFolderId);
 
-                                if (folder.RootFolderType != FolderType.USER)
+                                if (folder.FolderType == FolderType.VirtualRoom)
+                                {
+                                    filesMessageService.Send(folder, toFolder, _headers, MessageAction.VirtualRoomUnarchived, folder.Title);
+                                }
+                                else if (folder.RootFolderType != FolderType.USER)
                                 {
                                     filesMessageService.Send(folder, toFolder, _headers, MessageAction.FolderMoved, folder.Title, toFolder.Title);
                                 }
