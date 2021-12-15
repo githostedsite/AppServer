@@ -10,7 +10,12 @@ using ASC.Core;
 using ASC.Core.Users;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Security;
+using ASC.MessagingSystem;
+using ASC.Web.Files.Helpers;
 using ASC.Web.Files.Services.WCFService;
+
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 
 using Constants = ASC.Core.Users.Constants;
 using SecurityContext = ASC.Core.SecurityContext;
@@ -21,18 +26,24 @@ namespace ASC.Files.Core.Core
     public class VirtualRoomService<T>
     {
         private FileStorageService<T> FileStorageService { get; }
+        private IHttpContextAccessor HttpContextAccessor { get; }
+        private FilesMessageService FilesMessageService { get; }
         private FileSecurityCommon FileSecurityCommon { get; }
         private VirtualRoomsHelper VirtualRoomsHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
         private SecurityContext SecurityContext { get; }
         private UserManager UserManager { get; }
 
+        private IDictionary<string, StringValues> Headers => HttpContextAccessor?.HttpContext?.Request?.Headers;
+
         public VirtualRoomService(FileStorageService<T> storageService,
+            FilesMessageService filesMessageService,
             UserManager userManager,
             AuthorizationManager authorizationManager,
             FileSecurityCommon fileSecurityCommon,
             SecurityContext securityContext,
-            VirtualRoomsHelper virtualRoomsHelper)
+            VirtualRoomsHelper virtualRoomsHelper,
+            IHttpContextAccessor httpContextAccessor)
         {
             FileStorageService = storageService;
             UserManager = userManager;
@@ -40,6 +51,10 @@ namespace ASC.Files.Core.Core
             FileSecurityCommon = fileSecurityCommon;
             SecurityContext = securityContext;
             VirtualRoomsHelper = virtualRoomsHelper;
+            FilesMessageService = filesMessageService;
+            HttpContextAccessor = httpContextAccessor;
+
+            FileStorageService.DisableAudit = true;
         }
 
         public Folder<T> CreateRoom(string title, bool privacy, T parentId = default(T))
@@ -55,6 +70,9 @@ namespace ASC.Files.Core.Core
 
             ShareRoomForGroup(folder.ID, group.ID);
 
+            FilesMessageService.Send(folder, Headers, MessageAction.VirtualRoomCreated,
+                folder.Title);
+
             return folder;
         }
 
@@ -62,6 +80,9 @@ namespace ASC.Files.Core.Core
         {
             var folder = FileStorageService.GetFolder(folderId);
             var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
+
+            if (folder.Title.Equals(title))
+                return folder;
 
             ErrorIfEmpty(groupId);
 
@@ -73,6 +94,8 @@ namespace ASC.Files.Core.Core
 
             UserManager.SaveGroupInfo(group);
             var renamedFolder = FileStorageService.FolderRename(folderId, title);
+
+            FilesMessageService.Send(folder, Headers, MessageAction.VirtualRoomRenamed, renamedFolder.Title);
 
             return renamedFolder;
         }
@@ -93,6 +116,8 @@ namespace ASC.Files.Core.Core
                 if (!UserManager.UserExists(id)) continue;
 
                 UserManager.AddUserIntoLinkedGroup(id, groupId);
+
+                FilesMessageService.Send(folder, Headers, MessageAction.AddedUserIntoVirtualRoom, folder.Title);
             }
         }
 
@@ -119,6 +144,9 @@ namespace ASC.Files.Core.Core
                 {
                     UserManager.RemoveUserFromLinkedGroup(id, groupId);
                     result.Add(id);
+
+                    FilesMessageService.Send(folder, Headers, MessageAction.DeletedUserFromVirtualRoom, folder.Title);
+
                     continue;
                 }
 
@@ -126,6 +154,9 @@ namespace ASC.Files.Core.Core
                 {
                     RemoveAdminRoomPrivilege(groupId, id);
                     UserManager.RemoveUserFromLinkedGroup(id, groupId);
+
+                    FilesMessageService.Send(folder, Headers, MessageAction.DeletedUserFromVirtualRoom, folder.Title);
+
                     result.Add(id);
                 }
             }
