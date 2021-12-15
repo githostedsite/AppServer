@@ -199,13 +199,15 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 {
                                     DeleteLinkedFolder(folder, userManager, virtualRoomsHelper,
                                         authManager);
+
+                                    filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomDeleted, folder.Title);
                                 }
                                 else
                                 {
                                     FolderDao.DeleteFolder(folder.ID);
-                                }
 
-                                filesMessageService.Send(folder, _headers, MessageAction.FolderDeleted, folder.Title);
+                                    filesMessageService.Send(folder, _headers, MessageAction.FolderDeleted, folder.Title);
+                                }
 
                                 ProcessedFolder(folderId);
                             }
@@ -225,13 +227,15 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                     {
                                         DeleteLinkedFolder(folder, userManager,
                                             virtualRoomsHelper, authManager);
+
+                                        filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomDeleted, folder.Title);
                                     }
                                     else
                                     {
                                         FolderDao.DeleteFolder(folder.ID);
-                                    }
 
-                                    filesMessageService.Send(folder, _headers, MessageAction.FolderDeleted, folder.Title);
+                                        filesMessageService.Send(folder, _headers, MessageAction.FolderDeleted, folder.Title);
+                                    }
                                 }
                                 else
                                 {
@@ -239,13 +243,15 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                     {
                                         virtualRoomsHelper.ArchiveLinkedGroup(folder, userManager);
                                         FolderDao.MoveFolder(folder.ID, _archiveId, CancellationToken);
+
+                                        filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomArchived, folder.Title);
                                     }
                                     else
                                     {
                                         FolderDao.MoveFolder(folder.ID, _trashId, CancellationToken);
-                                    }
 
-                                    filesMessageService.Send(folder, _headers, MessageAction.FolderMovedToTrash, folder.Title);
+                                        filesMessageService.Send(folder, _headers, MessageAction.FolderMovedToTrash, folder.Title);
+                                    }
                                 }
 
                                 ProcessedFolder(folderId);
