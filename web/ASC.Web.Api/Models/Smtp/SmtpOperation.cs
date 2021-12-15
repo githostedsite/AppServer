@@ -104,8 +104,8 @@ namespace ASC.Api.Settings.Smtp
             Configuration = configuration;
 
             //todo
-            //messageSubject = WebstudioNotifyPatternResource.subject_smtp_test;
-            //messageBody = WebstudioNotifyPatternResource.pattern_smtp_test;
+            messageSubject = WebstudioNotifyPatternResource.subject_smtp_test;
+            messageBody = WebstudioNotifyPatternResource.pattern_smtp_test;
 
             Source = "";
             Progress = 0;
@@ -130,7 +130,7 @@ namespace ASC.Api.Settings.Smtp
 
                 SetProgress(10, "Setup user");
 
-                SecurityContext.AuthenticateMe(CurrentUser); //Core.Configuration.Constants.CoreSystem);
+                SecurityContext.AuthenticateMeWithoutCookie(CurrentUser); //Core.Configuration.Constants.CoreSystem);
 
                 SetProgress(15, "Find user data");
 

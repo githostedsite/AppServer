@@ -16,9 +16,11 @@ import { AppServerConfig } from "@appserver/common/constants";
 import { combineUrl } from "@appserver/common/utils";
 import withCultureNames from "@appserver/common/hoc/withCultureNames";
 import config from "../../../../../../package.json";
+import NoUserSelect from "@appserver/components/utils/commonStyles";
 
 const InfoContainer = styled.div`
   margin-bottom: 24px;
+  ${NoUserSelect}
 `;
 
 const InfoItem = styled.div`
@@ -202,6 +204,7 @@ class ProfileInfo extends React.PureComponent {
       isAdmin,
       isSelf,
       culture,
+      personal,
     } = this.props;
 
     const {
@@ -248,7 +251,7 @@ class ProfileInfo extends React.PureComponent {
             {{ supportEmail }}
           </Link>
           to take part in the translation and get up to 1 year free of charge."
-        </Trans>
+        </Trans>{" "}
         <Link
           isHovered={true}
           href="https://helpcenter.onlyoffice.com/ru/guides/become-translator.aspx"
@@ -261,10 +264,12 @@ class ProfileInfo extends React.PureComponent {
 
     return (
       <InfoContainer>
-        <InfoItem>
-          <InfoItemLabel>{t("Common:Type")}:</InfoItemLabel>
-          <InfoItemValue>{type}</InfoItemValue>
-        </InfoItem>
+        {!personal && (
+          <InfoItem>
+            <InfoItemLabel>{t("Common:Type")}:</InfoItemLabel>
+            <InfoItemValue>{type}</InfoItemValue>
+          </InfoItem>
+        )}
         {email && (
           <InfoItem>
             <InfoItemLabel>{t("Common:Email")}:</InfoItemLabel>
@@ -316,13 +321,13 @@ class ProfileInfo extends React.PureComponent {
             <InfoItemValue>{birthDayDate}</InfoItemValue>
           </InfoItem>
         )}
-        {title && (
+        {!personal && title && (
           <InfoItem>
             <InfoItemLabel>{userPostCaption}:</InfoItemLabel>
             <InfoItemValue>{title}</InfoItemValue>
           </InfoItem>
         )}
-        {department && (
+        {!personal && department && (
           <InfoItem>
             <InfoItemLabel>{groupCaption}:</InfoItemLabel>
             <InfoItemValue>{formatedDepartments}</InfoItemValue>
@@ -334,7 +339,7 @@ class ProfileInfo extends React.PureComponent {
             <InfoItemValue>{location}</InfoItemValue>
           </InfoItem>
         )}
-        {workFrom && (
+        {!personal && workFrom && (
           <InfoItem>
             <InfoItemLabel>{regDateCaption}:</InfoItemLabel>
             <InfoItemValue>{workFromDate}</InfoItemValue>
@@ -379,19 +384,41 @@ class ProfileInfo extends React.PureComponent {
 }
 
 export default withRouter(
-  inject(({ auth, peopleStore }) => ({
-    culture: auth.settingsStore.culture,
-    groupCaption: auth.settingsStore.customNames.groupCaption,
-    regDateCaption: auth.settingsStore.customNames.regDateCaption,
-    userPostCaption: auth.settingsStore.customNames.userPostCaption,
-    userCaption: auth.settingsStore.customNames.userCaption,
-    guestCaption: auth.settingsStore.customNames.guestCaption,
-    fetchPeople: peopleStore.usersStore.getUsersList,
-    filter: peopleStore.filterStore.filter,
-    setIsLoading: peopleStore.setIsLoading,
-    isLoading: peopleStore.isLoading,
-    updateProfileCulture: peopleStore.targetUserStore.updateProfileCulture,
-  }))(
+  inject(({ auth, peopleStore }) => {
+    const { settingsStore } = auth;
+    const { culture, customNames } = settingsStore;
+    const {
+      groupCaption,
+      regDateCaption,
+      userPostCaption,
+      userCaption,
+      guestCaption,
+    } = customNames;
+    const {
+      usersStore,
+      filterStore,
+      loadingStore,
+      targetUserStore,
+    } = peopleStore;
+    const { getUsersList: fetchPeople } = usersStore;
+    const { filter } = filterStore;
+    const { setIsLoading, isLoading } = loadingStore;
+    const { updateProfileCulture } = targetUserStore;
+    return {
+      culture,
+      groupCaption,
+      regDateCaption,
+      userPostCaption,
+      userCaption,
+      guestCaption,
+      fetchPeople,
+      filter,
+      setIsLoading,
+      isLoading,
+      updateProfileCulture,
+      personal: auth.settingsStore.personal,
+    };
+  })(
     observer(
       withTranslation(["Profile", "Common", "Translations"])(
         withCultureNames(ProfileInfo)

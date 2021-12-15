@@ -36,9 +36,16 @@ const StyledMediaViewer = styled.div`
   .deleteBtnContainer,
   .downloadBtnContainer {
     display: block;
-    width: 20px;
-    margin: 3px 10px;
+    width: 16px;
+    height: 16px;
+    margin: 4px 12px;
     line-height: 19px;
+
+    svg {
+      path {
+        fill: #fff;
+      }
+    }
   }
   .details {
     z-index: 302;
@@ -66,7 +73,8 @@ const StyledMediaViewer = styled.div`
     position: fixed;
     top: 4px;
     right: 10px;
-    height: 30px;
+    height: 25px;
+    width: 25px;
   }
 `;
 

@@ -33,6 +33,9 @@ import {
   BackupCodesDialog,
 } from "../../../../components/dialogs";
 
+import Loaders from "@appserver/common/components/Loaders";
+import withLoader from "../../../../HOCs/withLoader";
+
 const ProfileWrapper = styled.div`
   display: flex;
   align-items: flex-start;
@@ -151,6 +154,7 @@ class SectionBodyContent extends React.PureComponent {
     //}
 
     if (!isSelf) return;
+
     try {
       await getAuthProviders().then((providers) => {
         setProviders(providers);
@@ -172,10 +176,17 @@ class SectionBodyContent extends React.PureComponent {
   onEditSubscriptionsClick = () => console.log("Edit subscriptions onClick()");
 
   onEditProfileClick = () => {
-    const { isMy, avatarMax, setAvatarMax, history, profile } = this.props;
+    const {
+      isMy,
+      avatarMax,
+      setAvatarMax,
+      history,
+      profile,
+      setIsEditTargetUser,
+    } = this.props;
 
     avatarMax && setAvatarMax(null);
-
+    setIsEditTargetUser(true);
     const editUrl = isMy
       ? combineUrl(AppServerConfig.proxyURL, `/my?action=edit`)
       : combineUrl(
@@ -198,7 +209,7 @@ class SectionBodyContent extends React.PureComponent {
   };
   loginCallback = (profile) => {
     const { setProviders, t } = this.props;
-    linkOAuth(profile.Serialized).then((resp) => {
+    linkOAuth(profile).then((resp) => {
       getAuthProviders().then((providers) => {
         setProviders(providers);
         toastr.success(t("ProviderSuccessfullyConnected"));
@@ -256,7 +267,7 @@ class SectionBodyContent extends React.PureComponent {
         return (
           <React.Fragment key={`${item.provider}ProviderItem`}>
             <div>
-              {item.provider === "Facebook" ? (
+              {item.provider === "facebook" ? (
                 <FacebookButton
                   noHover={true}
                   iconName={icon}
@@ -329,8 +340,8 @@ class SectionBodyContent extends React.PureComponent {
       isSelf,
       providers,
       backupCodes,
+      personal,
     } = this.props;
-
     const contacts = profile.contacts && getUserContacts(profile.contacts);
     const role = getUserRole(profile);
     const socialContacts =
@@ -382,7 +393,7 @@ class SectionBodyContent extends React.PureComponent {
           //culture={culture}
         />
 
-        {isSelf && this.oauthDataExists() && (
+        {!personal && isSelf && this.oauthDataExists() && (
           <ToggleWrapper>
             <ToggleContent label={t("LoginSettings")} isOpen={true}>
               <ProviderButtonsWrapper>
@@ -391,7 +402,7 @@ class SectionBodyContent extends React.PureComponent {
             </ToggleContent>
           </ToggleWrapper>
         )}
-        {isSelf && false && (
+        {!personal && isSelf && false && (
           <ToggleWrapper isSelf={true}>
             <ToggleContent label={t("Subscriptions")} isOpen={true}>
               <Text as="span">
@@ -484,27 +495,53 @@ class SectionBodyContent extends React.PureComponent {
 }
 
 export default withRouter(
-  inject(({ auth, peopleStore }) => ({
-    isAdmin: auth.isAdmin,
-    profile: peopleStore.targetUserStore.targetUser,
-    viewer: auth.userStore.user,
-    isTabletView: auth.settingsStore.isTabletView,
-    isSelf: peopleStore.targetUserStore.isMe,
-    avatarMax: peopleStore.avatarEditorStore.avatarMax,
-    setAvatarMax: peopleStore.avatarEditorStore.setAvatarMax,
-    providers: peopleStore.usersStore.providers,
-    setProviders: peopleStore.usersStore.setProviders,
-    getOAuthToken: auth.settingsStore.getOAuthToken,
-    getLoginLink: auth.settingsStore.getLoginLink,
-    getBackupCodes: auth.tfaStore.getBackupCodes,
-    getNewBackupCodes: auth.tfaStore.getNewBackupCodes,
-    resetTfaApp: auth.tfaStore.unlinkApp,
-    getTfaType: auth.tfaStore.getTfaType,
-    backupCodes: auth.tfaStore.backupCodes,
-    setBackupCodes: auth.tfaStore.setBackupCodes,
-  }))(
+  inject(({ auth, peopleStore }) => {
+    const { isAdmin, userStore, settingsStore, tfaStore } = auth;
+    const { user: viewer } = userStore;
+    const { isTabletView, getOAuthToken, getLoginLink } = settingsStore;
+    const { targetUserStore, avatarEditorStore, usersStore } = peopleStore;
+    const {
+      targetUser: profile,
+      isMe: isSelf,
+      setIsEditTargetUser,
+    } = targetUserStore;
+    const { avatarMax, setAvatarMax } = avatarEditorStore;
+    const { providers, setProviders } = usersStore;
+    const {
+      getBackupCodes,
+      getNewBackupCodes,
+      unlinkApp: resetTfaApp,
+      getTfaType,
+      backupCodes,
+      setBackupCodes,
+    } = tfaStore;
+
+    return {
+      isAdmin,
+      profile,
+      viewer,
+      isTabletView,
+      isSelf,
+      avatarMax,
+      setAvatarMax,
+      providers,
+      setProviders,
+      getOAuthToken,
+      getLoginLink,
+      getBackupCodes,
+      getNewBackupCodes,
+      resetTfaApp,
+      getTfaType,
+      backupCodes,
+      setBackupCodes,
+      setIsEditTargetUser,
+      personal: auth.settingsStore.personal,
+    };
+  })(
     observer(
-      withTranslation(["Profile", "Common", "Translations"])(SectionBodyContent)
+      withTranslation(["Profile", "Common", "Translations"])(
+        withLoader(SectionBodyContent)(<Loaders.ProfileView />)
+      )
     )
   )
 );

@@ -36,7 +36,7 @@ BASE_DIR="/var/www/${PRODUCT}"
 PATH_TO_CONF="/etc/onlyoffice/${PRODUCT}"
 STORAGE_ROOT="${PATH_TO_CONF}/data"
 LOG_DIR="/var/log/onlyoffice/${PRODUCT}"
-DOTNET_RUN="/usr/bin/dotnet"
+DOTNET_RUN="/usr/share/dotnet/dotnet"
 APP_URLS="http://0.0.0.0"
 ENVIRONMENT=" --ENVIRONMENT=production"
 
@@ -60,6 +60,7 @@ SERVICE_NAME=(
 	crm
 	calendar
 	mail
+	ssoauth
 	)
 
 reassign_values (){
@@ -75,18 +76,18 @@ reassign_values (){
 		EXEC_FILE="ASC.ApiSystem.dll"
 	;;
 	urlshortener )
-		SERVICE_PORT="9999"
-		WORK_DIR="${BASE_DIR}/services/ASC.UrlShortener/"
+		SERVICE_PORT="9998"
+		WORK_DIR="${BASE_DIR}/services/ASC.UrlShortener.Svc/"
 		EXEC_FILE="ASC.UrlShortener.Svc.dll"
 	;;
 	thumbnails )
-		SERVICE_PORT="9800"
-		WORK_DIR="${BASE_DIR}/services/ASC.Thumbnails/"
+		SERVICE_PORT="9799"
+		WORK_DIR="${BASE_DIR}/services/ASC.Thumbnails.Svc/"
 		EXEC_FILE="ASC.Thumbnails.Svc.dll"
 	;;
 	socket )
-		SERVICE_PORT="9899"
-		WORK_DIR="${BASE_DIR}/services/ASC.Socket.IO/"
+		SERVICE_PORT="9898"
+		WORK_DIR="${BASE_DIR}/services/ASC.Socket.IO.Svc/"
 		EXEC_FILE="ASC.Socket.IO.Svc.dll"
 	;;
 	studio-notify )
@@ -162,6 +163,11 @@ reassign_values (){
 		SERVICE_PORT="5022"
 		WORK_DIR="${BASE_DIR}/products/ASC.Mail/server/"
 		EXEC_FILE="ASC.Mail.dll"
+	;;
+	ssoauth )
+		SERVICE_PORT="9833"
+		WORK_DIR="${BASE_DIR}/services/ASC.SsoAuth.Svc/"
+		EXEC_FILE="ASC.SsoAuth.Svc.dll"
 	;;
   esac
   SERVICE_NAME="$1"

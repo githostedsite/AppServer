@@ -1,6 +1,8 @@
 // Override default variables before the import
 $font-family-base: "Open Sans", sans-serif;
 
+@import "./opensansoffline.scss";
+
 html,
 body {
   height: 100%;
@@ -19,7 +21,6 @@ body {
 
 body {
   margin: 0;
-  overflow: hidden;
 }
 
 body.loading * {
@@ -39,4 +40,13 @@ body.desktop {
   -webkit-user-select: none;
   -o-user-select: none;
   mozuserselect: none;
+}
+
+#snackbar {
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  width: calc(100vw - 60px);
+  padding: 30px;
+  bottom: 15px;
 }

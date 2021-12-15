@@ -6,8 +6,9 @@ import { observer, inject } from "mobx-react";
 import FilesRowContainer from "./RowsView/FilesRowContainer";
 import FilesTileContainer from "./TilesView/FilesTileContainer";
 import EmptyContainer from "../../../../components/EmptyContainer";
-
 import withLoader from "../../../../HOCs/withLoader";
+import TableView from "./TableView/TableContainer";
+import { Consumer } from "@appserver/components/utils/context";
 
 let currentDroppable = null;
 
@@ -16,7 +17,6 @@ const SectionBodyContent = (props) => {
     t,
     tReady,
     fileActionId,
-    viewAs,
     isEmptyFilesList,
     folderId,
     dragging,
@@ -26,6 +26,11 @@ const SectionBodyContent = (props) => {
     setTooltipPosition,
     isRecycleBinFolder,
     moveDragItems,
+    viewAs,
+    setSelection,
+    setBufferSelection,
+    tooltipPageX,
+    tooltipPageY,
   } = props;
 
   useEffect(() => {
@@ -37,13 +42,16 @@ const SectionBodyContent = (props) => {
       customScrollElm && customScrollElm.scrollTo(0, 0);
     }
 
+    !isMobile && window.addEventListener("mousedown", onMouseDown);
     startDrag && window.addEventListener("mouseup", onMouseUp);
     startDrag && document.addEventListener("mousemove", onMouseMove);
 
     document.addEventListener("dragover", onDragOver);
     document.addEventListener("dragleave", onDragLeaveDoc);
     document.addEventListener("drop", onDropEvent);
+
     return () => {
+      window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("mousemove", onMouseMove);
 
@@ -51,31 +59,67 @@ const SectionBodyContent = (props) => {
       document.removeEventListener("dragleave", onDragLeaveDoc);
       document.removeEventListener("drop", onDropEvent);
     };
-  }, [onMouseUp, onMouseMove, startDrag, folderId]);
+  }, [onMouseUp, onMouseMove, startDrag, folderId, viewAs]);
+
+  const onMouseDown = (e) => {
+    if (
+      e.target.closest(".scroll-body") &&
+      !e.target.closest(".files-item") &&
+      !e.target.closest(".not-selectable") &&
+      !e.target.closest(".table-container_group-menu")
+    ) {
+      setSelection([]);
+      setBufferSelection(null);
+    }
+  };
 
   const onMouseMove = (e) => {
+    if (
+      Math.abs(e.pageX - tooltipPageX) < 5 &&
+      Math.abs(e.pageY - tooltipPageY) < 5
+    ) {
+      return false;
+    }
+
     if (!dragging) {
       document.body.classList.add("drag-cursor");
       setDragging(true);
     }
 
     setTooltipPosition(e.pageX, e.pageY);
-
     const wrapperElement = document.elementFromPoint(e.clientX, e.clientY);
     if (!wrapperElement) {
       return;
     }
-    const droppable = wrapperElement.closest(".droppable");
 
+    const droppable = wrapperElement.closest(".droppable");
     if (currentDroppable !== droppable) {
       if (currentDroppable) {
-        currentDroppable.classList.remove("droppable-hover");
+        if (viewAs === "table") {
+          const value = currentDroppable.getAttribute("value");
+          const classElements = document.getElementsByClassName(value);
+
+          for (let cl of classElements) {
+            cl.classList.remove("droppable-hover");
+          }
+        } else {
+          currentDroppable.classList.remove("droppable-hover");
+        }
       }
       currentDroppable = droppable;
 
       if (currentDroppable) {
-        currentDroppable.classList.add("droppable-hover");
-        currentDroppable = droppable;
+        if (viewAs === "table") {
+          const value = currentDroppable.getAttribute("value");
+          const classElements = document.getElementsByClassName(value);
+
+          for (let cl of classElements) {
+            cl.classList.add("droppable-hover");
+          }
+        } else {
+          currentDroppable.classList.add("droppable-hover");
+          currentDroppable = droppable;
+        }
       }
     }
   };
@@ -84,18 +128,10 @@ const SectionBodyContent = (props) => {
     document.body.classList.remove("drag-cursor");
 
     const treeElem = e.target.closest(".tree-drag");
-    const treeClassList = treeElem && treeElem.classList;
-    const isDragging = treeElem && treeClassList.contains("dragging");
-
-    let index = null;
-    for (let i in treeClassList) {
-      if (treeClassList[i] === "dragging") {
-        index = i - 1;
-        break;
-      }
-    }
-
-    const treeValue = isDragging ? treeClassList[index].split("_")[1] : null;
+    const treeDataValue = treeElem?.dataset?.value;
+    const splitValue = treeDataValue && treeDataValue.split(" ");
+    const isDragging = splitValue && splitValue.includes("dragging");
+    const treeValue = isDragging ? splitValue[0] : null;
 
     const elem = e.target.closest(".droppable");
     const title = elem && elem.dataset.title;
@@ -123,7 +159,7 @@ const SectionBodyContent = (props) => {
   };
 
   const onDropEvent = () => {
-    dragging && setDragging(false);
+    setDragging(false);
   };
 
   const onDragOver = (e) => {
@@ -144,13 +180,23 @@ const SectionBodyContent = (props) => {
   };
 
   //console.log("Files Home SectionBodyContent render", props);
-
-  return (!fileActionId && isEmptyFilesList) || null ? (
-    <EmptyContainer />
-  ) : viewAs === "tile" ? (
-    <FilesTileContainer />
-  ) : (
-    <FilesRowContainer tReady={tReady} />
+  return (
+    <Consumer>
+      {(context) =>
+        (!fileActionId && isEmptyFilesList) || null ? (
+          <EmptyContainer />
+        ) : viewAs === "tile" ? (
+          <FilesTileContainer sectionWidth={context.sectionWidth} t={t} />
+        ) : viewAs === "table" ? (
+          <TableView sectionWidth={context.sectionWidth} tReady={tReady} />
+        ) : (
+          <FilesRowContainer
+            sectionWidth={context.sectionWidth}
+            tReady={tReady}
+          />
+        )
+      }
+    </Consumer>
   );
 };
 
@@ -163,20 +209,25 @@ export default inject(
   }) => {
     const {
       fileActionStore,
-      filesList,
+      isEmptyFilesList,
       dragging,
       setDragging,
-      startDrag,
-      setStartDrag,
       viewAs,
       setTooltipPosition,
+      startDrag,
+      setStartDrag,
+      setSelection,
+      tooltipPageX,
+      tooltipPageY,
+      setBufferSelection,
     } = filesStore;
 
     return {
       dragging,
+      startDrag,
+      setStartDrag,
       fileActionId: fileActionStore.id,
-      viewAs,
-      isEmptyFilesList: filesList.length <= 0,
+      isEmptyFilesList,
       setDragging,
       startDrag,
       setStartDrag,
@@ -184,12 +235,17 @@ export default inject(
       setTooltipPosition,
       isRecycleBinFolder: treeFoldersStore.isRecycleBinFolder,
       moveDragItems: filesActionsStore.moveDragItems,
+      viewAs,
+      setSelection,
+      setBufferSelection,
+      tooltipPageX,
+      tooltipPageY,
     };
   }
 )(
   withRouter(
     withTranslation(["Home", "Translations"])(
-      withLoader(observer(SectionBodyContent))
+      withLoader(observer(SectionBodyContent))()
     )
   )
 );

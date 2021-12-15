@@ -9,12 +9,17 @@ import { isMobile } from "react-device-detect";
 const StyledArticleBody = styled.div`
   ${(props) => props.displayBorder && `outline: 1px dotted;`}
   flex-grow: 1;
-  height: 100%;
+
+  ${(props) => (props.isDesktop ? "height:auto" : "height:100%")};
+  .custom-scrollbar {
+    width: calc(100% + 24px) !important;
+  }
 
   @media ${tablet} {
-    height: calc(100% - 104px);
+    height: ${(props) =>
+      props.isDesktop ? "calc(100% - 104px)" : "calc(100% - 44px)"};
     display: table;
-    width: 100%;
+    width: calc(100% + 16px);
 
     .custom-scrollbar {
       display: table-cell;
@@ -49,6 +54,9 @@ const StyledArticleBody = styled.div`
 
 const StyledArticleWrapper = styled.div`
   margin: 16px 0;
+  @media ${tablet} {
+    margin-bottom: 60px;
+  }
 `;
 
 class ArticleBody extends React.Component {
@@ -58,10 +66,10 @@ class ArticleBody extends React.Component {
 
   render() {
     //console.log("PageLayout ArticleBody render");
-    const { children, pinned } = this.props;
+    const { children, pinned, isDesktop } = this.props;
 
     return (
-      <StyledArticleBody pinned={pinned}>
+      <StyledArticleBody pinned={pinned} isDesktop={isDesktop}>
         <Scrollbar
           id="articleScrollBar"
           className="custom-scrollbar"

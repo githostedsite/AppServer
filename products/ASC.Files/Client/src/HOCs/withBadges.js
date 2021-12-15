@@ -5,28 +5,26 @@ import {
   ShareAccessRights,
   AppServerConfig,
 } from "@appserver/common/constants";
-import toastr from "studio/toastr";
+import toastr from "@appserver/components/toast/toastr";
 import { combineUrl } from "@appserver/common/utils";
-import {
-  convertFile,
-  getFileConversationProgress,
-} from "@appserver/common/api/files";
+import { getFileConversationProgress } from "@appserver/common/api/files";
 
 import Badges from "../components/Badges";
 import config from "../../package.json";
 
 export default function withBadges(WrappedComponent) {
   class WithBadges extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = { showConvertDialog: false };
-    }
     onClickLock = () => {
-      const { item, lockFileAction, isAdmin } = this.props;
+      const { item, lockFileAction, isAdmin, setIsLoading } = this.props;
       const { locked, id, access } = item;
 
-      if (!isAdmin || !access === 0) return;
-      lockFileAction(id, !locked).catch((err) => toastr.error(err));
+      if (isAdmin || access === 0) {
+        setIsLoading(true);
+        return lockFileAction(id, !locked)
+          .catch((err) => toastr.error(err))
+          .finally(() => setIsLoading(false));
+      }
+      return;
     };
 
     onClickFavorite = () => {
@@ -72,27 +70,6 @@ export default function withBadges(WrappedComponent) {
         newFolderIds.push(item.id);
         setNewFilesPanelVisible(true, newFolderIds, item);
       }
-    };
-
-    setConvertDialogVisible = () =>
-      this.setState({ showConvertDialog: !this.state.showConvertDialog });
-
-    onConvert = () => {
-      const { item, t, setSecondaryProgressBarData } = this.props;
-      setSecondaryProgressBarData({
-        icon: "file",
-        visible: true,
-        percent: 0,
-        label: t("Convert"),
-        alert: false,
-      });
-      this.setState({ showConvertDialog: false }, () =>
-        convertFile(item.id).then((convertRes) => {
-          if (convertRes && convertRes[0] && convertRes[0].progress !== 100) {
-            this.getConvertProgress(item.id);
-          }
-        })
-      );
     };
 
     getConvertProgress = (fileId) => {
@@ -147,16 +124,23 @@ export default function withBadges(WrappedComponent) {
         }
       });
     };
+
+    setConvertDialogVisible = () => {
+      this.props.setConvertItem(this.props.item);
+      this.props.setConvertDialogVisible(true);
+    };
+
     render() {
-      const { showConvertDialog } = this.state;
       const {
         t,
         item,
         canWebEdit,
         isTrashFolder,
+        isPrivacyFolder,
         canConvert,
         onFilesClick, // from withFileAction HOC
         isAdmin,
+        isDesktopClient,
       } = this.props;
       const { fileStatus, access } = item;
 
@@ -177,6 +161,8 @@ export default function withBadges(WrappedComponent) {
           canWebEdit={canWebEdit}
           canConvert={canConvert}
           isTrashFolder={isTrashFolder}
+          isPrivacyFolder={isPrivacyFolder}
+          isDesktopClient={isDesktopClient}
           accessToEdit={accessToEdit}
           onClickLock={this.onClickLock}
           onClickFavorite={this.onClickFavorite}
@@ -188,16 +174,7 @@ export default function withBadges(WrappedComponent) {
       );
 
       return (
-        <>
-          {showConvertDialog && (
-            <ConvertDialog
-              visible={showConvertDialog}
-              onClose={this.setConvertDialogVisible}
-              onConvert={this.onConvert}
-            />
-          )}
-          <WrappedComponent badgesComponent={badgesComponent} {...this.props} />
-        </>
+        <WrappedComponent badgesComponent={badgesComponent} {...this.props} />
       );
     }
   }
@@ -218,15 +195,23 @@ export default function withBadges(WrappedComponent) {
       { item }
     ) => {
       const { docserviceStore } = formatsStore;
-      const { isRecycleBinFolder, updateRootBadge } = treeFoldersStore;
+      const {
+        isRecycleBinFolder,
+        isPrivacyFolder,
+        updateRootBadge,
+      } = treeFoldersStore;
       const {
         lockFileAction,
         setFavoriteAction,
         markAsRead,
       } = filesActionsStore;
-      const { isTabletView } = auth.settingsStore;
+      const { isTabletView, isDesktopClient } = auth.settingsStore;
       const { setIsVerHistoryPanel, fetchFileVersions } = versionHistoryStore;
-      const { setNewFilesPanelVisible } = dialogsStore;
+      const {
+        setNewFilesPanelVisible,
+        setConvertDialogVisible,
+        setConvertItem,
+      } = dialogsStore;
       const { filter, setIsLoading, fetchFiles } = filesStore;
       const { secondaryProgressDataStore } = uploadDataStore;
       const {
@@ -242,6 +227,7 @@ export default function withBadges(WrappedComponent) {
         canWebEdit,
         canConvert,
         isTrashFolder: isRecycleBinFolder,
+        isPrivacyFolder,
         lockFileAction,
         setFavoriteAction,
         homepage: config.homepage,
@@ -258,6 +244,9 @@ export default function withBadges(WrappedComponent) {
         setIsLoading,
         clearSecondaryProgressData,
         fetchFiles,
+        setConvertDialogVisible,
+        setConvertItem,
+        isDesktopClient,
       };
     }
   )(observer(WithBadges));

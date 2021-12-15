@@ -28,6 +28,9 @@ import {
 import config from "../../../../../package.json";
 import { combineUrl } from "@appserver/common/utils";
 
+import Loaders from "@appserver/common/components/Loaders";
+import withLoader from "../../../../HOCs/withLoader";
+
 const StyledContainer = styled.div`
   position: relative;
 
@@ -74,8 +77,11 @@ class SectionHeaderContent extends React.PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.profile.userName !== prevProps.profile.userName) {
-      console.log(this.props.profile.userName);
+    if (!this.props.profile && !prevProps.profile) return;
+    if (
+      !prevProps.profile ||
+      this.props.profile.userName !== prevProps.profile.userName
+    ) {
       this.setState(this.mapPropsToState(this.props));
     }
   }
@@ -143,6 +149,9 @@ class SectionHeaderContent extends React.PureComponent {
     data.append("Autosave", false);
     loadAvatar(this.state.profile.id, data)
       .then((response) => {
+        if (!response.success && response.message) {
+          throw response.message;
+        }
         var img = new Image();
         img.onload = function () {
           var stateCopy = Object.assign({}, _this.state);
@@ -402,11 +411,12 @@ class SectionHeaderContent extends React.PureComponent {
 
   onClickBack = () => {
     const { filter, setFilter, history, resetProfile, isMy } = this.props;
-    resetProfile();
 
     if (isMy) {
       return history.goBack();
     }
+
+    resetProfile();
 
     const url = filter.toUrlParams();
     const backUrl = combineUrl(
@@ -422,6 +432,7 @@ class SectionHeaderContent extends React.PureComponent {
   render() {
     const { profile, isAdmin, viewer, t, filter, history, isMe } = this.props;
     const { avatar, visibleAvatarEditor, dialogsVisible } = this.state;
+
     const contextOptions = () => this.getUserContextOptions(profile, viewer);
 
     return (
@@ -437,6 +448,7 @@ class SectionHeaderContent extends React.PureComponent {
           onClick={this.onClickBack}
           className="arrow-button"
         />
+
         <Headline className="header-headline" type="content" truncate={true}>
           {profile.displayName}
           {profile.isLDAP && ` (${t("Translations:LDAPLbl")})`}
@@ -527,7 +539,7 @@ export default withRouter(
   })(
     observer(
       withTranslation(["Profile", "Common", "Translations"])(
-        SectionHeaderContent
+        withLoader(SectionHeaderContent)(<Loaders.SectionHeader />)
       )
     )
   )

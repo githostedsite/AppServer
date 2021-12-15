@@ -24,6 +24,8 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
     modules,
     currentProductId,
     wizardCompleted,
+    personal,
+    location,
   } = rest;
 
   const { params, path } = computedMatch;
@@ -31,6 +33,11 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
 
   const renderComponent = (props) => {
     if (isLoaded && !isAuthenticated) {
+      if (personal) {
+        window.location.replace("/");
+        return <></>;
+      }
+
       console.log("PrivateRoute render Redirect to login", rest);
       return (
         <Redirect
@@ -39,6 +46,17 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
               AppServerConfig.proxyURL,
               wizardCompleted ? "/login" : "/wizard"
             ),
+            state: { from: props.location },
+          }}
+        />
+      );
+    }
+
+    if (location.pathname === "/" && personal) {
+      return (
+        <Redirect
+          to={{
+            pathname: "/products/files",
             state: { from: props.location },
           }}
         />
@@ -142,7 +160,7 @@ export default inject(({ auth }) => {
   } = auth;
   const { user } = userStore;
   const { modules } = moduleStore;
-  const { setModuleInfo, wizardCompleted } = settingsStore;
+  const { setModuleInfo, wizardCompleted, personal } = settingsStore;
 
   return {
     modules,
@@ -152,5 +170,7 @@ export default inject(({ auth }) => {
     isLoaded,
     setModuleInfo,
     wizardCompleted,
+
+    personal,
   };
 })(observer(PrivateRoute));

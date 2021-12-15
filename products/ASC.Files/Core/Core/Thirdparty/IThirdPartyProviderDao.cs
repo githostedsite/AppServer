@@ -80,6 +80,11 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
+        public Task<Stream> GetThumbnailAsync(File<string> file)
+        {
+            return null;
+        }
+
         public virtual Stream GetFileStream(File<string> file)
         {
             return null;
@@ -212,7 +217,8 @@ namespace ASC.Files.Thirdparty
         protected IServiceProvider ServiceProvider { get; }
         protected UserManager UserManager { get; }
         protected TenantUtil TenantUtil { get; }
-        protected FilesDbContext FilesDbContext { get; }
+        private Lazy<FilesDbContext> LazyFilesDbContext { get; }
+        protected FilesDbContext FilesDbContext { get => LazyFilesDbContext.Value; }
         protected SetupInfo SetupInfo { get; }
         protected ILog Log { get; }
         protected FileUtility FileUtility { get; }
@@ -237,7 +243,7 @@ namespace ASC.Files.Thirdparty
             ServiceProvider = serviceProvider;
             UserManager = userManager;
             TenantUtil = tenantUtil;
-            FilesDbContext = dbContextManager.Get(FileConstant.DatabaseId);
+            LazyFilesDbContext = new Lazy<FilesDbContext>(() => dbContextManager.Get(FileConstant.DatabaseId));
             SetupInfo = setupInfo;
             Log = monitor.CurrentValue;
             FileUtility = fileUtility;
@@ -320,7 +326,6 @@ namespace ASC.Files.Thirdparty
             InitFileEntry(file);
 
             file.Access = FileShare.None;
-            file.FileStatus = FileStatus.None;
             file.Shared = false;
             file.Version = 1;
 

@@ -5,8 +5,7 @@ import Button from "@appserver/components/button";
 import ModalDialog from "@appserver/components/modal-dialog";
 import Link from "@appserver/components/link";
 import Text from "@appserver/components/text";
-
-import { withTranslation } from "react-i18next";
+import { Trans, withTranslation } from "react-i18next";
 import ModalDialogContainer from "../ModalDialogContainer";
 import { sendInstructionsToDelete } from "@appserver/common/api/people";
 import toastr from "studio/toastr";
@@ -20,11 +19,17 @@ class DeleteSelfProfileDialogComponent extends React.Component {
     };
   }
   onDeleteSelfProfileInstructions = () => {
-    const { onClose } = this.props;
+    const { t, email, onClose } = this.props;
     this.setState({ isRequestRunning: true }, () => {
       sendInstructionsToDelete()
         .then((res) => {
-          toastr.success(res);
+          toastr.success(
+            <div
+              dangerouslySetInnerHTML={{
+                __html: res,
+              }}
+            />
+          );
         })
         .catch((error) => toastr.error(error))
         .finally(() => {
@@ -35,11 +40,15 @@ class DeleteSelfProfileDialogComponent extends React.Component {
 
   render() {
     console.log("DeleteSelfProfileDialog render");
-    const { t, visible, email, onClose } = this.props;
+    const { t, tReady, visible, email, onClose } = this.props;
     const { isRequestRunning } = this.state;
 
     return (
-      <ModalDialogContainer visible={visible} onClose={onClose}>
+      <ModalDialogContainer
+        isLoading={!tReady}
+        visible={visible}
+        onClose={onClose}
+      >
         <ModalDialog.Header>{t("DeleteProfileTitle")}</ModalDialog.Header>
         <ModalDialog.Body>
           <Text fontSize="13px">

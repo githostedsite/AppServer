@@ -30,6 +30,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
+using ASC.Api.Core;
 using ASC.Common.Utils;
 
 using Autofac.Extensions.DependencyInjection;
@@ -45,11 +46,10 @@ namespace ASC.ApiSystem
         public async static Task Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
-
             await host.RunAsync();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) => 
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .UseSystemd()
                 .UseWindowsService()
@@ -100,6 +100,7 @@ namespace ASC.ApiSystem
                                         {"pathToConf", path}
                     });
 
-                });
+                })
+            .ConfigureNLogLogging();
     }
 }

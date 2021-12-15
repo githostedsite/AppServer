@@ -2,10 +2,10 @@
 using System.IO;
 using System.Threading.Tasks;
 
+using ASC.Api.Core;
 using ASC.Common;
 using ASC.Common.Caching;
 using ASC.Common.DependencyInjection;
-using ASC.Common.Logging;
 using ASC.Common.Utils;
 using ASC.ElasticSearch;
 using ASC.Feed.Aggregator;
@@ -15,6 +15,7 @@ using ASC.Web.Files.Core.Search;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,6 +36,7 @@ namespace ASC.Files.Service
                 .UseSystemd()
                 .UseWindowsService()
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<BaseWorkerStartup>())
                 .ConfigureAppConfiguration((hostContext, config) =>
                 {
                     var buided = config.Build();
@@ -46,20 +48,22 @@ namespace ASC.Files.Service
                     config.SetBasePath(path);
                     var env = hostContext.Configuration.GetValue("ENVIRONMENT", "Production");
                     config
-                        .AddInMemoryCollection(new Dictionary<string, string>
-                            {
-                                {"pathToConf", path }
-                            }
-                        )
                         .AddJsonFile("appsettings.json")
                         .AddJsonFile($"appsettings.{env}.json", true)
                         .AddJsonFile($"appsettings.services.json", true)
                         .AddJsonFile("storage.json")
                         .AddJsonFile("notify.json")
+                        .AddJsonFile($"notify.{env}.json", true)
                         .AddJsonFile("kafka.json")
                         .AddJsonFile($"kafka.{env}.json", true)
+                        .AddJsonFile("elastic.json", true)
                         .AddEnvironmentVariables()
-                        .AddCommandLine(args);
+                        .AddCommandLine(args)
+                        .AddInMemoryCollection(new Dictionary<string, string>
+                            {
+                                {"pathToConf", path }
+                            }
+                        );
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
@@ -70,8 +74,20 @@ namespace ASC.Files.Service
                     diHelper.TryAdd(typeof(ICacheNotify<>), typeof(KafkaCache<>));
 
                     diHelper.RegisterProducts(hostContext.Configuration, hostContext.HostingEnvironment.ContentRootPath);
-                    services.AddHostedService<ServiceLauncher>();
-                    diHelper.TryAdd<ServiceLauncher>();
+
+                    if (!bool.TryParse(hostContext.Configuration["disable_elastic"], out var disableElastic))
+                    {
+                        disableElastic = false;
+                    }
+
+                    if (!disableElastic)
+                    {
+                        services.AddHostedService<ServiceLauncher>();
+                        diHelper.TryAdd<ServiceLauncher>();
+                        //diHelper.TryAdd<FileConverter>();
+                        diHelper.TryAdd<FactoryIndexerFile>();
+                        diHelper.TryAdd<FactoryIndexerFolder>();
+                    }
 
                     services.AddHostedService<FeedAggregatorService>();
                     diHelper.TryAdd<FeedAggregatorService>();
@@ -79,14 +95,11 @@ namespace ASC.Files.Service
                     services.AddHostedService<Launcher>();
                     diHelper.TryAdd<Launcher>();
 
-                    LogNLogExtension.ConfigureLog(diHelper, "ASC.Files", "ASC.Feed.Agregator");
-                    //diHelper.TryAdd<FileConverter>();
-                    diHelper.TryAdd<FactoryIndexerFile>();
-                    diHelper.TryAdd<FactoryIndexerFolder>();
                 })
                 .ConfigureContainer<ContainerBuilder>((context, builder) =>
                 {
                     builder.Register(context.Configuration, true, false, "search.json", "feed.json");
-                });
+                })
+            .ConfigureNLogLogging();
     }
 }

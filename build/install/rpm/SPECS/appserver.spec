@@ -13,7 +13,7 @@ Packager:       Ascensio System SIA <support@onlyoffice.com>
 ExclusiveArch:  x86_64
 AutoReq:        no
 AutoProv:       no
-License:        GPLv3
+License:        AGPLv3
 Source0:        https://github.com/ONLYOFFICE/%{product}/archive/%GIT_BRANCH.tar.gz
 BuildRequires:  nodejs >= 12.0
 BuildRequires:  yarn
@@ -32,6 +32,7 @@ Requires:       %name-notify
 Requires:       %name-people-server
 Requires:       %name-projects-server
 Requires:       %name-socket
+Requires:       %name-ssoauth
 Requires:       %name-studio-notify
 Requires:       %name-telegram-service
 Requires:       %name-thumbnails
@@ -47,7 +48,7 @@ App Server is a platform for building your own online office by connecting ONLYO
 
 %prep
 
-rm -rf %{_rpmdir}/%{_arch}/%{product}-*
+rm -rf %{_rpmdir}/%{_arch}/%{name}-*
 %setup -n %{sourcename}
 
 %include build.spec

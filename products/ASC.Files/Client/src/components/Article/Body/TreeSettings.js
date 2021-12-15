@@ -12,11 +12,17 @@ import commonIconsStyles from "@appserver/components/utils/common-icons-style";
 import config from "../../../../package.json";
 import { combineUrl } from "@appserver/common/utils";
 import { AppServerConfig } from "@appserver/common/constants";
+import Loaders from "@appserver/common/components/Loaders";
+import withLoader from "../../../HOCs/withLoader";
 
 const StyledTreeMenu = styled(TreeMenu)`
   margin-top: 18px !important;
   @media (max-width: 1024px) {
     margin-top: 14px !important;
+  }
+
+  .rc-tree-node-content-wrapper {
+    width: 98% !important;
   }
 
   .rc-tree-node-selected {
@@ -75,23 +81,22 @@ const PureTreeSettings = ({
   isLoading,
   setSelectedNode,
   setExpandSettingsTree,
-  getFilesSettings,
+
   setSelectedFolder,
   //selectedFolder,
   history,
   setIsLoading,
   t,
   isVisitor,
+  isDesktop,
 }) => {
   const { setting } = match.params;
 
   useEffect(() => {
     setIsLoading(true);
-    getFilesSettings().then(() => {
-      setIsLoading(false);
-      setSelectedNode([setting]);
-    });
-  }, [getFilesSettings, setting, setIsLoading, setSelectedNode]);
+    setSelectedNode([setting]);
+    setIsLoading(false);
+  }, [setting, setIsLoading, setSelectedNode]);
 
   useEffect(() => {
     const { setting } = match.params;
@@ -147,33 +152,34 @@ const PureTreeSettings = ({
   const renderTreeNode = () => {
     return (
       <TreeNode
-        id="settings"
+        id="settings" //does not work
         key="settings"
         title={t("Common:Settings")}
         isLeaf={false}
         icon={<StyledSettingsIcon size="scale" />}
+        className="tree-settings"
       >
         <TreeNode
-          className="settings-node"
-          id="common-settings"
+          className="settings-node common-settings"
+          id="common-settings" //does not work
           key="common"
           isLeaf={true}
           title={t("CommonSettings")}
         />
         {isAdmin ? (
           <TreeNode
-            className="settings-node"
-            id="admin-settings"
+            className="settings-node admin-settings"
+            id="admin-settings" //does not work
             key="admin"
             isLeaf={true}
             title={t("Common:AdminSettings")}
           />
         ) : null}
-        {enableThirdParty && !isVisitor ? (
+        {enableThirdParty && !isVisitor && !isDesktop ? (
           <TreeNode
             selectable={true}
-            className="settings-node"
-            id="connected-clouds"
+            className="settings-node connected-clouds"
+            id="connected-clouds" //does not work
             key="thirdParty"
             isLeaf={true}
             title={t("ThirdPartySettings")}
@@ -206,7 +212,7 @@ const PureTreeSettings = ({
 };
 
 const TreeSettings = withTranslation(["Settings", "Common"])(
-  withRouter(PureTreeSettings)
+  withRouter(withLoader(PureTreeSettings)(<></>))
 );
 
 export default inject(
@@ -221,7 +227,6 @@ export default inject(
     const { setSelectedFolder } = selectedFolderStore;
     const { selectedTreeNode, setSelectedNode } = treeFoldersStore;
     const {
-      getFilesSettings,
       enableThirdParty,
       expandedSetting,
       setExpandSettingsTree,
@@ -238,8 +243,8 @@ export default inject(
       setIsLoading,
       setSelectedFolder,
       setSelectedNode,
-      getFilesSettings,
       setExpandSettingsTree,
+      isDesktop: auth.settingsStore.isDesktopClient,
     };
   }
 )(observer(TreeSettings));

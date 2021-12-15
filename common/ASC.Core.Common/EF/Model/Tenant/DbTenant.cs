@@ -26,8 +26,6 @@ namespace ASC.Core.Common.EF.Model
         public DateTime StatusChangedHack { get { return StatusChanged ?? DateTime.MinValue; } set { StatusChanged = value; } }
         public DateTime CreationDateTime { get; set; }
         public Guid OwnerId { get; set; }
-        public bool Public { get; set; }
-        public string PublicVisibleProducts { get; set; }
         public string PaymentId { get; set; }
         public TenantIndustry? Industry { get; set; }
         public DateTime LastModified { get; set; }
@@ -43,14 +41,14 @@ namespace ASC.Core.Common.EF.Model
         {
             modelBuilder
                 .Add(MySqlAddDbTenant, Provider.MySql)
-                .Add(PgSqlAddDbTenant, Provider.Postgre)
+                .Add(PgSqlAddDbTenant, Provider.PostgreSql)
                 .HasData(
                 new DbTenant
                 {
                     Id = 1,
                     Alias = "localhost",
                     Name = "Web Office",
-                    CreationDateTime = DateTime.UtcNow,
+                    CreationDateTime = new DateTime(2021, 3, 9, 17, 46, 59, 97, DateTimeKind.Utc).AddTicks(4317),
                     OwnerId = Guid.Parse("66faa6e4-f133-11ea-b126-00ffeec8b4ef")
                 }
                 );
@@ -132,14 +130,6 @@ namespace ASC.Core.Common.EF.Model
                 entity.Property(e => e.PaymentId)
                     .HasColumnName("payment_id")
                     .HasColumnType("varchar(38)")
-                    .HasCharSet("utf8")
-                    .UseCollation("utf8_general_ci");
-
-                entity.Property(e => e.Public).HasColumnName("public");
-
-                entity.Property(e => e.PublicVisibleProducts)
-                    .HasColumnName("publicvisibleproducts")
-                    .HasColumnType("varchar(1024)")
                     .HasCharSet("utf8")
                     .UseCollation("utf8_general_ci");
 
@@ -245,13 +235,6 @@ namespace ASC.Core.Common.EF.Model
                 entity.Property(e => e.PaymentId)
                     .HasColumnName("payment_id")
                     .HasMaxLength(38)
-                    .HasDefaultValueSql("NULL");
-
-                entity.Property(e => e.Public).HasColumnName("public");
-
-                entity.Property(e => e.PublicVisibleProducts)
-                    .HasColumnName("publicvisibleproducts")
-                    .HasMaxLength(1024)
                     .HasDefaultValueSql("NULL");
 
                 entity.Property(e => e.Spam)

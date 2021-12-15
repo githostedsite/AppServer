@@ -12,6 +12,7 @@
   "CloseButton": "Închidere",
   "ComingSoon": "În curând",
   "CommunityProduct": "Comunitate",
+  "Confirmation": "Confirmare",
   "ContinueButton": "Continuare",
   "CopyEmailAndPassword": "Copiază adresa de e-mail și parola",
   "CountPerPage": "{{count}} per pagină",
@@ -73,5 +74,8 @@
   "Version": "Versiune",
   "View": "Vizualizare",
   "ViewWeb": "Accesați versiunea online",
-  "Warning": "Avertisment"
+  "Warning": "Avertisment",
+  "Name": "Numele",
+  "Phone": "Telefon",
+  "Owner": "Proprietar"
 }

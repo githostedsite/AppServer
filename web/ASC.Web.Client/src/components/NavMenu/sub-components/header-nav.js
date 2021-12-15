@@ -10,6 +10,9 @@ import { inject, observer } from "mobx-react";
 import { withRouter } from "react-router";
 import { AppServerConfig } from "@appserver/common/constants";
 import config from "../../../../package.json";
+import { isDesktop } from "react-device-detect";
+import AboutDialog from "../../pages/About/AboutDialog";
+import DebugInfoDialog from "../../pages/DebugInfo";
 
 const { proxyURL } = AppServerConfig;
 const homepage = config.homepage;
@@ -24,11 +27,11 @@ const PROFILE_MY_URL = combineUrl(PROXY_HOMEPAGE_URL, "/my");
 
 const StyledNav = styled.nav`
   display: flex;
-  padding: 0 24px 0 16px;
+  padding: 0 20px 0 16px;
   align-items: center;
   position: absolute;
   right: 0;
-  height: 56px;
+  height: 48px;
   z-index: 190 !important;
 
   .profile-menu {
@@ -49,6 +52,9 @@ const StyledNav = styled.nav`
   @media ${tablet} {
     padding: 0 16px;
   }
+  .icon-profile-menu {
+    cursor: pointer;
+  }
 `;
 const HeaderNav = ({
   history,
@@ -57,14 +63,36 @@ const HeaderNav = ({
   logout,
   isAuthenticated,
   peopleAvailable,
+  isPersonal,
+  userIsUpdate,
+  setUserIsUpdate,
+  buildVersionInfo,
+  debugInfo,
 }) => {
-  const { t } = useTranslation(["NavMenu", "Common"]);
+  const { t } = useTranslation(["NavMenu", "Common", "About"]);
+  const [visibleAboutDialog, setVisibleAboutDialog] = useState(false);
+  const [visibleDebugDialog, setVisibleDebugDialog] = useState(false);
 
   const onProfileClick = useCallback(() => {
-    history.push(peopleAvailable ? PROFILE_SELF_URL : PROFILE_MY_URL);
+    peopleAvailable
+      ? history.push(PROFILE_SELF_URL)
+      : history.push(PROFILE_MY_URL);
   }, []);
 
-  const onAboutClick = useCallback(() => history.push(ABOUT_URL), []);
+  const onAboutClick = useCallback(() => {
+    if (isDesktop) {
+      setVisibleAboutDialog(true);
+    } else {
+      history.push(ABOUT_URL);
+    }
+  }, []);
+
+  const onDebugClick = useCallback(() => {
+    setVisibleDebugDialog(true);
+  }, []);
+
+  const onCloseAboutDialog = () => setVisibleAboutDialog(false);
+  const onCloseDebugDialog = () => setVisibleDebugDialog(false);
 
   const onSwitchToDesktopClick = useCallback(() => {
     deleteCookie("desktop_view");
@@ -79,7 +107,7 @@ const HeaderNav = ({
   const onLogoutClick = useCallback(() => logout && logout(), [logout]);
 
   const getCurrentUserActions = useCallback(() => {
-    const currentUserActions = [
+    const actions = [
       {
         key: "ProfileBtn",
         label: t("Common:Profile"),
@@ -88,10 +116,12 @@ const HeaderNav = ({
       },
       {
         key: "SwitchToBtn",
-        label: t("TurnOnDesktopVersion"),
-        onClick: onSwitchToDesktopClick,
-        url: `${window.location.origin}?desktop_view=true`,
-        target: "_self",
+        ...(!isPersonal && {
+          label: t("TurnOnDesktopVersion"),
+          onClick: onSwitchToDesktopClick,
+          url: `${window.location.origin}?desktop_view=true`,
+          target: "_self",
+        }),
       },
       {
         key: "AboutBtn",
@@ -106,7 +136,15 @@ const HeaderNav = ({
       },
     ];
 
-    return currentUserActions;
+    if (debugInfo) {
+      actions.splice(3, 0, {
+        key: "DebugBtn",
+        label: "Debug Info",
+        onClick: onDebugClick,
+      });
+    }
+
+    return actions;
   }, [onProfileClick, onAboutClick, onLogoutClick]);
 
   //console.log("HeaderNav render");
@@ -129,11 +167,30 @@ const HeaderNav = ({
             noHover={true}
           />
         ))}
-
       {isAuthenticated && user ? (
-        <ProfileActions userActions={getCurrentUserActions()} user={user} />
+        <ProfileActions
+          userActions={getCurrentUserActions()}
+          user={user}
+          userIsUpdate={userIsUpdate}
+          setUserIsUpdate={setUserIsUpdate}
+        />
       ) : (
         <></>
+      )}
+
+      <AboutDialog
+        t={t}
+        visible={visibleAboutDialog}
+        onClose={onCloseAboutDialog}
+        personal={isPersonal}
+        buildVersionInfo={buildVersionInfo}
+      />
+
+      {debugInfo && (
+        <DebugInfoDialog
+          visible={visibleDebugDialog}
+          onClose={onCloseDebugDialog}
+        />
       )}
     </StyledNav>
   );
@@ -160,10 +217,17 @@ export default withRouter(
       language,
       logout,
     } = auth;
-    const { defaultPage } = settingsStore;
-    const { user } = userStore;
+    const {
+      defaultPage,
+      personal: isPersonal,
+      buildVersionInfo,
+      debugInfo,
+    } = settingsStore;
+    const { user, userIsUpdate, setUserIsUpdate } = userStore;
     const modules = auth.availableModules;
+
     return {
+      isPersonal,
       user,
       isAuthenticated,
       isLoaded,
@@ -172,6 +236,10 @@ export default withRouter(
       modules,
       logout,
       peopleAvailable: modules.some((m) => m.appName === "people"),
+      userIsUpdate,
+      setUserIsUpdate,
+      buildVersionInfo,
+      debugInfo,
     };
   })(observer(HeaderNav))
 );

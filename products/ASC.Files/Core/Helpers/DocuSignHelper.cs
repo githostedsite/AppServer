@@ -48,7 +48,6 @@ using ASC.Web.Core.Files;
 using ASC.Web.Core.Users;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.HttpHandlers;
-using ASC.Web.Files.Services.WCFService;
 using ASC.Web.Files.ThirdPartyApp;
 using ASC.Web.Files.Utils;
 using ASC.Web.Studio.Core;
@@ -454,7 +453,7 @@ namespace ASC.Web.Files.Helpers
 
         public string Name { get; set; }
 
-        public ItemList<Guid> Users { get; set; }
+        public List<Guid> Users { get; set; }
     }
 
     public enum DocuSignStatus

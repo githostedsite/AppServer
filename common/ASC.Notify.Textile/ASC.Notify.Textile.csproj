@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AssemblyTitle>ASC.Notify.Textile</AssemblyTitle>
     <Company>Ascensio System SIA</Company>
     <Product>ASC.Notify.Textile</Product>
     <Copyright>(c) Ascensio System SIA. All rights reserved</Copyright>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>

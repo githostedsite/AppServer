@@ -1,7 +1,11 @@
-
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+
+using ASC.Api.Core;
+using ASC.Common.Utils;
 
 using Autofac.Extensions.DependencyInjection;
 
@@ -13,7 +17,7 @@ namespace ASC.Calendar
 {
     public class Program
     {
-        public async static Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
 
@@ -27,19 +31,43 @@ namespace ASC.Calendar
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
-                })
-               .ConfigureAppConfiguration((hostingContext, config) =>
-                {
-                    var buided = config.Build();
-                    var path = buided["pathToConf"];
-                    if (!Path.IsPathRooted(path))
-                    {
-                        path = Path.GetFullPath(Path.Combine(hostingContext.HostingEnvironment.ContentRootPath, path));
-                    }
+                    var builder = webBuilder.UseStartup<Startup>();
 
-                    config.SetBasePath(path);
-                    config
+                    builder.ConfigureKestrel((hostingContext, serverOptions) =>
+                    {
+                        serverOptions.Limits.MaxRequestBodySize = 100 * 1024 * 1024;
+                        serverOptions.Limits.MaxRequestBufferSize = 100 * 1024 * 1024;
+                        serverOptions.Limits.MinRequestBodyDataRate = null;
+                        serverOptions.Limits.MinResponseDataRate = null;
+
+                        var kestrelConfig = hostingContext.Configuration.GetSection("Kestrel");
+
+                        if (!kestrelConfig.Exists()) return;
+
+                        var unixSocket = kestrelConfig.GetValue<string>("ListenUnixSocket");
+
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            if (!String.IsNullOrWhiteSpace(unixSocket))
+                            {
+                                unixSocket = String.Format(unixSocket, hostingContext.HostingEnvironment.ApplicationName.Replace("ASC.", "").Replace(".", ""));
+
+                                serverOptions.ListenUnixSocket(unixSocket);
+                            }
+                        }
+                    });
+                })
+            .ConfigureAppConfiguration((hostingContext, config) =>
+            {
+                var buided = config.Build();
+                var path = buided["pathToConf"];
+                if (!Path.IsPathRooted(path))
+                {
+                    path = Path.GetFullPath(CrossPlatform.PathCombine(hostingContext.HostingEnvironment.ContentRootPath, path));
+                }
+
+                config.SetBasePath(path);
+                config
                     .AddJsonFile("appsettings.json")
                     .AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json", true)
                     .AddJsonFile("storage.json")
@@ -49,8 +77,9 @@ namespace ASC.Calendar
                     .AddCommandLine(args)
                     .AddInMemoryCollection(new Dictionary<string, string>
                     {
-                                        {"pathToConf", path}
+                        {"pathToConf", path}
                     });
-                });
+            })
+            .ConfigureNLogLogging();
     }
 }

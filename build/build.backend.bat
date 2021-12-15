@@ -1,11 +1,23 @@
+@echo off
+
 PUSHD %~dp0..
-dotnet build ASC.Web.sln  /fl1 /flp1:LogFile=build/ASC.Web.log;Verbosity=Normal
+dotnet build ASC.Web.slnf  /fl1 /flp1:LogFile=build/ASC.Web.log;Verbosity=Normal
+echo.
+echo Install nodejs projects dependencies...
+echo.
 
-echo "ASC.UrlShortener"
-call build\scripts\urlshortener.sh
+if %errorlevel% == 0 (
+	for /R "build\scripts\" %%f in (*.bat) do (
+		echo Run script %%~nxf...
+		echo.
+		call build\scripts\%%~nxf
+	)
+)
 
-echo "ASC.Thumbnails"
-call build\scripts\thumbnails.sh
+echo.
 
-echo "ASC.Socket.IO"
-call build\scripts\socket.sh
+POPD
+
+if "%1"=="nopause" goto start
+pause
+:start

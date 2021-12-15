@@ -1052,6 +1052,15 @@ If you can't open the link, please copy the following "$InviteLink":"$InviteLink
 Sincerely,
 ONLYOFFICE team</value>
   </data>
+  <data name="pattern_personal_already_exist" xml:space="preserve">
+    <value>Hi there!
+There was an attempt to register a new ONLYOFFICE Personal account using this email. If it was you, we want to inform you that the account already exists — proceed to ONLYOFFICE Personal and log in.
+If you lost your password, you can recover it on password recovery page.
+If you didn’t attempt to register a new account, probably someone else did it by mistake. In this case, please ignore this email.
+
+Have a nice day!
+ONLYOFFICE team</value>
+  </data>
   <data name="pattern_personal_profile_delete" xml:space="preserve">
     <value>You have requested a termination of your account at personal.onlyoffice.com. Follow the link to complete the request (the link is active for a 7-day period): 
 
@@ -1883,6 +1892,9 @@ The link is only valid for 7 days.</value>
   <data name="subject_migration_start" xml:space="preserve">
     <value>${LetterLogoText}. Another region portal migration started</value>
   </data>
+  <data name="subject_migration_success" xml:space="preserve">
+    <value>${LetterLogoText}. Another region portal migration successfully completed</value>
+  </data>
   <data name="subject_opensource_admin_activation_v11" xml:space="preserve">
     <value>Confirm your email</value>
   </data>
@@ -1931,6 +1943,9 @@ The link is only valid for 7 days.</value>
   <data name="subject_personal_confirmation" xml:space="preserve">
     <value>ONLYOFFICE Personal. Please activate your email address</value>
   </data>
+  <data name="subject_personal_already_exist" xml:space="preserve">
+    <value>Log in to your ONLYOFFICE Personal account</value>
+  </data>
   <data name="subject_personal_profile_delete" xml:space="preserve">
     <value>ONLYOFFICE Personal account termination</value>
   </data>
@@ -1972,6 +1987,9 @@ The link is only valid for 7 days.</value>
   </data>
   <data name="subject_request_tariff" xml:space="preserve">
     <value>SaaS pricing plan request</value>
+  </data>
+  <data name="subject_restore_completed" xml:space="preserve">
+    <value>${LetterLogoText}. Restore completed</value>
   </data>
   <data name="subject_restore_started" xml:space="preserve">
     <value>${LetterLogoText}. Restore started</value>

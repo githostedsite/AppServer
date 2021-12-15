@@ -53,12 +53,16 @@ class DeleteProfileEverDialogComponent extends React.Component {
 
   render() {
     console.log("DeleteProfileEverDialog render");
-    const { t, visible, user, onClose, userCaption } = this.props;
+    const { t, tReady, visible, user, onClose, userCaption } = this.props;
     const { isRequestRunning } = this.state;
 
     return (
-      <ModalDialogContainer visible={visible} onClose={onClose}>
-        <ModalDialog.Header>{t("Confirmation")}</ModalDialog.Header>
+      <ModalDialogContainer
+        isLoading={!tReady}
+        visible={visible}
+        onClose={onClose}
+      >
+        <ModalDialog.Header>{t("Common:Confirmation")}</ModalDialog.Header>
         <ModalDialog.Body>
           <Text>
             <Trans

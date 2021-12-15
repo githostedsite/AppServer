@@ -22,6 +22,8 @@ class SettingsStore {
   updateIfExist = null;
   favoritesSection = null;
   recentSection = null;
+  hideConfirmConvertSave = null;
+  chunkUploadSize = 1024 * 1023; // 1024 * 1023; //~0.999mb
 
   settingsIsLoaded = false;
 
@@ -175,6 +177,11 @@ class SettingsStore {
       const index = this.treeFoldersStore.favoritesFolder ? 3 : 2;
       this.updateRootTreeFolders(set, index, FolderType.Recent);
     });
+  };
+
+  hideConfirmConvert = async (save = true) => {
+    const hideConfirmConvertSave = await api.files.hideConfirmConvert(save);
+    this.hideConfirmConvertSave = hideConfirmConvertSave;
   };
 }
 

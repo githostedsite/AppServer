@@ -19,6 +19,8 @@ class DialogsStore {
   thirdPartyDialogVisible = false;
   newFilesPanelVisible = false;
   conflictResolveDialogVisible = false;
+  convertDialogVisible = false;
+  isFolderActions = false;
 
   removeItem = null;
   connectItem = null;
@@ -29,6 +31,7 @@ class DialogsStore {
   conflictResolveDialogItems = null;
   removeMediaItem = null;
   unsubscribe = null;
+  convertItem = null;
 
   constructor(treeFoldersStore, filesStore, selectedFolderStore) {
     makeAutoObservable(this);
@@ -40,6 +43,10 @@ class DialogsStore {
 
   setSharingPanelVisible = (sharingPanelVisible) => {
     this.sharingPanelVisible = sharingPanelVisible;
+  };
+
+  setIsFolderActions = (isFolderActions) => {
+    this.isFolderActions = isFolderActions;
   };
 
   setChangeOwnerPanelVisible = (ownerPanelVisible) => {
@@ -159,6 +166,14 @@ class DialogsStore {
 
   setUnsubscribe = (unsubscribe) => {
     this.unsubscribe = unsubscribe;
+  };
+
+  setConvertDialogVisible = (visible) => {
+    this.convertDialogVisible = visible;
+  };
+
+  setConvertItem = (item) => {
+    this.convertItem = item;
   };
 }
 

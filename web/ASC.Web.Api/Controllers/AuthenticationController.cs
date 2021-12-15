@@ -73,6 +73,8 @@ namespace ASC.Web.Api.Controllers
         private TimeZoneConverter TimeZoneConverter { get; }
         private SmsKeyStorage SmsKeyStorage { get; }
         private CommonLinkUtility CommonLinkUtility { get; }
+        private ApiContext ApiContext { get; }
+        private AuthContext AuthContext { get; }
         private UserManagerWrapper UserManagerWrapper { get; }
 
         public AuthenticationController(
@@ -103,7 +105,9 @@ namespace ASC.Web.Api.Controllers
             TfaManager tfaManager,
             TimeZoneConverter timeZoneConverter,
             SmsKeyStorage smsKeyStorage,
-            CommonLinkUtility commonLinkUtility)
+            CommonLinkUtility commonLinkUtility,
+            ApiContext apiContext,
+            AuthContext authContext)
         {
             UserManager = userManager;
             TenantManager = tenantManager;
@@ -132,6 +136,8 @@ namespace ASC.Web.Api.Controllers
             TimeZoneConverter = timeZoneConverter;
             SmsKeyStorage = smsKeyStorage;
             CommonLinkUtility = commonLinkUtility;
+            ApiContext = apiContext;
+            AuthContext = authContext;
             UserManagerWrapper = userManagerWrapper;
         }
 
@@ -169,6 +175,7 @@ namespace ASC.Web.Api.Controllers
         }
 
         [Create("logout")]
+        [Read("logout")]// temp fix
         public void Logout()
         {
             CookiesManager.ClearCookies(CookiesType.AuthKey);
@@ -188,12 +195,66 @@ namespace ASC.Web.Api.Controllers
             return EmailValidationKeyModelHelper.Validate(model);
         }
 
+        [Authorize(AuthenticationSchemes = "confirm", Roles = "PhoneActivation")]
+        [Create("setphone", false)]
+        public AuthenticationTokenData SaveMobilePhoneFromBody([FromBody] MobileModel model)
+        {
+            return SaveMobilePhone(model);
+        }
+
+        [Authorize(AuthenticationSchemes = "confirm", Roles = "PhoneActivation")]
+        [Create("setphone", false)]
+        [Consumes("application/x-www-form-urlencoded")]
+        public AuthenticationTokenData SaveMobilePhoneFromForm([FromForm] MobileModel model)
+        {
+            return SaveMobilePhone(model);
+        }
+
+        private AuthenticationTokenData SaveMobilePhone(MobileModel model)
+        {
+            ApiContext.AuthByClaim();
+            var user = UserManager.GetUsers(AuthContext.CurrentAccount.ID);
+            model.MobilePhone = SmsManager.SaveMobilePhone(user, model.MobilePhone);
+            MessageService.Send(MessageAction.UserUpdatedMobileNumber, MessageTarget.Create(user.ID), user.DisplayUserName(false, DisplayUserSettingsHelper), model.MobilePhone);
+
+            return new AuthenticationTokenData
+            {
+                Sms = true,
+                PhoneNoise = SmsSender.BuildPhoneNoise(model.MobilePhone),
+                Expires = new ApiDateTime(TenantManager, TimeZoneConverter, DateTime.UtcNow.Add(SmsKeyStorage.StoreInterval))
+            };
+        }
+
+        [Create(@"sendsms", false)]
+        public AuthenticationTokenData SendSmsCodeFromBody([FromBody] AuthModel model)
+        {
+            return SendSmsCode(model);
+        }
+
+        [Create(@"sendsms", false)]
+        [Consumes("application/x-www-form-urlencoded")]
+        public AuthenticationTokenData SendSmsCodeFromForm([FromForm] AuthModel model)
+        {
+            return SendSmsCode(model);
+        }
+
+        private AuthenticationTokenData SendSmsCode(AuthModel model)
+        {
+            var user = GetUser(model, out _);
+            SmsManager.PutAuthCode(user, true);
+
+            return new AuthenticationTokenData
+            {
+                Sms = true,
+                PhoneNoise = SmsSender.BuildPhoneNoise(user.MobilePhone),
+                Expires = new ApiDateTime(TenantManager, TimeZoneConverter, DateTime.UtcNow.Add(SmsKeyStorage.StoreInterval))
+            };
+        }
+
         private AuthenticationTokenData AuthenticateMe(AuthModel auth)
         {
-            var tenant = TenantManager.GetCurrentTenant().TenantId;
-
             bool viaEmail;
-            var user = GetUser(tenant, auth, out viaEmail);
+            var user = GetUser(auth, out viaEmail);
 
             if (StudioSmsNotificationSettingsHelper.IsVisibleSettings() && StudioSmsNotificationSettingsHelper.Enable)
             {
@@ -239,6 +300,7 @@ namespace ASC.Web.Api.Controllers
 
                 MessageService.Send(viaEmail ? MessageAction.LoginSuccessViaApi : MessageAction.LoginSuccessViaApiSocialAccount);
 
+                var tenant = TenantManager.GetCurrentTenant().TenantId;
                 var expires = TenantCookieSettingsHelper.GetExpiresTime(tenant);
 
                 return new AuthenticationTokenData
@@ -261,7 +323,7 @@ namespace ASC.Web.Api.Controllers
         private AuthenticationTokenData AuthenticateMeWithCode(AuthModel auth)
         {
             var tenant = TenantManager.GetCurrentTenant().TenantId;
-            var user = GetUser(tenant, auth, out _);
+            var user = GetUser(auth, out _);
 
             var sms = false;
             try
@@ -286,7 +348,7 @@ namespace ASC.Web.Api.Controllers
                 var token = SecurityContext.AuthenticateMe(user.ID);
 
                 MessageService.Send(sms ? MessageAction.LoginSuccessViaApiSms : MessageAction.LoginSuccessViaApiTfa);
-;
+                ;
                 var expires = TenantCookieSettingsHelper.GetExpiresTime(tenant);
 
                 var result = new AuthenticationTokenData
@@ -321,7 +383,7 @@ namespace ASC.Web.Api.Controllers
             }
         }
 
-        private UserInfo GetUser(int tenantId, AuthModel memberModel, out bool viaEmail)
+        private UserInfo GetUser(AuthModel memberModel, out bool viaEmail)
         {
             viaEmail = true;
             var action = MessageAction.LoginFailViaApi;
@@ -361,7 +423,7 @@ namespace ASC.Web.Api.Controllers
                     }
 
                     user = UserManager.GetUsersByPasswordHash(
-                        tenantId,
+                        TenantManager.GetCurrentTenant().TenantId,
                         memberModel.UserName,
                         memberModel.PasswordHash);
 
@@ -383,7 +445,7 @@ namespace ASC.Web.Api.Controllers
                     {
                         thirdPartyProfile = ProviderManager.GetLoginProfile(memberModel.Provider, memberModel.AccessToken);
                     }
-                    
+
                     memberModel.UserName = thirdPartyProfile.EMail;
 
                     user = GetUserByThirdParty(thirdPartyProfile);
@@ -432,7 +494,7 @@ namespace ASC.Web.Api.Controllers
                     {
                         try
                         {
-                            SecurityContext.AuthenticateMe(ASC.Core.Configuration.Constants.CoreSystem);
+                            SecurityContext.AuthenticateMeWithoutCookie(ASC.Core.Configuration.Constants.CoreSystem);
                             UserManager.DeleteUser(userInfo.ID);
                             userInfo = Constants.LostUser;
                         }
@@ -504,7 +566,7 @@ namespace ASC.Web.Api.Controllers
 
                 try
                 {
-                    SecurityContext.AuthenticateMe(ASC.Core.Configuration.Constants.CoreSystem);
+                    SecurityContext.AuthenticateMeWithoutCookie(ASC.Core.Configuration.Constants.CoreSystem);
                     userInfo = UserManagerWrapper.AddUser(newUserInfo, UserManagerWrapper.GeneratePassword());
                 }
                 finally

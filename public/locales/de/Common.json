@@ -12,6 +12,7 @@
   "CloseButton": "Schließen",
   "ComingSoon": "Kommt demnächst",
   "CommunityProduct": "Community",
+  "Confirmation": "Bestätigung",
   "ContinueButton": "Weiter",
   "CopyEmailAndPassword": "E-Mail und Passwort kopieren",
   "CountPerPage": "{{count}} pro Seite",
@@ -81,5 +82,8 @@
   "Version": "Version",
   "View": "Anzeigen",
   "ViewWeb": "Web-Version öffnen",
-  "Warning": "Warnung"
+  "Warning": "Warnung",
+  "Name": "Name",
+  "Phone": "Telefon",
+  "Owner": "Besitzer"
 }

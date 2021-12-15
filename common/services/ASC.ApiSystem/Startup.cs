@@ -24,18 +24,19 @@
 */
 
 
+using System.Text.Json.Serialization;
+
+using ASC.Api.Core;
 using ASC.ApiSystem.Classes;
 using ASC.ApiSystem.Controllers;
 using ASC.Common;
 using ASC.Common.Caching;
 using ASC.Common.DependencyInjection;
-using ASC.Common.Logging;
 
 using Autofac;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,20 +45,20 @@ using Microsoft.Extensions.Hosting;
 
 namespace ASC.ApiSystem
 {
-    public class Startup
+    public class Startup : BaseWorkerStartup
     {
-        public IConfiguration Configuration { get; }
         public IHostEnvironment HostEnvironment { get; }
 
-        public Startup(IConfiguration configuration, IHostEnvironment hostEnvironment)
+        public Startup(IConfiguration configuration, IHostEnvironment hostEnvironment) : base(configuration)
         {
-            Configuration = configuration;
             HostEnvironment = hostEnvironment;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        public override void ConfigureServices(IServiceCollection services)
         {
+            base.ConfigureServices(services);
+
             var diHelper = new DIHelper(services);
 
             services.AddHttpContextAccessor();
@@ -67,7 +68,7 @@ namespace ASC.ApiSystem
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.WriteIndented = false;
-                    options.JsonSerializerOptions.IgnoreNullValues = true;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                 });
 
             services.AddMemoryCache();
@@ -82,17 +83,12 @@ namespace ASC.ApiSystem
             services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, AuthHandler>("auth.allowskip", _ => { })
                 .AddScheme<AuthenticationSchemeOptions, AuthHandler>("auth.allowskip.registerportal", _ => { });
-
-            LogNLogExtension.ConfigureLog(diHelper, "ASC.Apisystem");
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public override void Configure(IApplicationBuilder app)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            base.Configure(app);
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
@@ -119,7 +115,7 @@ namespace ASC.ApiSystem
 
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.Register(Configuration, false);
+            builder.Register(Configuration, false, false);
         }
     }
 }

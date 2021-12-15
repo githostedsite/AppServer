@@ -12,6 +12,8 @@ const SectionPagingContent = ({
   setIsLoading,
   selectedCount,
   selectedFolderId,
+  tReady,
+  totalPages,
 }) => {
   const { t } = useTranslation("Home");
   const onNextClick = useCallback(
@@ -104,7 +106,6 @@ const SectionPagingContent = ({
 
   const pageItems = useMemo(() => {
     if (filter.total < filter.pageCount) return [];
-    const totalPages = Math.ceil(filter.total / filter.pageCount);
     return [...Array(totalPages).keys()].map((item) => {
       return {
         key: item,
@@ -114,7 +115,7 @@ const SectionPagingContent = ({
         }),
       };
     });
-  }, [filter.total, filter.pageCount, t]);
+  }, [filter.total, filter.pageCount, t, totalPages]);
 
   const emptyPageSelection = {
     key: 0,
@@ -140,7 +141,7 @@ const SectionPagingContent = ({
       );
   }, [files, folders, filter, pageItems]);
 
-  return filter.total < filter.pageCount && filter.total < 26 ? (
+  return !tReady || (filter.total < filter.pageCount && filter.total < 26) ? (
     <></>
   ) : (
     <Paging
@@ -167,11 +168,14 @@ const SectionPagingContent = ({
 export default inject(({ filesStore, selectedFolderStore }) => {
   const { files, folders, fetchFiles, filter, setIsLoading } = filesStore;
 
+  const totalPages = Math.ceil(filter.total / filter.pageCount);
+
   return {
     files,
     folders,
     selectedFolderId: selectedFolderStore.id,
     filter,
+    totalPages,
 
     setIsLoading,
     fetchFiles,
