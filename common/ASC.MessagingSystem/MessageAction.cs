@@ -513,6 +513,14 @@ namespace ASC.MessagingSystem
 
         StartStorageDecryption = 5053,
 
+        VirtualRoomCreated = 5054,
+        VirtualRoomRenamed = 5055,
+        VirtualRoomDeleted = 5056,
+        VirtualRoomArchived = 5057,
+        VirtualRoomUnarchived = 5058,
+        AddedUserIntoVirtualRoom = 5059,
+        DeletedUserFromVirtualRoom = 5060,
+
         #endregion
 
         #region others
