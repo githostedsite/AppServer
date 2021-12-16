@@ -350,15 +350,6 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             userManager.DeleteGroup(groupId);
             authorizationManager.RemoveAllAces(new GroupSecurityObject(groupId));
         }
-
-        private void ArchiveLinkedGoup(Folder<T> folder, VirtualRoomsHelper virtualRoomsHelper, UserManager userManager)
-        {
-            var groupId = virtualRoomsHelper.GetLinkedGroupId(folder);
-            var group = userManager.GetGroupInfo(groupId);
-
-            group.CategoryID = Constants.ArchivedLinkedGroupCategoryId;
-            userManager.SaveGroupInfo(group);
-        }
     }
 
     [Scope]
