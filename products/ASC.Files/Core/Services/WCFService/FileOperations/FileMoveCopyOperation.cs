@@ -202,7 +202,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
-                else if (folder.FolderType != FolderType.VirtualRoom && toFolder.ID.Equals(default(T)))
+                else if (folder.FolderType != FolderType.VirtualRoom && folder.RootFolderType != FolderType.Archive 
+                    && toFolder.ID.Equals(default(T)))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
