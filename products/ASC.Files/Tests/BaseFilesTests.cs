@@ -1,15 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 
+using ASC.Api.Documents;
 using ASC.Common.Logging;
 using ASC.Core;
 using ASC.Core.Common.EF;
 using ASC.Core.Common.EF.Context;
 using ASC.Core.Tenants;
+using ASC.Core.Users;
+using ASC.Employee.Core.Controllers;
+using ASC.Files.Core.Core;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Helpers;
 using ASC.Files.Model;
 using ASC.Files.Tests.Infrastructure;
@@ -74,6 +80,7 @@ namespace ASC.Files.Tests
         protected FilesControllerHelper<int> FilesControllerHelper { get; set; }
         protected GlobalFolderHelper GlobalFolderHelper { get; set; }
         protected FileStorageService<int> FileStorageService { get; set; }
+        protected VirtualRoomsHelper VirtualRoomsHelper { get; set; }
         protected UserManager UserManager { get; set; }
         protected Tenant CurrentTenant { get; set; }
         protected SecurityContext SecurityContext { get; set; }
@@ -101,6 +108,7 @@ namespace ASC.Files.Tests
             SecurityContext = scope.ServiceProvider.GetService<SecurityContext>();
             UserOptions = scope.ServiceProvider.GetService<IOptions<UserOptions>>().Value;
             FileStorageService = scope.ServiceProvider.GetService<FileStorageService<int>>();
+            VirtualRoomsHelper = scope.ServiceProvider.GetService<VirtualRoomsHelper>();
             Log = scope.ServiceProvider.GetService<IOptionsMonitor<ILog>>().CurrentValue;
 
 
@@ -152,6 +160,40 @@ namespace ASC.Files.Tests
             };
 
             return batchModel;
+        }
+
+        public UserInfo CreateUser(string userName, string email)
+        {
+            var userInfo = new UserInfo
+            {
+                ID = Guid.NewGuid(),
+                Tenant = 1,
+                UserName = userName,
+                Email = email,
+                FirstName = "Test",
+                LastName = "User",
+                Status = EmployeeStatus.Active,
+                LastModified = DateTime.Now,
+                WorkFromDate = DateTime.Now
+            };
+
+            return UserManager.SaveUserInfo(userInfo);
+        }
+
+        public void SetSecurity(int folderId, Guid userId, Core.Security.FileShare fileShare)
+        {
+            var shareParam = new FileShareParams { Access = fileShare, ShareTo = userId };
+            FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { folderId },
+                new List<FileShareParams> { shareParam }, false, string.Empty);
+        }
+
+        public void SetRoomAdmin(int folderId, Guid userId)
+        {
+            FilesControllerHelper.AddMembersIntoRoom(folderId, new List<Guid> { userId });
+
+            var shareParam = new FileShareParams { Access = Core.Security.FileShare.ReadWrite, ShareTo = userId };
+            FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { folderId },
+                new List<FileShareParams> { shareParam }, false, string.Empty);
         }
     }
 }
