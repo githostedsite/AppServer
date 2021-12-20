@@ -85,6 +85,7 @@ namespace ASC.Files.Tests
         protected Tenant CurrentTenant { get; set; }
         protected SecurityContext SecurityContext { get; set; }
         protected UserOptions UserOptions { get; set; }
+        protected CoreBaseSettings CoreBaseSettings { get; set; }
         protected IServiceScope scope { get; set; }
 
         public const string TestConnection = "Server=localhost;Database=onlyoffice_test;User ID=root;Password=root;Pooling=true;Character Set=utf8;AutoEnlist=false;SSL Mode=none;AllowPublicKeyRetrieval=True";
@@ -109,6 +110,7 @@ namespace ASC.Files.Tests
             UserOptions = scope.ServiceProvider.GetService<IOptions<UserOptions>>().Value;
             FileStorageService = scope.ServiceProvider.GetService<FileStorageService<int>>();
             VirtualRoomsHelper = scope.ServiceProvider.GetService<VirtualRoomsHelper>();
+            CoreBaseSettings = scope.ServiceProvider.GetService<CoreBaseSettings>();
             Log = scope.ServiceProvider.GetService<IOptionsMonitor<ILog>>().CurrentValue;
 
 
