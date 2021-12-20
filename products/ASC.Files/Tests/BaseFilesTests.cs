@@ -195,5 +195,14 @@ namespace ASC.Files.Tests
             FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { folderId },
                 new List<FileShareParams> { shareParam }, false, string.Empty);
         }
+
+        public (FolderWrapper<int>, Guid) CreateVirtualRoom(string title)
+        {
+            var roomFolder = FilesControllerHelper.CreateVirtualRoom(title, false);
+            var groupId = FileStorageService.GetSharedInfo(new List<int>(), new List<int> { roomFolder.Id })
+                .SingleOrDefault(s => s.SubjectGroup).SubjectId;
+
+            return (roomFolder, groupId);
+        }
     }
 }
