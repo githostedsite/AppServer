@@ -32,6 +32,8 @@ namespace ASC.Files.Tests
         {
             base.SetUp();
 
+            CoreBaseSettings.VDR = true;
+
             UserId1 = CreateUser("TestUser1", "testuser1@gmail.com").ID;
             UserId2 = CreateUser("TestUser2", "testuser2@gmail.com").ID;
         }
