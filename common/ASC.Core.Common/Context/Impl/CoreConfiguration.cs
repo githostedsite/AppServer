@@ -77,6 +77,7 @@ namespace ASC.Core
         public bool VDR
         {
             get { return vdr ?? (bool)(vdr = string.Compare(Configuration["core:vdr"], "true", true) == 0); }
+            set { vdr = value; }
         }
     }
 
