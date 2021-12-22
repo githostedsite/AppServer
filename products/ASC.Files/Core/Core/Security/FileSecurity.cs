@@ -736,6 +736,11 @@ namespace ASC.Files.Core.Security
             return daoFactory.GetSecurityDao<T>().GetShares(entry);
         }
 
+        public IEnumerable<FileShareRecord> GetShares<T>(IEnumerable<Guid> subjects)
+        {
+            return daoFactory.GetSecurityDao<T>().GetShares(subjects);
+        }
+
         public List<FileEntry> GetSharesForMe(FilterType filterType, bool subjectGroup, Guid subjectID, string searchText = "", bool searchInContent = false, bool withSubfolders = false)
         {
             var securityDao = daoFactory.GetSecurityDao<int>();
