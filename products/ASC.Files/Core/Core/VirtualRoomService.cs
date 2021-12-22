@@ -26,26 +26,34 @@ namespace ASC.Files.Core.Core
     public class VirtualRoomService<T>
     {
         private FileStorageService<T> FileStorageService { get; }
+        private FileStorageService<int> FileStorageServiceInt { get; }
+        private FileStorageService<string> FileStorageServiceString { get; }
         private IHttpContextAccessor HttpContextAccessor { get; }
         private FilesMessageService FilesMessageService { get; }
         private FileSecurityCommon FileSecurityCommon { get; }
         private VirtualRoomsHelper VirtualRoomsHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
         private SecurityContext SecurityContext { get; }
+        private FileSecurity FileSecurity { get; }
         private UserManager UserManager { get; }
 
         private IDictionary<string, StringValues> Headers => HttpContextAccessor?.HttpContext?.Request?.Headers;
 
         public VirtualRoomService(FileStorageService<T> storageService,
+            FileStorageService<int> fileStorageServiceInt,
+            FileStorageService<string> fileStorageServiceString,
             FilesMessageService filesMessageService,
             UserManager userManager,
             AuthorizationManager authorizationManager,
             FileSecurityCommon fileSecurityCommon,
             SecurityContext securityContext,
             VirtualRoomsHelper virtualRoomsHelper,
+            FileSecurity fileSecurity,
             IHttpContextAccessor httpContextAccessor)
         {
             FileStorageService = storageService;
+            FileStorageServiceInt = fileStorageServiceInt;
+            FileStorageServiceString = fileStorageServiceString;
             UserManager = userManager;
             AuthorizationManager = authorizationManager;
             FileSecurityCommon = fileSecurityCommon;
@@ -53,6 +61,7 @@ namespace ASC.Files.Core.Core
             VirtualRoomsHelper = virtualRoomsHelper;
             FilesMessageService = filesMessageService;
             HttpContextAccessor = httpContextAccessor;
+            FileSecurity = fileSecurity;
 
             FileStorageService.DisableAudit = true;
         }
@@ -121,16 +130,12 @@ namespace ASC.Files.Core.Core
             }
         }
 
-        public void RemoveMembersFromRoom(T folderId, IEnumerable<Guid> userIDs)
+        public void RemoveMembersFromRoom(Guid groupId, IEnumerable<Guid> userIDs)
         {
-            var folder = FileStorageService.GetFolder(folderId);
-            var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
+            var record = FileSecurity.GetShares<int>(new List<Guid> { groupId })
+                .FirstOrDefault(r => r.EntryType == FileEntryType.Folder);
 
-            ErrorIfEmpty(groupId);
-
-            var group = UserManager.GetGroupInfo(groupId);
-
-            ErrorIfArchive(group);
+            if (record == null) return;
 
             var objectId = new GroupSecurityObject(groupId);
             var result = new List<Guid>();
@@ -145,8 +150,6 @@ namespace ASC.Files.Core.Core
                     UserManager.RemoveUserFromLinkedGroup(id, groupId);
                     result.Add(id);
 
-                    FilesMessageService.Send(folder, Headers, MessageAction.DeletedUserFromVirtualRoom, folder.Title);
-
                     continue;
                 }
 
@@ -154,8 +157,6 @@ namespace ASC.Files.Core.Core
                 {
                     RemoveAdminRoomPrivilege(groupId, id);
                     UserManager.RemoveUserFromLinkedGroup(id, groupId);
-
-                    FilesMessageService.Send(folder, Headers, MessageAction.DeletedUserFromVirtualRoom, folder.Title);
 
                     result.Add(id);
                 }
@@ -167,14 +168,35 @@ namespace ASC.Files.Core.Core
                 SubjectId = r
             }));
 
-            var collection = new AceCollection<T>
-            {
-                Files = new List<T>(),
-                Folders = new List<T>() { folderId },
-                Aces = aces
-            };
+            var isParsed = int.TryParse(record.EntryId.ToString(), out int idInt);
 
-            FileStorageService.SetAceObject(collection, false);
+            if (isParsed)
+            {
+                var collection = new AceCollection<int>
+                {
+                    Files = new List<int>(),
+                    Folders = new List<int>() { idInt },
+                    Aces = aces
+                };
+
+                FileStorageServiceInt.SetAceObject(collection, false);
+
+                return;
+            }
+
+            var idString = record.EntryId as string;
+
+            if (!string.IsNullOrEmpty(idString))
+            {
+                var collection = new AceCollection<string>
+                {
+                    Files = new List<string>(),
+                    Folders = new List<string>() { idString },
+                    Aces = aces
+                };
+
+                FileStorageServiceString.SetAceObject(collection, false);
+            }
         }
 
         public List<T> ProcessAcesForRooms(IEnumerable<T> folderIds, List<AceWrapper> aces)
