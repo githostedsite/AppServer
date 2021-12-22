@@ -1,13 +1,12 @@
-﻿using System.Collections.Generic;
-using System;
-
-using ASC.Common;
-using ASC.Web.Files.Utils;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+
 using ASC.Api.Documents;
+using ASC.Common;
 using ASC.Core;
-using Microsoft.AspNetCore.Identity;
 using ASC.Core.Users;
+using ASC.Web.Files.Utils;
 
 namespace ASC.Files.Core.Helpers
 {
