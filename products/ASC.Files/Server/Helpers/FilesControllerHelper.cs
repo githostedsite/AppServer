@@ -660,20 +660,6 @@ namespace ASC.Files.Helpers
 
             return FolderWrapperHelper.Get(folder);
         }
-
-        public IEnumerable<FileShareWrapper> AddMembersIntoRoom(T folderId, IEnumerable<Guid> usersIDs)
-        {
-            VirtualRoomService.AddMembersIntoRoom(folderId, usersIDs);
-
-            return GetSecurityInfo(new List<T>(), new List<T> { folderId });
-        }
-
-        public IEnumerable<FileShareWrapper> RemoveMembersFromRoom(T folderId, IEnumerable<Guid> usersIDs)
-        {
-            VirtualRoomService.RemoveMembersFromRoom(folderId, usersIDs);
-
-            return GetSecurityInfo(new List<T>(), new List<T> { folderId });
-        }
         #endregion
 
         ///// <summary>
