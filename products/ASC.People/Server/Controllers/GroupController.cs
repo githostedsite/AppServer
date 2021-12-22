@@ -8,6 +8,7 @@ using ASC.Common;
 using ASC.Common.Web;
 using ASC.Core;
 using ASC.Core.Users;
+using ASC.Files.Core.Core;
 using ASC.MessagingSystem;
 using ASC.People.Models;
 using ASC.Web.Api.Models;
@@ -30,6 +31,7 @@ namespace ASC.Employee.Core.Controllers
         private PermissionContext PermissionContext { get; }
         private MessageTarget MessageTarget { get; }
         private GroupWraperFullHelper GroupWraperFullHelper { get; }
+        private VirtualRoomService<int> VirtualRoomService { get; }
 
         public GroupController(
             ApiContext apiContext,
@@ -38,7 +40,8 @@ namespace ASC.Employee.Core.Controllers
             PermissionContext permissionContext,
             MessageTarget messageTarget,
             GroupWraperFullHelper groupWraperFullHelper,
-            CoreBaseSettings coreBaseSettings)
+            CoreBaseSettings coreBaseSettings,
+            VirtualRoomService<int> virtualRoomService)
         {
             ApiContext = apiContext;
             MessageService = messageService;
@@ -47,6 +50,7 @@ namespace ASC.Employee.Core.Controllers
             MessageTarget = messageTarget;
             GroupWraperFullHelper = groupWraperFullHelper;
             CoreBaseSettings = coreBaseSettings;
+            VirtualRoomService = virtualRoomService;
         }
 
         [Read]
@@ -68,7 +72,7 @@ namespace ASC.Employee.Core.Controllers
             {
                 result = result.Where(r => r.Name.Contains(ApiContext.FilterValue, StringComparison.InvariantCultureIgnoreCase));
             }
-            return result.Select(r=> GroupWraperFullHelper.Get(r, true));
+            return result.Select(r => GroupWraperFullHelper.Get(r, true));
         }
 
         [Read("{groupid}")]
@@ -84,7 +88,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create]
-        public GroupWrapperFull AddGroupFromBody([FromBody]GroupModel groupModel)
+        public GroupWrapperFull AddGroupFromBody([FromBody] GroupModel groupModel)
         {
             return AddGroup(groupModel);
         }
@@ -117,7 +121,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("{groupid}")]
-        public GroupWrapperFull UpdateGroupFromBody(Guid groupid, [FromBody]GroupModel groupModel)
+        public GroupWrapperFull UpdateGroupFromBody(Guid groupid, [FromBody] GroupModel groupModel)
         {
             return UpdateGroup(groupid, groupModel);
         }
@@ -141,7 +145,7 @@ namespace ASC.Employee.Core.Controllers
             group.Name = groupModel.GroupName ?? group.Name;
             UserManager.SaveGroupInfo(group);
 
-            RemoveMembersFrom(groupid, new GroupModel {Members = UserManager.GetUsersByGroup(groupid, EmployeeStatus.All).Select(u => u.ID).Where(id => !groupModel.Members.Contains(id)) });
+            RemoveMembersFrom(groupid, new GroupModel { Members = UserManager.GetUsersByGroup(groupid, EmployeeStatus.All).Select(u => u.ID).Where(id => !groupModel.Members.Contains(id)) });
 
             TransferUserToDepartment(groupModel.GroupManager, @group, true);
             if (groupModel.Members != null)
@@ -200,7 +204,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create("{groupid}/members")]
-        public GroupWrapperFull SetMembersToFromBody(Guid groupid, [FromBody]GroupModel groupModel)
+        public GroupWrapperFull SetMembersToFromBody(Guid groupid, [FromBody] GroupModel groupModel)
         {
             return SetMembersTo(groupid, groupModel);
         }
@@ -214,13 +218,13 @@ namespace ASC.Employee.Core.Controllers
 
         private GroupWrapperFull SetMembersTo(Guid groupid, GroupModel groupModel)
         {
-            RemoveMembersFrom(groupid, new GroupModel {Members = UserManager.GetUsersByGroup(groupid).Select(x => x.ID) });
+            RemoveMembersFrom(groupid, new GroupModel { Members = UserManager.GetUsersByGroup(groupid).Select(x => x.ID) });
             AddMembersTo(groupid, groupModel);
             return GetById(groupid);
         }
 
         [Update("{groupid}/members")]
-        public GroupWrapperFull AddMembersToFromBody(Guid groupid, [FromBody]GroupModel groupModel)
+        public GroupWrapperFull AddMembersToFromBody(Guid groupid, [FromBody] GroupModel groupModel)
         {
             return AddMembersTo(groupid, groupModel);
         }
@@ -234,18 +238,30 @@ namespace ASC.Employee.Core.Controllers
 
         private GroupWrapperFull AddMembersTo(Guid groupid, GroupModel groupModel)
         {
-            PermissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var group = GetGroupInfo(groupid);
 
-            foreach (var userId in groupModel.Members)
+            if (group.CategoryID == Constants.LinkedGroupCategoryId)
             {
-                TransferUserToDepartment(userId, group, false);
+                PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
+                foreach (var userId in groupModel.Members)
+                {
+                    TransferUserToLinkedGroup(userId, group);
+                }
             }
+            else
+            {
+                PermissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
+                foreach (var userId in groupModel.Members)
+                {
+                    TransferUserToDepartment(userId, group, false);
+                }
+            }
+
             return GetById(group.ID);
         }
 
         [Update("{groupid}/manager")]
-        public GroupWrapperFull SetManagerFromBody(Guid groupid, [FromBody]SetManagerModel setManagerModel)
+        public GroupWrapperFull SetManagerFromBody(Guid groupid, [FromBody] SetManagerModel setManagerModel)
         {
             return SetManager(groupid, setManagerModel);
         }
@@ -272,7 +288,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Delete("{groupid}/members")]
-        public GroupWrapperFull RemoveMembersFromFromBody(Guid groupid, [FromBody]GroupModel groupModel)
+        public GroupWrapperFull RemoveMembersFromFromBody(Guid groupid, [FromBody] GroupModel groupModel)
         {
             return RemoveMembersFrom(groupid, groupModel);
         }
@@ -286,23 +302,33 @@ namespace ASC.Employee.Core.Controllers
 
         private GroupWrapperFull RemoveMembersFrom(Guid groupid, GroupModel groupModel)
         {
-            PermissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var group = GetGroupInfo(groupid);
 
-            foreach (var userId in groupModel.Members)
+            if (group.CategoryID == Constants.LinkedGroupCategoryId)
             {
-                RemoveUserFromDepartment(userId, group);
+                PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
+                VirtualRoomService.RemoveMembersFromRoom(groupid, groupModel.Members);
             }
+            else
+            {
+                PermissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
+                foreach (var userId in groupModel.Members)
+                {
+                    RemoveUserFromDepartment(userId, group);
+                }
+            }
+
             return GetById(group.ID);
         }
 
         private void RemoveUserFromDepartment(Guid userId, GroupInfo @group)
         {
-            if (!UserManager.UserExists(userId) && group.CategoryID == Constants.LinkedGroupCategoryId
-                && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
+            if (!UserManager.UserExists(userId) && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
 
             var user = UserManager.GetUsers(userId);
+
             UserManager.RemoveUserFromGroup(user.ID, @group.ID);
+
             UserManager.SaveUserInfo(user);
         }
 
@@ -316,6 +342,14 @@ namespace ASC.Employee.Core.Controllers
                 UserManager.SetDepartmentManager(@group.ID, userId);
             }
             UserManager.AddUserIntoGroup(userId, @group.ID);
+        }
+
+        private void TransferUserToLinkedGroup(Guid userId, GroupInfo group)
+        {
+            if (!UserManager.UserExists(userId) && userId != Guid.Empty
+                && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
+
+            UserManager.AddUserIntoLinkedGroup(userId, @group.ID);
         }
     }
 }
