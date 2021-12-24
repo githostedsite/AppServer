@@ -41,6 +41,7 @@ using ASC.Core;
 using ASC.Core.Common.Settings;
 using ASC.Core.Users;
 using ASC.Files.Core;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Web.Core.Files;
@@ -493,6 +494,34 @@ namespace ASC.Web.Files.Utils
                 entries = entries.Concat(shared);
 
                 CalculateTotal();
+            }
+            else if (parent.FolderType == FolderType.Archive)
+            {
+                withSubfolders = false;
+
+                var folderDao = DaoFactory.GetFolderDao<T>();
+                var thirdPartyFolderDao = DaoFactory.GetFolderDao<string>();
+
+                var folders = folderDao.GetFolders(parent.ID, orderBy, filter, subjectGroup, subjectId, searchText, withSubfolders);
+                var thirdPartyFolders = thirdPartyFolderDao.GetFolders(GlobalFolderHelper.FoldersCustom.Item2)
+                    .Where(f => f.RootFolderType == FolderType.Archive);
+
+                entries = entries.Concat(folders);
+                entries = entries.Concat(thirdPartyFolders);
+
+                CalculateTotal();
+            }
+            else if (parent.FolderType == FolderType.VirtualRoom && parent.ProviderEntry
+                && parent.ID.Equals(parent.RootFolderId))
+            {
+                withSubfolders = false;
+                var folderDao = DaoFactory.GetFolderDao<string>();
+                var stringId = parent.ID.ToString();
+                var roomsIds = GlobalFolderHelper.FoldersCustom.Item2.Where(id => id.StartsWith(stringId));
+
+                var folders = folderDao.GetFolders(roomsIds);
+
+                entries = entries.Concat(folders);
             }
             else
             {
