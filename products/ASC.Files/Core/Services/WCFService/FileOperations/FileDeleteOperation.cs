@@ -242,7 +242,9 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                     if (folder.FolderType == FolderType.VirtualRoom)
                                     {
                                         virtualRoomsHelper.ArchiveLinkedGroup(folder, userManager);
-                                        FolderDao.MoveFolder(folder.ID, _archiveId, CancellationToken);
+
+                                        if (!folder.ProviderEntry)
+                                            FolderDao.MoveFolder(folder.ID, _archiveId, CancellationToken);
 
                                         filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomArchived, folder.Title);
                                     }
