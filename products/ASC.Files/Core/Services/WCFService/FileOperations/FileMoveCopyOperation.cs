@@ -337,8 +337,12 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             else
                             {
                                 fileMarker.RemoveMarkAsNewForAll(folder);
+                                TTo newFolderId;
 
-                                var newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
+                                if (folder.FolderType == FolderType.VirtualRoom && folder.ProviderEntry)
+                                    newFolderId = (TTo)Convert.ChangeType(folder.ID, typeof(TTo));
+                                else
+                                    newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
 
                                 if (folder.RootFolderType == FolderType.Archive)
                                     virtualRoomsHelper.UnarchiveLinkedGroup(folder, userManager);
