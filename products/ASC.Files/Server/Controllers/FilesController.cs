@@ -257,7 +257,7 @@ namespace ASC.Api.Documents
                     var wrappers = thirdparty.Select(r => FilesControllerHelperString.GetFolder(((Folder<string>)r).ID, userIdOrGroupId,
                          FilterType.FoldersOnly, false)).ToList();
 
-                    result.AddRange(VirtualRoomsHelper.FilterThirdPartyStorage(wrappers, resultStringIDs));
+                    result.AddRange(wrappers);
                 }
                 else
                 {
