@@ -89,7 +89,7 @@ namespace ASC.Files.Core.Security
 
         public FileShare DefaultArchiveShare
         {
-            get { return FileShare.Restrict; }
+            get { return FileShare.Read; }
         }
 
         private UserManager UserManager { get; }
@@ -598,11 +598,12 @@ namespace ASC.Files.Core.Security
 
                     if (action == FilesSecurityActions.Read && e.Access != FileShare.Restrict) result.Add(e);
                     else if (action == FilesSecurityActions.Comment && (e.Access == FileShare.Comment || e.Access == FileShare.Review || e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite)) result.Add(e);
-                    else if (action == FilesSecurityActions.FillForms && (e.Access == FileShare.FillForms || e.Access == FileShare.Review || e.Access == FileShare.ReadWrite)) result.Add(e);
-                    else if (action == FilesSecurityActions.Review && (e.Access == FileShare.Review || e.Access == FileShare.ReadWrite)) result.Add(e);
+                    else if (action == FilesSecurityActions.FillForms && (e.Access == FileShare.FillForms || e.Access == FileShare.Review || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
+                    else if (action == FilesSecurityActions.Review && (e.Access == FileShare.Review || (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator))) result.Add(e);
                     else if (action == FilesSecurityActions.CustomFilter && (e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite)) result.Add(e);
-                    else if (action == FilesSecurityActions.Edit && e.Access == FileShare.ReadWrite) result.Add(e);
-                    else if (action == FilesSecurityActions.Create && e.Access == FileShare.ReadWrite) result.Add(e);
+                    else if (action == FilesSecurityActions.Edit && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
+                    else if (action == FilesSecurityActions.Create && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
+                    else if (action == FilesSecurityActions.Delete && e.Access == FileShare.RoomAdministrator) result.Add(e);
                     else if (e.Access != FileShare.Restrict && e.CreateBy == userId && (e.FileEntryType == FileEntryType.File || ((IFolder)e).FolderType != FolderType.COMMON)) result.Add(e);
 
                     if (e.CreateBy == userId) e.Access = FileShare.None; //HACK: for client
@@ -859,6 +860,44 @@ namespace ASC.Files.Core.Security
             }
 
             return entries.Where(x => string.IsNullOrEmpty(x.Error)).Cast<FileEntry>().ToList();
+        }
+
+        public List<FileEntry> GetArchiveForMe()
+        {
+            var securityDao = daoFactory.GetSecurityDao<int>();
+            var subjects = GetUserSubjects(AuthContext.CurrentAccount.ID);
+            var records = securityDao.GetShares(subjects);
+
+            var result = new List<FileEntry>();
+            result.AddRange(GetArchiveForMe<int>(records.Where(r => r.EntryId.GetType() == typeof(int)), subjects));
+            result.AddRange(GetArchiveForMe<string>(records.Where(r => r.EntryId.GetType() == typeof(string)), subjects));
+
+            return result;
+        }
+
+        public List<FileEntry<T>> GetArchiveForMe<T>(IEnumerable<FileShareRecord> records, List<Guid> subjects)
+        {
+            var folderDao = daoFactory.GetFolderDao<T>();
+            var folderIds = new Dictionary<T, FileShare>();
+
+            var recordGroup = records.GroupBy(r => new { r.EntryId, r.EntryType }, (key, group) => new
+            {
+                firstRecord = group.OrderBy(r => r, new SubjectComparer(subjects))
+                    .ThenByDescending(r => r.Share, new FileShareRecord.ShareComparer())
+                    .First()
+            });
+
+            foreach (var record in recordGroup.Where(r => r.firstRecord.Share == FileShare.RoomAdministrator))
+            {
+                if (!folderIds.ContainsKey((T)record.firstRecord.EntryId))
+                    folderIds.Add((T)record.firstRecord.EntryId, record.firstRecord.Share);
+            }
+
+            var entries = new List<FileEntry<T>>();
+
+            entries.AddRange(folderDao.GetFolders(folderIds.Keys).Where(f => f.RootFolderType == FolderType.Archive));
+
+            return entries;
         }
 
         public List<FileEntry> GetPrivacyForMe(FilterType filterType, bool subjectGroup, Guid subjectID, string searchText = "", bool searchInContent = false, bool withSubfolders = false)
