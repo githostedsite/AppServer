@@ -526,7 +526,8 @@ namespace ASC.Web.Files.Classes
 
         public int GetFolderArchive(IDaoFactory daoFactory)
         {
-            if (!Global.IsAdministrator) return default;
+            if (!AuthContext.IsAuthenticated) return default;
+            if (UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)) return default;
 
             var cacheKey = string.Format("archive/{0}", TenantManager.GetCurrentTenant().TenantId);
 
