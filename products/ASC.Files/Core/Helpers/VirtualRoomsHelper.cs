@@ -74,7 +74,7 @@ namespace ASC.Files.Core.Helpers
             var groupId = GetLinkedGroupId(folder);
             var group = userManager.GetGroupInfo(groupId);
             group.CategoryID = categoryId;
-            userManager.SaveGroupInfo(group);
+            userManager.SaveLinkedGroupInfo(group);
         }
     }
 }
