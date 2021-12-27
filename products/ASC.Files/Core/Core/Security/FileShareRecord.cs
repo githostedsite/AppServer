@@ -51,6 +51,7 @@ namespace ASC.Files.Core.Security
             private static readonly int[] ShareOrder = new[]
                 {
                     (int)FileShare.None,
+                    (int)FileShare.RoomAdministrator,
                     (int)FileShare.ReadWrite,
                     (int)FileShare.CustomFilter,
                     (int)FileShare.Review,
@@ -58,7 +59,7 @@ namespace ASC.Files.Core.Security
                     (int)FileShare.Comment,
                     (int)FileShare.Read,
                     (int)FileShare.Restrict,
-                    (int)FileShare.Varies
+                    (int)FileShare.Varies,
                 };
 
             public int Compare(FileShare x, FileShare y)
