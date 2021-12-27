@@ -499,15 +499,20 @@ namespace ASC.Web.Files.Utils
             {
                 withSubfolders = false;
 
-                var folderDao = DaoFactory.GetFolderDao<T>();
-                var thirdPartyFolderDao = DaoFactory.GetFolderDao<string>();
+                if (Global.IsAdministrator)
+                {
+                    var folderDao = DaoFactory.GetFolderDao<T>();
+                    var thirdPartyFolderDao = DaoFactory.GetFolderDao<string>();
 
-                var folders = folderDao.GetFolders(parent.ID, orderBy, filter, subjectGroup, subjectId, searchText, withSubfolders);
-                var thirdPartyFolders = thirdPartyFolderDao.GetFolders(GlobalFolderHelper.FoldersCustom.Item2)
-                    .Where(f => f.RootFolderType == FolderType.Archive);
+                    var folders = folderDao.GetFolders(parent.ID, orderBy, filter, subjectGroup, subjectId, searchText, withSubfolders);
+                    var thirdPartyFolders = thirdPartyFolderDao.GetFolders(GlobalFolderHelper.FoldersCustom.Item2)
+                        .Where(f => f.RootFolderType == FolderType.Archive);
 
-                entries = entries.Concat(folders);
-                entries = entries.Concat(thirdPartyFolders);
+                    entries = entries.Concat(folders);
+                    entries = entries.Concat(thirdPartyFolders);
+                }
+                else
+                    entries = fileSecurity.GetArchiveForMe();
 
                 CalculateTotal();
             }
