@@ -638,6 +638,16 @@ namespace ASC.Core
             return new GroupInfo(newGroup.CategoryId) { ID = newGroup.Id, Name = newGroup.Name, Sid = newGroup.Sid };
         }
 
+        public GroupInfo SaveLinkedGroupInfo(GroupInfo g)
+        {
+            if (Constants.LostGroupInfo.Equals(g)) return Constants.LostGroupInfo;
+            if (Constants.BuildinGroups.Any(b => b.ID == g.ID)) return Constants.BuildinGroups.Single(b => b.ID == g.ID);
+            PermissionContext.DemandPermissions(new GroupSecurityObject(g.ID),Constants.Action_EditLinkedGroups);
+
+            var newGroup = UserService.SaveGroup(Tenant.TenantId, ToGroup(g));
+            return new GroupInfo(newGroup.CategoryId) { ID = newGroup.Id, Name = newGroup.Name, Sid = newGroup.Sid };
+        }
+
         public void DeleteGroup(Guid id)
         {
             if (Constants.LostGroupInfo.Equals(id)) return;
