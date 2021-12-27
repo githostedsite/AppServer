@@ -145,7 +145,7 @@ namespace ASC.Files.Core.Core
             {
                 if (!UserManager.UserExists(id)) continue;
 
-                if (!IsRoomAdministartor(id, groupId))
+                if (!IsRoomAdministrator(id, groupId))
                 {
                     UserManager.RemoveUserFromLinkedGroup(id, groupId);
                     result.Add(id);
@@ -202,7 +202,8 @@ namespace ASC.Files.Core.Core
         public List<T> ProcessAcesForRooms(IEnumerable<T> folderIds, List<AceWrapper> aces)
         {
             var result = new List<T>();
-            var isAdmin = FileSecurityCommon.IsAdministrator(SecurityContext.CurrentAccount.ID);
+            var userId = SecurityContext.CurrentAccount.ID;
+            var isAdmin = FileSecurityCommon.IsAdministrator(userId);
 
             foreach (var folderId in folderIds)
             {
@@ -220,6 +221,8 @@ namespace ASC.Files.Core.Core
                 if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
                     continue;
 
+                var isRoomAdmin = !isAdmin ? IsRoomAdministrator(userId, groupId) : true;
+
                 foreach (var ace in aces)
                 {
                     if (ace.SubjectGroup)
@@ -228,7 +231,7 @@ namespace ASC.Files.Core.Core
                     if (!UserManager.IsUserInGroup(ace.SubjectId, groupId))
                         continue;
 
-                    if (ace.Share == FileShare.ReadWrite && isAdmin) // Only the owner or administrator of the portal can assign a room administrator
+                    if (ace.Share == FileShare.RoomAdministrator && isAdmin) // Only the owner or administrator of the portal can assign a room administrator
                     {
                         AddAdminRoomPrivilege(groupId, ace.SubjectId);
                         result.Add(folderId);
@@ -242,10 +245,10 @@ namespace ASC.Files.Core.Core
                         continue;
                     }
 
-                    if (IsRoomAdministartor(ace.SubjectId, groupId)) // The room administrator cannot set rights for another room administrator
+                    if (IsRoomAdministrator(ace.SubjectId, groupId)) 
                         continue;
 
-                    if (ace.Share != FileShare.ReadWrite)
+                    if (ace.Share != FileShare.RoomAdministrator && isRoomAdmin) // The room administrator cannot set rights for another room administrator
                         result.Add(folderId);
                 }
             }
@@ -287,7 +290,7 @@ namespace ASC.Files.Core.Core
             FileStorageService.SetAceObject(aceCollection, false);
         }
 
-        private bool IsRoomAdministartor(Guid userId, Guid groupId)
+        private bool IsRoomAdministrator(Guid userId, Guid groupId)
         {
             var record = AuthorizationManager.GetAces(userId,
                 Constants.Action_EditLinkedGroups.ID)
