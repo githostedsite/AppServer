@@ -32,7 +32,6 @@ using System.Text.Json;
 using ASC.Common;
 using ASC.Core;
 using ASC.Core.Tenants;
-using ASC.Core.Users;
 using ASC.Files.Core;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
@@ -202,7 +201,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
-                else if (folder.FolderType != FolderType.VirtualRoom && folder.RootFolderType != FolderType.Archive 
+                else if (folder.FolderType != FolderType.VirtualRoom && folder.RootFolderType != FolderType.Archive
                     && toFolder.ID.Equals(default(T)))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
