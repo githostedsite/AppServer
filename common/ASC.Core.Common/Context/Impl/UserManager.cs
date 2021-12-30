@@ -363,7 +363,7 @@ namespace ASC.Core
 
             var httpRequestDictionary = new HttpRequestDictionary<List<GroupInfo>>(Accessor?.HttpContext, "GroupInfo");
             var result = httpRequestDictionary.Get(userID.ToString());
-            if (result != null)
+            if (result != null && result.Count != 0)
             {
                 if (categoryId.HasValue)
                 {
