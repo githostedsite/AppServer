@@ -554,7 +554,7 @@ namespace ASC.Web.Files.Classes
             }
             else
             {
-                groupIDs = UserManager.GetUserGroupsId(AuthContext.CurrentAccount.ID);
+                groupIDs = UserManager.GetUserGroups(AuthContext.CurrentAccount.ID, ASC.Core.Users.Constants.LinkedGroupCategoryId).Select(g => g.ID);
             }
 
             if (groupIDs == null || groupIDs.Any() == false)
