@@ -545,7 +545,9 @@ namespace ASC.Files.Core.Security
 
                     if (subjects == null)
                     {
-                        subjects = GetUserSubjects(userId, Constants.LinkedGroupCategoryId);
+                        subjects = e.RootFolderType == FolderType.VirtualRoom ?
+                            GetUserSubjects(userId, Constants.LinkedGroupCategoryId) :
+                            GetUserSubjects(userId);
                         if (shares == null)
                         {
                             shares = GetShares(entries);
