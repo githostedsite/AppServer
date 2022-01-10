@@ -781,6 +781,24 @@ namespace ASC.Files.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The required linked group was not found.
+        /// </summary>
+        public static string ErrorMessage_LinkedGroupNotFound {
+            get {
+                return ResourceManager.GetString("ErrorMessage_LinkedGroupNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You cannot edit an archived virtual room.
+        /// </summary>
+        public static string ErrorMessage_SecurityException_EditArchivedRoom {
+            get {
+                return ResourceManager.GetString("ErrorMessage_SecurityException_EditArchivedRoom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Everyone.
         /// </summary>
         public static string Everyone {

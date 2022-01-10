@@ -357,6 +357,12 @@
   <data name="ErrorMassage_ViewTrashItem" xml:space="preserve">
     <value>You are not allowed to preview the elements in the Trash</value>
   </data>
+  <data name="ErrorMessage_LinkedGroupNotFound" xml:space="preserve">
+    <value>The required linked group was not found</value>
+  </data>
+  <data name="ErrorMessage_SecurityException_EditArchivedRoom" xml:space="preserve">
+    <value>You cannot edit an archived virtual room</value>
+  </data>
   <data name="Everyone" xml:space="preserve">
     <value>Everyone</value>
   </data>
