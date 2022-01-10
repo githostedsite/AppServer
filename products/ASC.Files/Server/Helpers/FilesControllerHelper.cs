@@ -23,6 +23,7 @@ using ASC.Files.Core.Core;
 using ASC.Files.Core.Model;
 using ASC.Files.Model;
 using ASC.Web.Core.Files;
+using ASC.Web.Core.Utility;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.Core.Entries;
 using ASC.Web.Files.Services.DocumentService;
@@ -69,6 +70,8 @@ namespace ASC.Files.Helpers
         private CoreBaseSettings CoreBaseSettings { get; }
         private EncryptionKeyPairHelper EncryptionKeyPairHelper { get; }
         private IHttpContextAccessor HttpContextAccessor { get; }
+        private SetupInfo SetupInfo { get; }
+        private FileSizeComment FileSizeComment { get; }
         private ILog Logger { get; set; }
 
         /// <summary>
@@ -659,6 +662,11 @@ namespace ASC.Files.Helpers
             var folder = VirtualRoomService.RenameRoom(folderId, title);
 
             return FolderWrapperHelper.Get(folder);
+        }
+
+        public FileUploadResult UploalRoomLogo(T folderId, IFormCollection model)
+        {
+            return FileStorageService.UploadRoomLogo(folderId, model);
         }
         #endregion
 
