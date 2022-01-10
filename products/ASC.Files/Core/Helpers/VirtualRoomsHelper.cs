@@ -4,9 +4,11 @@ using System.Linq;
 
 using ASC.Api.Documents;
 using ASC.Common;
+using ASC.Common.Security.Authorizing;
 using ASC.Core;
-using ASC.Core.Users;
 using ASC.Web.Files.Utils;
+
+using Constants = ASC.Core.Users.Constants;
 
 namespace ASC.Files.Core.Helpers
 {
@@ -14,10 +16,14 @@ namespace ASC.Files.Core.Helpers
     public class VirtualRoomsHelper
     {
         private FileSharing FileSharing { get; }
+        private AuthorizationManager AuthorizationManager { get; }
 
-        public VirtualRoomsHelper(FileSharing fileSharing)
+        public VirtualRoomsHelper(
+            FileSharing fileSharing,
+            AuthorizationManager authorizationManager)
         {
             FileSharing = fileSharing;
+            AuthorizationManager = authorizationManager;
         }
 
         public Guid GetLinkedGroupId<T>(Folder<T> folder)
@@ -55,6 +61,18 @@ namespace ASC.Files.Core.Helpers
             }
 
             return wrappersByProvider.Values;
+        }
+
+        public bool IsRoomAdministartor<T>(Guid userId, Folder<T> folder)
+        {
+            var groupId = GetLinkedGroupId(folder);
+
+            var record = AuthorizationManager.GetAces(userId,
+                Constants.Action_EditLinkedGroups.ID)
+                .FirstOrDefault(r => r.ObjectId == AzObjectIdHelper
+                .GetFullObjectId(new GroupSecurityObject(groupId)));
+
+            return record != null;
         }
 
         public void ArchiveLinkedGroup<T>(Folder<T> folder, UserManager userManager)
