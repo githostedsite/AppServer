@@ -49,6 +49,7 @@ using ASC.Files.Model;
 using ASC.MessagingSystem;
 using ASC.Web.Api.Routing;
 using ASC.Web.Core.Files;
+using ASC.Web.Core.Utility;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.Configuration;
 using ASC.Web.Files.Helpers;
@@ -483,6 +484,12 @@ namespace ASC.Api.Documents
             catch { }
 
             return list;
+        }
+
+        [Create("{folderId:int}/logo")]
+        public FileUploadResult UploadRoomLogo(int folderId, IFormCollection model)
+        {
+            return FilesControllerHelperInt.UploalRoomLogo(folderId, model);
         }
 
         /// <summary>
