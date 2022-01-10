@@ -39,6 +39,7 @@ using ASC.Core;
 using ASC.Core.Common.Settings;
 using ASC.Core.Tenants;
 using ASC.Data.Storage;
+using ASC.Web.Core.Images;
 using ASC.Web.Core.Utility.Skins;
 
 using Microsoft.Extensions.Options;
@@ -50,44 +51,26 @@ using SixLabors.ImageSharp.Processing;
 namespace ASC.Web.Core.Users
 {
     [Transient]
-    public class ResizeWorkerItem : DistributedTask
+    public class UserPhotoResizeWorkerItem : ResizeWorkerItem
     {
-        public ResizeWorkerItem()
-        {
+        public Guid UserId { get; }
+        public UserPhotoThumbnailSettings Settings { get; }
 
-        }
+        public UserPhotoResizeWorkerItem() { }
 
-        public ResizeWorkerItem(Guid userId, byte[] data, long maxFileSize, Size size, IDataStore dataStore, UserPhotoThumbnailSettings settings) : base()
+        public UserPhotoResizeWorkerItem(Guid userId, byte[] data, long maxFileSize, Size size, IDataStore dataStore, UserPhotoThumbnailSettings settings) 
+            : base(data, maxFileSize, size, dataStore)
         {
             UserId = userId;
-            Data = data;
-            MaxFileSize = maxFileSize;
-            Size = size;
-            DataStore = dataStore;
             Settings = settings;
         }
 
-        public Size Size { get; }
-
-        public IDataStore DataStore { get; }
-
-        public long MaxFileSize { get; }
-
-        public byte[] Data { get; }
-
-        public Guid UserId { get; }
-
-        public UserPhotoThumbnailSettings Settings { get; }
-
         public override bool Equals(object obj)
         {
-            if (obj is null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != typeof(ResizeWorkerItem)) return false;
-            return Equals((ResizeWorkerItem)obj);
+            return base.Equals(obj);
         }
 
-        public bool Equals(ResizeWorkerItem other)
+        public bool Equals(UserPhotoResizeWorkerItem other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -97,8 +80,8 @@ namespace ASC.Web.Core.Users
         public override int GetHashCode()
         {
             return HashCode.Combine(UserId, MaxFileSize, Size);
-            }
         }
+    }
 
     [Singletone]
     public class UserPhotoManagerCache
@@ -683,7 +666,7 @@ namespace ASC.Web.Core.Users
             if (data == null || data.Length <= 0) throw new UnknownImageFormatException();
             if (maxFileSize != -1 && data.Length > maxFileSize) throw new ImageWeightLimitException();
 
-            var resizeTask = new ResizeWorkerItem(userID, data, maxFileSize, size, GetDataStore(), SettingsManager.LoadForUser<UserPhotoThumbnailSettings>(userID));
+            var resizeTask = new UserPhotoResizeWorkerItem(userID, data, maxFileSize, size, GetDataStore(), SettingsManager.LoadForUser<UserPhotoThumbnailSettings>(userID));
             var key = $"{userID}{size}";
             resizeTask.SetProperty("key", key);
 
@@ -705,7 +688,7 @@ namespace ASC.Web.Core.Users
             }
         }
 
-        private void ResizeImage(ResizeWorkerItem item)
+        private void ResizeImage(UserPhotoResizeWorkerItem item)
         {
             try
             {
