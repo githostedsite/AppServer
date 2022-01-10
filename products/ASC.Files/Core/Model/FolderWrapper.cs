@@ -33,6 +33,7 @@ using ASC.Api.Utils;
 using ASC.Common;
 using ASC.Core;
 using ASC.Files.Core;
+using ASC.Files.Core.Core;
 using ASC.Files.Core.Security;
 using ASC.Web.Api.Models;
 using ASC.Web.Files.Classes;
@@ -40,6 +41,13 @@ using ASC.Web.Files.Utils;
 
 namespace ASC.Api.Documents
 {
+    public class Logo
+    {
+        public string Big { get; set; }
+        public string Medium { get; set; }
+        public string Small { get; set; }
+    }
+
     /// <summary>
     /// </summary>
     public class FolderWrapper<T> : FileEntryWrapper<T>
@@ -61,6 +69,8 @@ namespace ASC.Api.Documents
         public bool? IsShareable { get; set; }
 
         public int New { get; set; }
+
+        public Logo Logo { get; set; }
 
         /// <summary>
         /// </summary>
@@ -99,6 +109,7 @@ namespace ASC.Api.Documents
         private AuthContext AuthContext { get; }
         private IDaoFactory DaoFactory { get; }
         private GlobalFolderHelper GlobalFolderHelper { get; }
+        private RoomLogoManager RoomLogoManager { get; }
 
         public FolderWrapperHelper(
             ApiDateTimeHelper apiDateTimeHelper,
@@ -107,12 +118,14 @@ namespace ASC.Api.Documents
             IDaoFactory daoFactory,
             FileSecurity fileSecurity,
             GlobalFolderHelper globalFolderHelper,
-            FileSharingHelper fileSharingHelper)
+            FileSharingHelper fileSharingHelper,
+            RoomLogoManager roomLogoManager)
             : base(apiDateTimeHelper, employeeWrapperHelper, fileSharingHelper, fileSecurity)
         {
             AuthContext = authContext;
             DaoFactory = daoFactory;
             GlobalFolderHelper = globalFolderHelper;
+            RoomLogoManager = roomLogoManager;
         }
 
         public FolderWrapper<T> Get<T>(Folder<T> folder, List<Tuple<FileEntry<T>, bool>> folders = null)
@@ -147,6 +160,8 @@ namespace ASC.Api.Documents
                 }
             }
 
+            if (folder.FolderType == FolderType.VirtualRoom) result.Logo = GetLogo(folder.ID);
+
             return result;
         }
 
@@ -158,6 +173,18 @@ namespace ASC.Api.Documents
             result.IsShareable = folder.Shareable.NullIfDefault();
             result.New = folder.NewForMe;
             return result;
+        }
+
+        private Logo GetLogo<T>(T folderId)
+        {
+            var logo = new Logo
+            {
+                Big = RoomLogoManager.GetBigLogoUrl(folderId),
+                Medium = RoomLogoManager.GetMediumLogoUrl(folderId),
+                Small = RoomLogoManager.GetSmallLogoUrl(folderId),
+            };
+
+            return logo;
         }
     }
 }
