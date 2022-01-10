@@ -657,13 +657,6 @@ namespace ASC.Files.Helpers
             return FolderWrapperHelper.Get(folder);
         }
 
-        public FolderWrapper<T> RenameVirtualRoom(T folderId, string title)
-        {
-            var folder = VirtualRoomService.RenameRoom(folderId, title);
-
-            return FolderWrapperHelper.Get(folder);
-        }
-
         public FileUploadResult UploalRoomLogo(T folderId, IFormCollection model)
         {
             return FileStorageService.UploadRoomLogo(folderId, model);

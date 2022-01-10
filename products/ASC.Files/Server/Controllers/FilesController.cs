@@ -402,64 +402,6 @@ namespace ASC.Api.Documents
         }
 
         /// <summary>
-        /// Rename the root folder and its associated group (virtual room) in storage on the server
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="model"></param>
-        /// <returns>Updated information on the virtual room</returns>
-        [Update("room/{folderId:int}")]
-        public FolderWrapper<int> RenameVirtualRoomFromBody(int folderId, [FromBody] CreateFolderModel model)
-        {
-            ErrorIfNotVDR();
-
-            return FilesControllerHelperInt.RenameVirtualRoom(folderId, model.Title);
-        }
-
-        /// <summary>
-        /// Rename the root folder and its associated group (virtual room) in storage on the server
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="model"></param>
-        /// <returns>Updated information on the virtual room</returns>
-        [Update("room/{folderId:int}")]
-        [Consumes("application/x-www-form-urlencoded")]
-        public FolderWrapper<int> RenameVirtualRoomFromForm(int folderId, [FromForm] CreateRoomModel model)
-        {
-            ErrorIfNotVDR();
-
-            return FilesControllerHelperInt.RenameVirtualRoom(folderId, model.Title);
-        }
-
-        /// <summary>
-        /// Rename the root folder and its associated group (virtual room) in third-party storage
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="model"></param>
-        /// <returns>Updated information on the virtual room</returns>
-        [Update("room/{folderId}")]
-        public FolderWrapper<string> RenameVirtualRoomFromBody(string folderId, [FromBody] CreateFolderModel model)
-        {
-            ErrorIfNotVDR();
-
-            return FilesControllerHelperString.RenameVirtualRoom(folderId, model.Title);
-        }
-
-        /// <summary>
-        /// Rename the root folder and its associated group (virtual room) in third-party storage
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="model"></param>
-        /// <returns>Updated information on the virtual room</returns>
-        [Update("room/{folderId}")]
-        [Consumes("application/x-www-form-urlencoded")]
-        public FolderWrapper<string> RenameVirtualRoomFromForm(string folderId, [FromForm] CreateFolderModel model)
-        {
-            ErrorIfNotVDR();
-
-            return FilesControllerHelperString.RenameVirtualRoom(folderId, model.Title);
-        }
-
-        /// <summary>
         /// Returns a list of detailed information about virtual rooms in all storages
         /// </summary>
         /// <returns>Virtual rooms with detailed content</returns>
