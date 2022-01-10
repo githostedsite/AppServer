@@ -85,30 +85,6 @@ namespace ASC.Files.Core.Core
             return folder;
         }
 
-        public Folder<T> RenameRoom(T folderId, string title)
-        {
-            var folder = FileStorageService.GetFolder(folderId);
-            var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
-
-            if (folder.Title.Equals(title))
-                return folder;
-
-            ErrorIfEmpty(groupId);
-
-            var group = UserManager.GetGroupInfo(groupId);
-
-            ErrorIfArchive(group);
-
-            group.Name = title;
-
-            UserManager.SaveGroupInfo(group);
-            var renamedFolder = FileStorageService.FolderRename(folderId, title);
-
-            FilesMessageService.Send(folder, Headers, MessageAction.VirtualRoomRenamed, renamedFolder.Title);
-
-            return renamedFolder;
-        }
-
         public void AddMembersIntoRoom(T folderId, IEnumerable<Guid> userIDs)
         {
             var folder = FileStorageService.GetFolder(folderId);
