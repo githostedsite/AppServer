@@ -48,6 +48,7 @@ using ASC.Data.Storage;
 using ASC.ElasticSearch;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
+using ASC.Files.Core.Core;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
@@ -57,6 +58,7 @@ using ASC.MessagingSystem;
 using ASC.Web.Core.Files;
 using ASC.Web.Core.PublicResources;
 using ASC.Web.Core.Users;
+using ASC.Web.Core.Utility;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.Core.Entries;
 using ASC.Web.Files.Helpers;
@@ -124,6 +126,10 @@ namespace ASC.Web.Files.Services.WCFService
         private FileTrackerHelper FileTracker { get; }
         private ICacheNotify<ThumbnailRequest> ThumbnailNotify { get; }
         private EntryStatusManager EntryStatusManager { get; }
+        private RoomLogoManager RoomLogoManager { get; }
+        private VirtualRoomsHelper VirtualRoomsHelper { get; }
+        private FileSizeComment FileSizeComment { get; }
+        private SetupInfo SetupInfo { get; }
         private ILog Logger { get; set; }
 
         public FileStorageService(
@@ -168,7 +174,11 @@ namespace ASC.Web.Files.Services.WCFService
             TenantManager tenantManager,
             FileTrackerHelper fileTracker,
             ICacheNotify<ThumbnailRequest> thumbnailNotify,
-            EntryStatusManager entryStatusManager)
+            EntryStatusManager entryStatusManager,
+            RoomLogoManager roomLogoManager,
+            FileSizeComment fileSizeComment,
+            SetupInfo setupInfo,
+            VirtualRoomsHelper virtualRoomsHelper)
         {
             Global = global;
             GlobalStore = globalStore;
@@ -212,6 +222,10 @@ namespace ASC.Web.Files.Services.WCFService
             FileTracker = fileTracker;
             ThumbnailNotify = thumbnailNotify;
             EntryStatusManager = entryStatusManager;
+            RoomLogoManager = roomLogoManager;
+            FileSizeComment = fileSizeComment;
+            SetupInfo = setupInfo;
+            VirtualRoomsHelper = virtualRoomsHelper;
         }
 
         public Folder<T> GetFolder(T folderId)
@@ -2392,6 +2406,84 @@ namespace ASC.Web.Files.Services.WCFService
             }
 
             return fileIds;
+        }
+
+        public FileUploadResult UploadRoomLogo(T folderId, IFormCollection model)
+        {
+            var folder = GetFolder(folderId);
+
+            ErrorIf(!Global.IsAdministrator && !VirtualRoomsHelper.IsRoomAdministartor(AuthContext.CurrentAccount.ID, folder),
+                FilesCommonResource.ErrorMassage_SecurityException_UploadLogo);
+
+            var result = new FileUploadResult();
+
+            try
+            {
+                if (model.Files.Count != 0)
+                {
+                    var roomLogo = model.Files[0];
+
+                    if (roomLogo.Length > SetupInfo.MaxImageUploadSize)
+                    {
+                        result.Success = false;
+                        result.Message = FileSizeComment.FileImageSizeExceptionString;
+                        return result;
+                    }
+
+                    var data = new byte[roomLogo.Length];
+                    using var inputStream = roomLogo.OpenReadStream();
+
+                    var br = new BinaryReader(inputStream);
+                    br.Read(data, 0, (int)roomLogo.Length);
+                    br.Close();
+
+                    ImageHelper.CheckImgFormat(data);
+
+                    if (data.Length > SetupInfo.MaxImageUploadSize)
+                        throw new ImageSizeLimitException();
+
+                    var mainPhoto = RoomLogoManager.SaveOrUpdateLogo(folderId, data);
+
+                    result.Data =
+                        new
+                        {
+                            main = mainPhoto,
+                            big = RoomLogoManager.GetBigLogoUrl(folderId),
+                            medium = RoomLogoManager.GetMediumLogoUrl(folderId),
+                            small = RoomLogoManager.GetSmallLogoUrl(folderId),
+                        };
+
+                    result.Success = true;
+                }
+                else
+                {
+                    result.Success = false;
+                    result.Message = "Error";
+                }
+
+            }
+            catch (UnknownImageFormatException)
+            {
+                result.Success = false;
+                result.Message = "Error";
+            }
+            catch (ImageWeightLimitException)
+            {
+                result.Success = false;
+                result.Message = "Error";
+            }
+            catch (ImageSizeLimitException)
+            {
+                result.Success = false;
+                result.Message = "Error";
+            }
+            catch (Exception ex)
+            {
+                result.Success = false;
+                result.Message = ex.Message.HtmlEncode();
+            }
+
+            return result;
         }
 
         public string GetHelpCenter()
