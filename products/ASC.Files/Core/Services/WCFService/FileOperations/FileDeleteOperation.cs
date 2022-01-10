@@ -36,6 +36,7 @@ using ASC.Core.Users;
 using ASC.Files.Core;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
+using ASC.Files.Core.Security;
 using ASC.MessagingSystem;
 using ASC.Web.Files.Helpers;
 using ASC.Web.Files.Utils;
@@ -131,7 +132,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFolders(IEnumerable<T> folderIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, virtualRoomsHelper, authManager, userManager) = scopeClass;
+            var (fileMarker, filesMessageService, virtualRoomsHelper, authManager, userManager, fileSecurityCommon, authContext) = scopeClass;
             foreach (var folderId in folderIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -144,6 +145,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 }
                 else if (folder.FolderType != FolderType.DEFAULT && folder.FolderType != FolderType.BUNCH
                     && folder.FolderType != FolderType.VirtualRoom)
+                {
+                    Error = FilesCommonResource.ErrorMassage_SecurityException_DeleteFolder;
+                }
+                else if (folder.FolderType == FolderType.VirtualRoom && _immediately && !fileSecurityCommon.IsAdministrator(authContext.CurrentAccount.ID))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_DeleteFolder;
                 }
@@ -268,7 +273,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFiles(IEnumerable<T> fileIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, _, _, _) = scopeClass;
+            var (fileMarker, filesMessageService, _, _, _, _, _) = scopeClass;
             foreach (var fileId in fileIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -361,26 +366,33 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private FilesMessageService FilesMessageService { get; }
         private VirtualRoomsHelper LinkedFolderHelper { get; }
         private AuthorizationManager AuthorizationManager { get; }
+        private FileSecurityCommon FileSecurityCommon { get; }
+        private AuthContext AuthContext { get; }
         private UserManager UserManager => FileMarker.UserManager;
 
         public FileDeleteOperationScope(FileMarker fileMarker, FilesMessageService filesMessageService,
-            VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager)
+            VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager,
+            FileSecurityCommon fileSecurityCommon, AuthContext authContext)
         {
             FileMarker = fileMarker;
             FilesMessageService = filesMessageService;
             LinkedFolderHelper = linkedFolderHelper;
             AuthorizationManager = authorizationManager;
+            FileSecurityCommon = fileSecurityCommon;
+            AuthContext = authContext;
         }
 
         public void Deconstruct(out FileMarker fileMarker, out FilesMessageService filesMessageService,
             out VirtualRoomsHelper linkedFolderHelper, out AuthorizationManager authorizationManager, 
-            out UserManager userManager)
+            out UserManager userManager, out FileSecurityCommon fileSecurityCommon, out AuthContext authContext)
         {
             fileMarker = FileMarker;
             filesMessageService = FilesMessageService;
             linkedFolderHelper = LinkedFolderHelper;
             authorizationManager = AuthorizationManager;
             userManager = UserManager;
+            fileSecurityCommon = FileSecurityCommon;
+            authContext = AuthContext;
         }
     }
 }
