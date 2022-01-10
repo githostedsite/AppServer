@@ -485,6 +485,19 @@ namespace ASC.Web.Files.Services.WCFService
 
             if (string.Compare(folder.Title, title, false) != 0)
             {
+                if (folder.FolderType == FolderType.VirtualRoom)
+                {
+                    var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
+                    var group = UserManager.GetGroupInfo(groupId);
+
+                    ErrorIf(group == Constants.LostGroupInfo, FilesCommonResource.ErrorMessage_LinkedGroupNotFound);
+                    ErrorIf(group.CategoryID == Constants.ArchivedLinkedGroupCategoryId,
+                        FilesCommonResource.ErrorMessage_SecurityException_EditArchivedRoom);
+
+                    group.Name = title;
+                    UserManager.SaveGroupInfo(group);
+                }
+
                 var newFolderID = folderDao.RenameFolder(folder, title);
                 folder = folderDao.GetFolder(newFolderID);
                 folder.Access = folderAccess;
