@@ -146,7 +146,9 @@ namespace ASC.Files.Thirdparty.ProviderDao
                 if (folderDao == null) continue;
 
                 var parentFolders = folderDao.GetParentFolders(selector.ConvertId(folder.ID));
-                if (parentFolders == null || !parentFolders.Any()) continue;
+                if (folder.RootFolderType != FolderType.VirtualRoom && (parentFolders == null || !parentFolders.Any())) continue;
+
+                if (folder.RootFolderType == FolderType.VirtualRoom) parentFolders.Add(folder as Folder<string>);
 
                 parentFolders.Reverse();
                 var pureShareRecords = GetPureShareRecords(parentFolders);
