@@ -516,6 +516,25 @@ namespace ASC.Web.Files.Utils
 
                 CalculateTotal();
             }
+            else if (parent.FolderType == FolderType.RoomsStorage)
+            {
+                withSubfolders = false;
+
+                if (Global.IsAdministrator)
+                {
+                    var folderDao = DaoFactory.GetFolderDao<T>();
+                    var folders = folderDao.GetFolders(parent.ID, orderBy, filter, subjectGroup, subjectId, searchText, withSubfolders);
+
+                    entries = entries.Concat(folders);
+                }
+                else
+                    entries = fileSecurity.GetVirtualRoomsForMe();
+
+                var thirdparty = GetThirpartyFolders(parent);
+                entries = entries.Concat(thirdparty);
+
+                CalculateTotal();
+            }
             else if (parent.FolderType == FolderType.VirtualRoom && parent.ProviderEntry
                 && parent.ID.Equals(parent.RootFolderId))
             {
@@ -624,6 +643,32 @@ namespace ASC.Web.Files.Utils
                 var fileSecurity = FileSecurity;
 
                 var providers = providerDao.GetProvidersInfo(parent.RootFolderType, searchText);
+                folderList = providers
+                    .Select(providerInfo => GetFakeThirdpartyFolder<T>(providerInfo, parent.ID.ToString()))
+                    .Where(r => fileSecurity.CanRead(r)).ToList();
+
+                if (folderList.Any())
+                {
+                    var securityDao = DaoFactory.GetSecurityDao<string>();
+                    securityDao.GetPureShareRecords(folderList)
+                    //.Where(x => x.Owner == SecurityContext.CurrentAccount.ID)
+                    .Select(x => x.EntryId).Distinct().ToList()
+                    .ForEach(id =>
+                    {
+                        folderList.First(y => y.ID.Equals(id)).Shared = true;
+                    });
+                }
+            }
+
+            if (parent.ID.Equals(GlobalFolderHelper.FolderVirtualRooms) && ThirdpartyConfiguration.SupportInclusion(DaoFactory)
+                && FilesSettingsHelper.EnableThirdParty)
+            {
+                var providerDao = DaoFactory.ProviderDao;
+                if (providerDao == null) return folderList;
+
+                var fileSecurity = FileSecurity;
+
+                var providers = providerDao.GetProvidersInfo(FolderType.VirtualRoom, searchText);
                 folderList = providers
                     .Select(providerInfo => GetFakeThirdpartyFolder<T>(providerInfo, parent.ID.ToString()))
                     .Where(r => fileSecurity.CanRead(r)).ToList();

@@ -87,6 +87,11 @@ namespace ASC.Files.Core.Security
             get { return FileShare.Restrict; }
         }
 
+        public FileShare DefaultVirtualRoomsShare
+        {
+            get { return FileShare.Read; }
+        }
+
         public FileShare DefaultArchiveShare
         {
             get { return FileShare.Read; }
@@ -390,7 +395,8 @@ namespace ASC.Files.Core.Security
                      f.RootFolderType == FolderType.Privacy ||
                      f.RootFolderType == FolderType.Projects ||
                      f.RootFolderType == FolderType.Archive ||
-                     f.RootFolderType == FolderType.VirtualRoom;
+                     f.RootFolderType == FolderType.VirtualRoom ||
+                     f.RootFolderType == FolderType.RoomsStorage;
 
             var isVisitor = user.IsVisitor(UserManager);
 
@@ -543,6 +549,12 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
+                    if (e.RootFolderType == FolderType.RoomsStorage && FileSecurityCommon.IsAdministrator(userId))
+                    {
+                        result.Add(e);
+                        continue;
+                    }
+
                     if (subjects == null)
                     {
                         subjects = e.RootFolderType == FolderType.VirtualRoom ?
@@ -593,7 +605,9 @@ namespace ASC.Files.Core.Security
                             : e.RootFolderType == FolderType.VirtualRoom
                             ? DefaultVirtualRoomShare
                             : e.RootFolderType == FolderType.Archive
-                            ? DefaultArchiveShare 
+                            ? DefaultArchiveShare
+                            : e.RootFolderType == FolderType.RoomsStorage
+                            ? DefaultVirtualRoomsShare
                             : DefaultCommonShare;
 
                     e.Access = ace != null ? ace.Share : defaultShare;
@@ -898,6 +912,44 @@ namespace ASC.Files.Core.Security
             var entries = new List<FileEntry<T>>();
 
             entries.AddRange(folderDao.GetFolders(folderIds.Keys).Where(f => f.RootFolderType == FolderType.Archive));
+
+            return entries;
+        }
+
+        public List<FileEntry> GetVirtualRoomsForMe()
+        {
+            var securityDao = daoFactory.GetSecurityDao<int>();
+            var subjects = GetUserSubjects(AuthContext.CurrentAccount.ID, Constants.LinkedGroupCategoryId);
+            var records = securityDao.GetShares(subjects);
+
+            var result = new List<FileEntry>();
+            result.AddRange(GetVirtualRoomsForMe<int>(records.Where(r => r.EntryId.GetType() == typeof(int)), subjects));
+            result.AddRange(GetVirtualRoomsForMe<string>(records.Where(r => r.EntryId.GetType() == typeof(string)), subjects));
+
+            return result;
+        }
+
+        public List<FileEntry> GetVirtualRoomsForMe<T>(IEnumerable<FileShareRecord> records, List<Guid> subjects)
+        {
+            var folderDao = daoFactory.GetFolderDao<T>();
+            var folderIds = new Dictionary<T, FileShare>();
+
+            var recordGroup = records.GroupBy(r => new { r.EntryId, r.EntryType }, (key, group) => new
+            {
+                firstRecord = group.OrderBy(r => r, new SubjectComparer(subjects))
+                    .ThenByDescending(r => r.Share, new FileShareRecord.ShareComparer())
+                    .First()
+            });
+
+            foreach (var record in recordGroup)
+            {
+                if (!folderIds.ContainsKey((T)record.firstRecord.EntryId))
+                    folderIds.Add((T)record.firstRecord.EntryId, record.firstRecord.Share);
+            }
+
+            var entries = new List<FileEntry>();
+
+            entries.AddRange(folderDao.GetFolders(folderIds.Keys).Where(f => f.RootFolderType == FolderType.RoomsStorage));
 
             return entries;
         }

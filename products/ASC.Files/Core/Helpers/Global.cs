@@ -540,6 +540,25 @@ namespace ASC.Web.Files.Classes
             return archiveFolderId;
         }
 
+        internal static readonly IDictionary<string, int> VirtualRoomsFolderCache =
+            new ConcurrentDictionary<string, int>(); /*Use SYNCHRONIZED for cross thread blocks*/
+
+        public int GetFolderVirtualRooms(IDaoFactory daoFactory)
+        {
+            if (!AuthContext.IsAuthenticated) return default;
+            if (UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)) return default;
+
+            var cacheKey = string.Format("virtualrooms/{0}", TenantManager.GetCurrentTenant().TenantId);
+
+            if (!VirtualRoomsFolderCache.TryGetValue(cacheKey, out var virtualRoomsFolderId))
+            {
+                virtualRoomsFolderId = AuthContext.IsAuthenticated ? daoFactory.GetFolderDao<int>().GetFolderIDVirtualRooms(true) : default;
+                VirtualRoomsFolderCache[cacheKey] = virtualRoomsFolderId;
+            }
+
+            return virtualRoomsFolderId;
+        }
+
         public (IEnumerable<int>, IEnumerable<string>) GetRooms(IDaoFactory daoFactory)
         {
             if (IsOutsider) return (null, null);
@@ -692,6 +711,7 @@ namespace ASC.Web.Files.Classes
         public int FolderFavorites => GlobalFolder.GetFolderFavorites(DaoFactory);
         public int FolderTemplates => GlobalFolder.GetFolderTemplates(DaoFactory);
         public int FolderArchive => GlobalFolder.GetFolderArchive(DaoFactory);
+        public int FolderVirtualRooms => GlobalFolder.GetFolderVirtualRooms(DaoFactory);
         public (IEnumerable<int>, IEnumerable<string>) FoldersCustom => GlobalFolder.GetRooms(DaoFactory);
 
         public T GetFolderMy<T>()
