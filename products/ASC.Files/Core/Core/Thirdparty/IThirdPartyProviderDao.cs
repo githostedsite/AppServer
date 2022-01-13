@@ -199,6 +199,11 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
+        public string GetFolderIDVirtualRooms(bool createIfNotExists)
+        {
+            return null;
+        }
+
         public string GetBunchObjectID(string folderID)
         {
             return null;
