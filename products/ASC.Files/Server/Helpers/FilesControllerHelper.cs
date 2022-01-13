@@ -70,8 +70,6 @@ namespace ASC.Files.Helpers
         private CoreBaseSettings CoreBaseSettings { get; }
         private EncryptionKeyPairHelper EncryptionKeyPairHelper { get; }
         private IHttpContextAccessor HttpContextAccessor { get; }
-        private SetupInfo SetupInfo { get; }
-        private FileSizeComment FileSizeComment { get; }
         private ILog Logger { get; set; }
 
         /// <summary>
@@ -652,7 +650,7 @@ namespace ASC.Files.Helpers
         #region VirtualRooms
         public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy, T parentId = default(T))
         {
-            var folder = VirtualRoomService.CreateRoom(title, privacy, parentId);
+            var folder = FileStorageService.CreateRoom(parentId, title);
 
             return FolderWrapperHelper.Get(folder);
         }
@@ -660,6 +658,16 @@ namespace ASC.Files.Helpers
         public FileUploadResult UploalRoomLogo(T folderId, IFormCollection model)
         {
             return FileStorageService.UploadRoomLogo(folderId, model);
+        }
+
+        public IEnumerable<FileOperationWraper> ArchiveRoom(IEnumerable<JsonElement> folderIds)
+        {
+            return FileStorageService.ArchiveRooms(folderIds).Select(FileOperationWraperHelper.Get);
+        }
+
+        public IEnumerable<FileOperationWraper> UnarchiveRoom(IEnumerable<JsonElement> folderIds)
+        {
+            return FileStorageService.UnarchiveRooms(folderIds).Select(FileOperationWraperHelper.Get);
         }
         #endregion
 
