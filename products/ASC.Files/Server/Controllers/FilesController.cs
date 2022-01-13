@@ -166,13 +166,12 @@ namespace ASC.Api.Documents
         }
 
         [Read("@root")]
-        public IEnumerable<object> GetRootFolders(Guid userIdOrGroupId, FilterType filterType, bool withsubfolders, bool withoutTrash, bool withoutAdditionalFolder)
+        public IEnumerable<FolderContentWrapper<int>> GetRootFolders(Guid userIdOrGroupId, FilterType filterType, bool withsubfolders, bool withoutTrash, bool withoutAdditionalFolder)
         {
             var IsVisitor = UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsVisitor(UserManager);
             var IsOutsider = UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOutsider(UserManager);
             var IsAdmin = UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsAdmin(UserManager);
-            var resultIntIDs = new SortedSet<int>();
-            var resultStringIDs = new SortedSet<string>();
+            var result = new SortedSet<int>();
 
             if (IsOutsider)
             {
@@ -182,96 +181,61 @@ namespace ASC.Api.Documents
 
             if (!IsVisitor)
             {
-                resultIntIDs.Add(GlobalFolderHelper.FolderMy);
+                result.Add(GlobalFolderHelper.FolderMy);
             }
 
-            if (!CoreBaseSettings.Personal && !UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOutsider(UserManager))
+            if (!CoreBaseSettings.Personal
+                && !UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOutsider(UserManager)
+                && !CoreBaseSettings.VDR)
             {
-                resultIntIDs.Add(GlobalFolderHelper.FolderShare);
+                result.Add(GlobalFolderHelper.FolderShare);
             }
 
             if (!IsVisitor && !withoutAdditionalFolder)
             {
                 if (FilesSettingsHelper.FavoritesSection)
                 {
-                    resultIntIDs.Add(GlobalFolderHelper.FolderFavorites);
+                    result.Add(GlobalFolderHelper.FolderFavorites);
                 }
 
                 if (FilesSettingsHelper.RecentSection)
                 {
-                    resultIntIDs.Add(GlobalFolderHelper.FolderRecent);
+                    result.Add(GlobalFolderHelper.FolderRecent);
                 }
 
-                if (!CoreBaseSettings.Personal && PrivacyRoomSettings.IsAvailable(TenantManager))
+                if (!CoreBaseSettings.Personal && PrivacyRoomSettings.IsAvailable(TenantManager)
+                    && !CoreBaseSettings.VDR)
                 {
-                    resultIntIDs.Add(GlobalFolderHelper.FolderPrivacy);
+                    result.Add(GlobalFolderHelper.FolderPrivacy);
                 }
             }
 
-            if (!CoreBaseSettings.Personal)
+            if (!CoreBaseSettings.Personal && !CoreBaseSettings.VDR)
             {
-                resultIntIDs.Add(GlobalFolderHelper.FolderCommon);
+                result.Add(GlobalFolderHelper.FolderCommon);
             }
 
             if (!IsVisitor
                && !withoutAdditionalFolder
                && FileUtility.ExtsWebTemplate.Any()
-               && FilesSettingsHelper.TemplatesSection)
+               && FilesSettingsHelper.TemplatesSection
+               && !CoreBaseSettings.VDR)
             {
-                resultIntIDs.Add(GlobalFolderHelper.FolderTemplates);
+                result.Add(GlobalFolderHelper.FolderTemplates);
             }
 
-            if (!withoutTrash)
+            if (!withoutTrash && !CoreBaseSettings.VDR)
             {
-                resultIntIDs.Add((int)GlobalFolderHelper.FolderTrash);
+                result.Add((int)GlobalFolderHelper.FolderTrash);
             }
 
             if (CoreBaseSettings.VDR && !IsVisitor && !CoreBaseSettings.Personal)
             {
-                if (IsAdmin)
-                {
-                    var archiveFolderId = GlobalFolderHelper.FolderArchive;
-                    resultIntIDs.Add(archiveFolderId);
-                }
-
-                var foldersIds = GlobalFolderHelper.FoldersCustom;
-
-                foreach (var id in foldersIds.Item1)
-                {
-                    resultIntIDs.Add(id);
-                }
-
-                foreach (var id in foldersIds.Item2)
-                {
-                    resultStringIDs.Add(id);
-                }
+                result.Add(GlobalFolderHelper.FolderVirtualRooms);
+                result.Add(GlobalFolderHelper.FolderArchive);
             }
 
-            var result = resultIntIDs.Select(r =>
-                (object)FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
-
-            if (CoreBaseSettings.VDR && FilesSettingsHelper.EnableThirdParty)
-            {
-                if (IsAdmin)
-                {
-                    var thirdparty = FileStorageService.GetThirdPartyFolder((int)FolderType.VirtualRoom);
-                    var wrappers = thirdparty.Select(r => FilesControllerHelperString.GetFolder(((Folder<string>)r).ID, userIdOrGroupId,
-                         FilterType.FoldersOnly, false)).ToList();
-
-                    result.AddRange(wrappers);
-                }
-                else
-                {
-                    try
-                    {
-                        result.AddRange(resultStringIDs.Select(r =>
-                        FilesControllerHelperString.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)));
-                    }
-                    catch { }
-                }
-            }
-                
-            return result;
+            return result.Select(r => FilesControllerHelperInt.GetFolder(r, userIdOrGroupId, filterType, withsubfolders)).ToList();
         }
 
 
@@ -355,7 +319,7 @@ namespace ASC.Api.Documents
         {
             ErrorIfNotVDR();
 
-            return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
+            return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy, GlobalFolderHelper.FolderVirtualRooms);
         }
 
         /// <summary>
@@ -428,6 +392,18 @@ namespace ASC.Api.Documents
             return list;
         }
 
+        [Update("room/archive")]
+        public IEnumerable<FileOperationWraper> ArchiveVirtualRooms([FromBody] BatchModel model)
+        {
+            return FilesControllerHelperInt.ArchiveRoom(model.FolderIds);
+        }
+
+        [Update("room/unarchive")]
+        public IEnumerable<FileOperationWraper> UnarchiveVirtualRoom([FromBody] BatchModel model)
+        {
+            return FilesControllerHelperInt.UnarchiveRoom(model.FolderIds);
+        }
+
         [Create("{folderId:int}/logo")]
         public FileUploadResult UploadRoomLogo(int folderId, IFormCollection model)
         {
@@ -446,6 +422,12 @@ namespace ASC.Api.Documents
         public FolderContentWrapper<int> GetShareFolder(Guid userIdOrGroupId, FilterType filterType, bool withsubfolders)
         {
             return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderShare, userIdOrGroupId, filterType, withsubfolders);
+        }
+
+        [Read("@vrooms")]
+        public FolderContentWrapper<int> GetVirtulaRooms()
+        {
+            return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderVirtualRooms, Guid.Empty, FilterType.None, false);
         }
 
         /// <summary>
