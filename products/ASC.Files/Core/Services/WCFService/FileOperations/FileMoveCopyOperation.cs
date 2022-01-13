@@ -131,7 +131,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
         protected override void Do(IServiceScope scope)
         {
-            Do(scope, DaoFolderId);
+            if (DaoFolderId != 0)
+            {
+                Do(scope, DaoFolderId);
+            }
 
             if (!string.IsNullOrEmpty(ThirdpartyFolderId))
             {
@@ -149,7 +152,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             Result += string.Format("folder_{0}{1}", DaoFolderId, SPLIT_CHAR);
 
             //TODO: check on each iteration?
-            var toFolder = DaoFolderId == 0 ? new Folder<TTo>() : folderDao.GetFolder(tto);
+            var toFolder = folderDao.GetFolder(tto);
             if (toFolder == null) return;
             if (!FilesSecurity.CanCreate(toFolder)) throw new System.Security.SecurityException(FilesCommonResource.ErrorMassage_SecurityException_Create);
 
@@ -201,8 +204,9 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
-                else if (folder.FolderType != FolderType.VirtualRoom && folder.RootFolderType != FolderType.Archive
-                    && toFolder.ID.Equals(default(T)))
+                else if ((folder.FolderType != FolderType.VirtualRoom && toFolder.FolderType == FolderType.RoomsStorage)
+                    || (folder.FolderType == FolderType.VirtualRoom && toFolder.FolderType != FolderType.RoomsStorage)
+                    || (folder.FolderType != FolderType.VirtualRoom && toFolder.FolderType == FolderType.Archive))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
