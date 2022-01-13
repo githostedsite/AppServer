@@ -1302,27 +1302,6 @@ namespace ASC.Files.Core.Data
             return q1.Union(q2);
         }
 
-        public void UpdateThirdPartyRootFolders(IEnumerable<string> entryIDs, string provider, int providerId)
-        {
-            using var tx = FilesDbContext.Database.BeginTransaction();
-
-            var bunch = Query(FilesDbContext.BunchObjects)
-                .Where(r => r.RightNode.StartsWith($"files/{virtualroom}") && r.LeftNode.StartsWith(provider))
-                .ToDictionary(r => ThirdPartyHelper.GetEntryId(r.LeftNode));
-
-            foreach (var item in entryIDs)
-            {
-                if (bunch.ContainsKey(item))
-                {
-                    bunch[item].LeftNode = ThirdPartyHelper.MakeFolderId(item, provider, providerId);
-                }
-
-                FilesDbContext.SaveChanges();
-            }
-
-            tx.Commit();
-        }
-
         private string GetProjectTitle(object folderID)
         {
             return "";
@@ -1374,18 +1353,6 @@ namespace ASC.Files.Core.Data
             //    cache.Insert(cacheKey, projectTitle, TimeSpan.FromMinutes(15));
             //}
             //return projectTitle;
-        }
-
-        public void DeleteBunchObjects(string module, FolderType folderType, IEnumerable<string> data)
-        {
-            var keys = data.Select(id => BunchFoldersHelper.MakeBunchKey(folderType, id, module)).ToArray();
-
-            var bunches = Query(FilesDbContext.BunchObjects)
-                .Where(r => keys.Length > 1 ? keys.Any(a => a == r.RightNode) : r.RightNode == keys[0])
-                .ToList();
-
-            FilesDbContext.RemoveRange(bunches);
-            FilesDbContext.SaveChanges();
         }
     }
 

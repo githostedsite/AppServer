@@ -1382,24 +1382,9 @@ namespace ASC.Web.Files.Services.WCFService
                 FileMarker.MarkAsNew(folder);
             }
 
-            if (folderType == FolderType.VirtualRoom)
-            {
-                //RestoreThirdPartyRootFolders(folder);
-                CreateAndShareGroup(folder.ID, folder.Title);
-            }
+            if (folderType == FolderType.VirtualRoom) CreateAndShareGroup(folder.ID, folder.Title);
 
             return folder;
-        }
-
-        public void RestoreThirdPartyRootFolders(Folder<T> folder)
-        {
-            var folderDao = GetFolderDao();
-            var folderDaoInt = DaoFactory.GetFolderDao<int>();
-
-            var folders = folderDao.GetFolders(folder.ID);
-
-            folderDaoInt.UpdateThirdPartyRootFolders(folders.Select(f => ThirdPartyHelper.GetEntryId(f.ID.ToString())),
-                ThirdPartyHelper.GetProvider(folder.ID.ToString()), folder.ProviderId);
         }
 
         public object DeleteThirdParty(string providerId)

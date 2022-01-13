@@ -559,29 +559,6 @@ namespace ASC.Web.Files.Classes
             return virtualRoomsFolderId;
         }
 
-        public (IEnumerable<int>, IEnumerable<string>) GetRooms(IDaoFactory daoFactory)
-        {
-            if (IsOutsider) return (null, null);
-
-            var userId = AuthContext.CurrentAccount.ID;
-            IEnumerable<Guid> groupIDs;
-
-            if (FileSecurityCommon.IsAdministrator(userId))
-            {
-                groupIDs = UserManager.GetGroups(ASC.Core.Users.Constants.LinkedGroupCategoryId)
-                    .Select(g => g.ID);
-            }
-            else
-            {
-                groupIDs = UserManager.GetUserGroups(AuthContext.CurrentAccount.ID, ASC.Core.Users.Constants.LinkedGroupCategoryId).Select(g => g.ID);
-            }
-
-            if (groupIDs == null || groupIDs.Any() == false)
-                return (new List<int>(), new List<string>());
-
-            return daoFactory.GetFolderDao<int>().GetRoomsIDs(groupIDs);
-        }
-
         protected internal void SetFolderTrash(object value)
         {
             var cacheKey = string.Format("trash/{0}/{1}", TenantManager.GetCurrentTenant().TenantId, value);
@@ -712,7 +689,6 @@ namespace ASC.Web.Files.Classes
         public int FolderTemplates => GlobalFolder.GetFolderTemplates(DaoFactory);
         public int FolderArchive => GlobalFolder.GetFolderArchive(DaoFactory);
         public int FolderVirtualRooms => GlobalFolder.GetFolderVirtualRooms(DaoFactory);
-        public (IEnumerable<int>, IEnumerable<string>) FoldersCustom => GlobalFolder.GetRooms(DaoFactory);
 
         public T GetFolderMy<T>()
         {

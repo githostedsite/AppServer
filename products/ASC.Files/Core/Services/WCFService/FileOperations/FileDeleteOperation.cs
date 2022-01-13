@@ -32,7 +32,6 @@ using System.Threading;
 using ASC.Common;
 using ASC.Core;
 using ASC.Core.Tenants;
-using ASC.Core.Users;
 using ASC.Files.Core;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
@@ -180,8 +179,6 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 }
 
                                 var folderDaoInt = scope.ServiceProvider.GetService<IFolderDao<int>>();
-                                folderDaoInt.DeleteBunchObjects("files", FolderType.VirtualRoom, 
-                                    groupIds.Select(g => g.ToString()));
                             }
 
                             ProviderDao.RemoveProviderInfo(folder.ProviderId);

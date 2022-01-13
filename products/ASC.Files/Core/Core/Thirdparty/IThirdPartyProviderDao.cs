@@ -214,10 +214,6 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public void DeleteBunchObjects(string module, FolderType folderType, IEnumerable<string> data) { }
-
-        public void UpdateThirdPartyRootFolders(IEnumerable<string> entryIDs, string provider, int providerId) { }
-
         public IEnumerable<(Folder<string>, SmallShareRecord)> GetFeedsForFolders(int tenant, DateTime from, DateTime to)
         {
             throw new NotImplementedException();

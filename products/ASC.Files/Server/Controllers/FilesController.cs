@@ -370,26 +370,11 @@ namespace ASC.Api.Documents
         /// </summary>
         /// <returns>Virtual rooms with detailed content</returns>
         [Read("@rooms")]
-        public IEnumerable<object> GetVirtualRooms()
+        public FolderContentWrapper<int> GetVirtualRooms()
         {
             ErrorIfNotVDR();
 
-            var folderIds = GlobalFolderHelper.FoldersCustom;
-
-            var foldersInt = folderIds.Item1.Select(id =>
-                FilesControllerHelperInt.GetFolder(id, Guid.Empty, FilterType.None, false))
-                .Where(f => f.Current.RootFolderType != FolderType.Archive);
-            var foldersString = folderIds.Item2.Select(id =>
-                FilesControllerHelperString.GetFolder(id, Guid.Empty, FilterType.None, false))
-                .Where(f => f.Current.RootFolderType != FolderType.Archive);
-
-            var list = new List<object>();
-            list.AddRange(foldersInt);
-
-            try { list.AddRange(foldersString); }
-            catch { }
-
-            return list;
+            return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderVirtualRooms, Guid.Empty, FilterType.None, false);
         }
 
         [Update("room/archive")]

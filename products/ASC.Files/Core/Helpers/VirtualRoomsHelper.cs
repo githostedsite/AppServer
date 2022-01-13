@@ -42,27 +42,6 @@ namespace ASC.Files.Core.Helpers
             return ace.SubjectId;
         }
 
-        public IEnumerable<FolderContentWrapper<string>> FilterThirdPartyStorage(
-            IEnumerable<FolderContentWrapper<string>> inputWrappers, IEnumerable<string> virtualRoomsIDs)
-        {
-            var wrappersByProvider = inputWrappers.ToDictionary(r => r.Current.Id);
-            var virtualRoomsIDsByProviderId = virtualRoomsIDs.ToLookup(r => ThirdPartyHelper.GetFullProviderId(r));
-
-            foreach (var wrapper in wrappersByProvider)
-            {
-                if (!virtualRoomsIDsByProviderId.Contains(wrapper.Key))
-                {
-                    wrapper.Value.Folders = new List<FileEntryWrapper>();
-                    continue;
-                };
-
-                var ids = virtualRoomsIDsByProviderId[wrapper.Key];
-                wrapper.Value.Folders = wrapper.Value.Folders.Where(f => ids.Contains(((FolderWrapper<string>)f).Id)).ToList();
-            }
-
-            return wrappersByProvider.Values;
-        }
-
         public bool IsRoomAdministartor<T>(Guid userId, Folder<T> folder)
         {
             var groupId = GetLinkedGroupId(folder);
