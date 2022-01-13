@@ -69,6 +69,7 @@ namespace ASC.Files.Core.Data
         private const string privacy = "privacy";
         private const string trash = "trash";
         private const string projects = "projects";
+        private const string roomStorage = "virtualrooms";
         private const string virtualroom = "virtualroom";
         private const string archive = "archive";
 
@@ -388,18 +389,18 @@ namespace ASC.Files.Core.Data
 
                 FilesDbContext.SaveChanges();
 
-                if (folder.FolderType == FolderType.VirtualRoom)
-                {
-                    var toInsert = new DbFilesBunchObjects
-                    {
-                        LeftNode = folder.ID.ToString(),
-                        RightNode = folder.BunchKey,
-                        TenantId = TenantID
-                    };
+                //if (folder.FolderType == FolderType.VirtualRoom)
+                //{
+                //    var toInsert = new DbFilesBunchObjects
+                //    {
+                //        LeftNode = folder.ID.ToString(),
+                //        RightNode = folder.BunchKey,
+                //        TenantId = TenantID
+                //    };
 
-                    FilesDbContext.BunchObjects.Add(toInsert);
-                    FilesDbContext.SaveChanges();
-                }
+                //    FilesDbContext.BunchObjects.Add(toInsert);
+                //    FilesDbContext.SaveChanges();
+                //}
             }
 
             if (transaction == null)
@@ -988,6 +989,10 @@ namespace ASC.Files.Core.Data
                         folder.FolderType = FolderType.Projects;
                         folder.Title = projects;
                         break;
+                    case roomStorage:
+                        folder.FolderType = FolderType.RoomsStorage;
+                        folder.Title = roomStorage;
+                        break;
                     case archive:
                         folder.FolderType = FolderType.Archive;
                         folder.Title = archive;
@@ -1060,6 +1065,11 @@ namespace ASC.Files.Core.Data
         public int GetFolderIDPrivacy(bool createIfNotExists, Guid? userId = null)
         {
             return (this as IFolderDao<int>).GetFolderID(FileConstant.ModuleId, privacy, (userId ?? AuthContext.CurrentAccount.ID).ToString(), createIfNotExists);
+        }
+
+        public int GetFolderIDVirtualRooms(bool createIfNotExists)
+        {
+            return (this as IFolderDao<int>).GetFolderID(FileConstant.ModuleId, roomStorage, null, createIfNotExists);
         }
 
         public (IEnumerable<int>, IEnumerable<string>) GetRoomsIDs(IEnumerable<Guid> groupIDs)
@@ -1189,6 +1199,9 @@ namespace ASC.Files.Core.Data
                     break;
                 case FolderType.Archive:
                     result.Title = FilesUCResource.Archive;
+                    break;
+                case FolderType.RoomsStorage:
+                    result.Title = FilesUCResource.VirtualRooms;
                     break;
                 case FolderType.BUNCH:
                     try

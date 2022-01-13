@@ -47,6 +47,7 @@ namespace ASC.Files.Core
         VirtualRoom = 14,
         PrivacyVirtualRoom = 15,
         Archive = 16,
+        RoomsStorage = 17,
     }
 
     public interface IFolder

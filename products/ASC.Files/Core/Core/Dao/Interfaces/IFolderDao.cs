@@ -319,6 +319,7 @@ namespace ASC.Files.Core
         /// <param name="createIfNotExists"></param>
         /// <returns></returns>
         T GetFolderIDArchive(bool createIfNotExists);
+        T GetFolderIDVirtualRooms(bool createIfNotExists);
 
         /// <summary>
         /// Returns virtual rooms ids
