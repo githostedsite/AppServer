@@ -75,6 +75,7 @@ using Microsoft.Extensions.Primitives;
 
 using Constants = ASC.Core.Users.Constants;
 using FileShare = ASC.Files.Core.Security.FileShare;
+using FileType = ASC.Web.Core.Files.FileType;
 using UrlShortener = ASC.Web.Core.Utility.UrlShortener;
 
 namespace ASC.Web.Files.Services.WCFService
@@ -415,31 +416,36 @@ namespace ASC.Web.Files.Services.WCFService
 
         public Folder<T> CreateNewFolder(T parentId, string title)
         {
-            if (string.IsNullOrEmpty(title) || parentId == null) throw new ArgumentException();
+            ErrorIf(parentId.Equals(GlobalFolderHelper.FolderVirtualRooms), FilesCommonResource.ErrorMassage_SecurityException_Create);
+            var folder = CreateNewFolder(parentId, title, FolderType.DEFAULT);
 
-            var folderDao = GetFolderDao();
-            var parent = folderDao.GetFolder(parentId);
-            ErrorIf(parent == null, FilesCommonResource.ErrorMassage_FolderNotFound);
-            ErrorIf(!FileSecurity.CanCreate(parent), FilesCommonResource.ErrorMassage_SecurityException_Create);
+            FilesMessageService.Send(folder, GetHttpHeaders(), MessageAction.FolderCreated, folder.Title);
 
-            try
-            {
-                var newFolder = ServiceProvider.GetService<Folder<T>>();
-                newFolder.Title = title;
-                newFolder.FolderID = parent.ID;
+            return folder;
+        }
 
-                var folderId = folderDao.SaveFolder(newFolder);
-                var folder = folderDao.GetFolder(folderId);
+        public Folder<T> CreateRoom(T parentId, string title)
+        {
+            var folder = CreateNewFolder(parentId, title, FolderType.VirtualRoom);
+            CreateAndShareGroup(folder.ID, title);
 
-                if (!DisableAudit)
-                    FilesMessageService.Send(folder, GetHttpHeaders(), MessageAction.FolderCreated, folder.Title);
+            FilesMessageService.Send(folder, GetHttpHeaders(), MessageAction.VirtualRoomCreated, folder.Title);
 
-                return folder;
-            }
-            catch (Exception e)
-            {
-                throw GenerateException(e);
-            }
+            return folder;
+        }
+
+        public List<FileOperationResult> ArchiveRooms(IEnumerable<JsonElement> foldersIds)
+        {
+            return FileOperationsManager.Delete(AuthContext.CurrentAccount.ID, TenantManager.GetCurrentTenant(), foldersIds, new List<JsonElement>(), 
+                false, false, false, GetHttpHeaders());
+        }
+
+        public List<FileOperationResult> UnarchiveRooms(IEnumerable<JsonElement> foldersIds)
+        {
+            var destFolderId = JsonSerializer.SerializeToElement(GlobalFolderHelper.FolderVirtualRooms);
+
+            return FileOperationsManager.MoveOrCopy(AuthContext.CurrentAccount.ID, TenantManager.GetCurrentTenant(),
+                new List<JsonElement>(foldersIds), new List<JsonElement>(), destFolderId, false, FileConflictResolveType.Skip, false, GetHttpHeaders());
         }
 
         public Folder<T> CreateNewRootFolder(string title, FolderType type, string bunchKeyData,
@@ -470,6 +476,7 @@ namespace ASC.Web.Files.Services.WCFService
                 throw GenerateException(e);
             }
         }
+
 
         public Folder<T> FolderRename(T folderId, string title)
         {
@@ -631,7 +638,7 @@ namespace ASC.Web.Files.Services.WCFService
             {
                 folder = folderDao.GetFolder(fileWrapper.ParentId);
 
-                if (!FileSecurity.CanCreate(folder))
+                if (!FileSecurity.CanCreate(folder) || folder.FolderType == FolderType.RoomsStorage)
                 {
                     folder = null;
                 }
@@ -1376,7 +1383,10 @@ namespace ASC.Web.Files.Services.WCFService
             }
 
             if (folderType == FolderType.VirtualRoom)
-                RestoreThirdPartyRootFolders(folder);
+            {
+                //RestoreThirdPartyRootFolders(folder);
+                CreateAndShareGroup(folder.ID, folder.Title);
+            }
 
             return folder;
         }
@@ -2499,9 +2509,62 @@ namespace ASC.Web.Files.Services.WCFService
             return result;
         }
 
+        public void CreateAndShareGroup(T folderId, string title)
+        {
+            var group = UserManager.SaveGroupInfo(new GroupInfo
+            {
+                Name = title,
+                CategoryID = Constants.LinkedGroupCategoryId
+            });
+
+            var aceCollection = new AceCollection<T>
+            {
+                Files = new List<T>(),
+                Folders = new List<T> { folderId },
+                Aces = new List<AceWrapper>
+                {
+                    new AceWrapper
+                    {
+                        Share = FileShare.Read,
+                        SubjectId = group.ID,
+                        SubjectGroup = true,
+                    }
+                }
+            };
+
+            SetAceObject(aceCollection, false);
+        }
+
         public string GetHelpCenter()
         {
             return ""; //TODO: Studio.UserControls.Common.HelpCenter.HelpCenter.RenderControlToString();
+        }
+
+        private Folder<T> CreateNewFolder(T parentId, string title, FolderType folderType)
+        {
+            if (string.IsNullOrEmpty(title) || parentId == null) throw new ArgumentException();
+
+            var folderDao = GetFolderDao();
+            var parent = folderDao.GetFolder(parentId);
+            ErrorIf(parent == null, FilesCommonResource.ErrorMassage_FolderNotFound);
+            ErrorIf(!FileSecurity.CanCreate(parent), FilesCommonResource.ErrorMassage_SecurityException_Create);
+
+            try
+            {
+                var newFolder = ServiceProvider.GetService<Folder<T>>();
+                newFolder.Title = title;
+                newFolder.FolderID = parent.ID;
+                newFolder.FolderType = folderType;
+
+                var folderId = folderDao.SaveFolder(newFolder);
+                var folder = folderDao.GetFolder(folderId);
+
+                return folder;
+            }
+            catch (Exception e)
+            {
+                throw GenerateException(e);
+            }
         }
 
         private IFolderDao<T> GetFolderDao()
