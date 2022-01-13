@@ -150,4 +150,7 @@
   <data name="Trash" xml:space="preserve">
     <value>Trash</value>
   </data>
+  <data name="VirtualRooms" xml:space="preserve">
+    <value>VirtualRooms</value>
+  </data>
 </root>
