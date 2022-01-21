@@ -154,7 +154,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             //TODO: check on each iteration?
             var toFolder = folderDao.GetFolder(tto);
             if (toFolder == null) return;
-            if (!FilesSecurity.CanCreate(toFolder)) throw new System.Security.SecurityException(FilesCommonResource.ErrorMassage_SecurityException_Create);
+            if (!FilesSecurity.CanCreate(toFolder) && toFolder.FolderType != FolderType.RoomsStorage) throw new System.Security.SecurityException(FilesCommonResource.ErrorMassage_SecurityException_Create);
 
             if (folderDao.GetParentFolders(toFolder.ID).Any(parent => Folders.Any(r => r.ToString() == parent.ID.ToString())))
             {
@@ -204,9 +204,9 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 {
                     Error = FilesCommonResource.ErrorMassage_FolderNotFound;
                 }
-                else if ((folder.FolderType != FolderType.VirtualRoom && toFolder.FolderType == FolderType.RoomsStorage)
+                else if (FilesSecurity.CanRoomEdit(folder) && ((folder.FolderType != FolderType.VirtualRoom && toFolder.FolderType == FolderType.RoomsStorage)
                     || (folder.FolderType == FolderType.VirtualRoom && toFolder.FolderType != FolderType.RoomsStorage)
-                    || (folder.FolderType != FolderType.VirtualRoom && toFolder.FolderType == FolderType.Archive))
+                    || (folder.FolderType != FolderType.VirtualRoom && toFolder.FolderType == FolderType.Archive)))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFolder;
                 }
@@ -340,37 +340,40 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             else
                             {
                                 fileMarker.RemoveMarkAsNewForAll(folder);
-                                TTo newFolderId;
 
                                 if (folder.FolderType == FolderType.VirtualRoom && folder.ProviderEntry)
-                                    newFolderId = (TTo)Convert.ChangeType(folder.ID, typeof(TTo));
-                                else
-                                    newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
-
-                                if (folder.RootFolderType == FolderType.Archive)
+                                {
+                                    ProviderDao.UpdateProviderInfo(folder.ProviderId, FolderType.VirtualRoom);
                                     virtualRoomsHelper.UnarchiveLinkedGroup(folder, userManager);
 
-                                newFolder = folderDao.GetFolder(newFolderId);
+                                    filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomUnarchived, folder.Title);
+                                }
 
-                                if (folder.FolderType == FolderType.VirtualRoom)
-                                {
-                                    filesMessageService.Send(folder, toFolder, _headers, MessageAction.VirtualRoomUnarchived, folder.Title);
-                                }
-                                else if (folder.RootFolderType != FolderType.USER)
-                                {
-                                    filesMessageService.Send(folder, toFolder, _headers, MessageAction.FolderMoved, folder.Title, toFolder.Title);
-                                }
                                 else
                                 {
-                                    filesMessageService.Send(newFolder, toFolder, _headers, MessageAction.FolderMoved, folder.Title, toFolder.Title);
-                                }
+                                    var newFolderId = FolderDao.MoveFolder(folder.ID, toFolderId, CancellationToken);
 
-                                if (isToFolder)
-                                    needToMark.Add(newFolder);
+                                    if (folder.RootFolderType == FolderType.Archive)
+                                        virtualRoomsHelper.UnarchiveLinkedGroup(folder, userManager);
 
-                                if (ProcessedFolder(folderId))
-                                {
-                                    Result += string.Format("folder_{0}{1}", newFolderId, SPLIT_CHAR);
+                                    newFolder = folderDao.GetFolder(newFolderId);
+
+                                    if (folder.FolderType == FolderType.VirtualRoom)
+                                        filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomUnarchived, folder.Title);
+
+                                    else if (folder.RootFolderType != FolderType.USER)
+                                        filesMessageService.Send(folder, toFolder, _headers, MessageAction.FolderMoved, folder.Title, toFolder.Title);
+
+                                    else
+                                        filesMessageService.Send(newFolder, toFolder, _headers, MessageAction.FolderMoved, folder.Title, toFolder.Title);
+
+                                    if (isToFolder)
+                                        needToMark.Add(newFolder);
+
+                                    if (ProcessedFolder(folderId))
+                                    {
+                                        Result += string.Format("folder_{0}{1}", newFolderId, SPLIT_CHAR);
+                                    }
                                 }
                             }
                         }
@@ -412,6 +415,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                 else if (!FilesSecurity.CanRead(file))
                 {
                     Error = FilesCommonResource.ErrorMassage_SecurityException_ReadFile;
+                }
+                else if (toFolder.FolderType == FolderType.RoomsStorage)
+                {
+                    Error = FilesCommonResource.ErrorMassage_SecurityException_MoveFile;
                 }
                 else if (file.RootFolderType == FolderType.Privacy
                     && (copy || toFolder.RootFolderType != FolderType.Privacy))
