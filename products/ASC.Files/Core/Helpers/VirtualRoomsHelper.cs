@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using ASC.Api.Documents;
 using ASC.Common;
 using ASC.Common.Security.Authorizing;
 using ASC.Core;
@@ -18,8 +17,7 @@ namespace ASC.Files.Core.Helpers
         private FileSharing FileSharing { get; }
         private AuthorizationManager AuthorizationManager { get; }
 
-        public VirtualRoomsHelper(
-            FileSharing fileSharing,
+        public VirtualRoomsHelper(FileSharing fileSharing,
             AuthorizationManager authorizationManager)
         {
             FileSharing = fileSharing;
@@ -42,16 +40,28 @@ namespace ASC.Files.Core.Helpers
             return ace.SubjectId;
         }
 
-        public bool IsRoomAdministartor<T>(Guid userId, Folder<T> folder)
+        public bool IsRoomAdministrator(Guid userId, Guid groupId)
         {
-            var groupId = GetLinkedGroupId(folder);
-
             var record = AuthorizationManager.GetAces(userId,
                 Constants.Action_EditLinkedGroups.ID)
                 .FirstOrDefault(r => r.ObjectId == AzObjectIdHelper
                 .GetFullObjectId(new GroupSecurityObject(groupId)));
 
             return record != null;
+        }
+
+        public void AddAdminRoomPrivilege(Guid userId, Guid groupId)
+        {
+            var record = CreateLinkedGroupEditingRecord(userId, groupId);
+
+            AuthorizationManager.AddAce(record);
+        }
+
+        public void DeleteAdminRoomPrivilege(Guid userId, Guid groupId)
+        {
+            var record = CreateLinkedGroupEditingRecord(userId, groupId);
+
+            AuthorizationManager.RemoveAce(record);
         }
 
         public void ArchiveLinkedGroup<T>(Folder<T> folder, UserManager userManager)
@@ -72,6 +82,14 @@ namespace ASC.Files.Core.Helpers
             var group = userManager.GetGroupInfo(groupId);
             group.CategoryID = categoryId;
             userManager.SaveLinkedGroupInfo(group);
+        }
+
+        private AzRecord CreateLinkedGroupEditingRecord(Guid userId, Guid groupId)
+        {
+            return new AzRecord(userId,
+                Constants.Action_EditLinkedGroups.ID,
+                AceType.Allow,
+                new GroupSecurityObject(groupId));
         }
     }
 }
