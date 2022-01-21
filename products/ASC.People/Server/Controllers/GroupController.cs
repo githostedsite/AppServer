@@ -9,6 +9,7 @@ using ASC.Common.Web;
 using ASC.Core;
 using ASC.Core.Users;
 using ASC.Files.Core.Core;
+using ASC.Files.Core.VirtualRooms;
 using ASC.MessagingSystem;
 using ASC.People.Models;
 using ASC.Web.Api.Models;
@@ -31,7 +32,7 @@ namespace ASC.Employee.Core.Controllers
         private PermissionContext PermissionContext { get; }
         private MessageTarget MessageTarget { get; }
         private GroupWraperFullHelper GroupWraperFullHelper { get; }
-        private VirtualRoomService<int> VirtualRoomService { get; }
+        private VirtualRoomsMembersManager VirtualRoomsMembersManager { get; }
 
         public GroupController(
             ApiContext apiContext,
@@ -41,7 +42,7 @@ namespace ASC.Employee.Core.Controllers
             MessageTarget messageTarget,
             GroupWraperFullHelper groupWraperFullHelper,
             CoreBaseSettings coreBaseSettings,
-            VirtualRoomService<int> virtualRoomService)
+            VirtualRoomsMembersManager virtualRoomsMembers)
         {
             ApiContext = apiContext;
             MessageService = messageService;
@@ -50,7 +51,7 @@ namespace ASC.Employee.Core.Controllers
             MessageTarget = messageTarget;
             GroupWraperFullHelper = groupWraperFullHelper;
             CoreBaseSettings = coreBaseSettings;
-            VirtualRoomService = virtualRoomService;
+            VirtualRoomsMembersManager = virtualRoomsMembers;
         }
 
         [Read]
@@ -243,10 +244,7 @@ namespace ASC.Employee.Core.Controllers
             if (group.CategoryID == Constants.LinkedGroupCategoryId)
             {
                 PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
-                foreach (var userId in groupModel.Members)
-                {
-                    TransferUserToLinkedGroup(userId, group);
-                }
+                VirtualRoomsMembersManager.AddMembers(group, groupModel.Members);
             }
             else
             {
@@ -307,7 +305,7 @@ namespace ASC.Employee.Core.Controllers
             if (group.CategoryID == Constants.LinkedGroupCategoryId)
             {
                 PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
-                VirtualRoomService.RemoveMembersFromRoom(groupid, groupModel.Members);
+                VirtualRoomsMembersManager.RemoveMembers(group, groupModel.Members);
             }
             else
             {
