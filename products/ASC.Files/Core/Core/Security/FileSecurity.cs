@@ -36,6 +36,8 @@ using ASC.Web.Files.Api;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.Configuration;
 
+using Constants = ASC.Core.Users.Constants;
+
 namespace ASC.Files.Core.Security
 {
     [Scope]
@@ -157,10 +159,14 @@ namespace ASC.Files.Core.Security
             return Can(entry, userId, FilesSecurityActions.CustomFilter);
         }
 
-
         public bool CanCreate<T>(FileEntry<T> entry, Guid userId)
         {
             return Can(entry, userId, FilesSecurityActions.Create);
+        }
+
+        public bool CanRoomCreate<T>(FileEntry<T> entry, Guid userId)
+        {
+            return Can(entry, userId, FilesSecurityActions.CreateRoom);
         }
 
         public bool CanEdit<T>(FileEntry<T> entry, Guid userId)
@@ -171,6 +177,11 @@ namespace ASC.Files.Core.Security
         public bool CanDelete<T>(FileEntry<T> entry, Guid userId)
         {
             return Can(entry, userId, FilesSecurityActions.Delete);
+        }
+
+        public bool CanRoomEdit<T>(FileEntry<T> entry, Guid userId)
+        {
+            return Can(entry, userId, FilesSecurityActions.RoomEdit);
         }
 
         public bool CanRead<T>(FileEntry<T> entry)
@@ -191,6 +202,16 @@ namespace ASC.Files.Core.Security
         public bool CanFillForms<T>(FileEntry<T> entry)
         {
             return CanFillForms(entry, AuthContext.CurrentAccount.ID);
+        }
+
+        public bool CanRoomEdit<T>(FileEntry<T> entry)
+        {
+            return CanRoomEdit(entry, AuthContext.CurrentAccount.ID);
+        }
+
+        public bool CanRoomCreate<T>(FileEntry<T> entry)
+        {
+            return CanRoomCreate(entry, AuthContext.CurrentAccount.ID);
         }
 
         public bool CanReview<T>(FileEntry<T> entry)
@@ -420,7 +441,7 @@ namespace ASC.Files.Core.Security
                     if (isVisitor && e.RootFolderType == FolderType.Recent)
                     {
                         continue;
-                    }
+                    }   
 
                     if (isVisitor && e.RootFolderType == FolderType.Favorites)
                     {
@@ -534,22 +555,24 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
-                    if (e.RootFolderType == FolderType.Archive && (action == FilesSecurityActions.Read 
+                    if (e.RootFolderType == FolderType.Archive && (action == FilesSecurityActions.Read
                         || action == FilesSecurityActions.Delete) && FileSecurityCommon.IsAdministrator(userId))
                     {
-                        
+
                         result.Add(e);
                         continue;
                     }
 
-                    if (e.RootFolderType == FolderType.VirtualRoom && FileSecurityCommon.IsAdministrator(userId))
+                    if (e.FileEntryType == FileEntryType.Folder && ((IFolder)e).FolderType == FolderType.VirtualRoom
+                        && FileSecurityCommon.IsAdministrator(userId))
                     {
                         // administrator has all rights for all virtual rooms
                         result.Add(e);
                         continue;
                     }
 
-                    if (e.RootFolderType == FolderType.RoomsStorage && FileSecurityCommon.IsAdministrator(userId))
+                    if ((action == FilesSecurityActions.CreateRoom || action == FilesSecurityActions.Delete) && e.RootFolderType == FolderType.RoomsStorage 
+                        && FileSecurityCommon.IsAdministrator(userId))
                     {
                         result.Add(e);
                         continue;
@@ -557,9 +580,8 @@ namespace ASC.Files.Core.Security
 
                     if (subjects == null)
                     {
-                        subjects = e.RootFolderType == FolderType.VirtualRoom ?
-                            GetUserSubjects(userId, Constants.LinkedGroupCategoryId) :
-                            GetUserSubjects(userId);
+                        subjects = GetUserSubjects(userId);
+
                         if (shares == null)
                         {
                             shares = GetShares(entries);
@@ -620,7 +642,9 @@ namespace ASC.Files.Core.Security
                     else if (action == FilesSecurityActions.Edit && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Create && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Delete && e.Access == FileShare.RoomAdministrator) result.Add(e);
-                    else if (e.Access != FileShare.Restrict && e.CreateBy == userId && (e.FileEntryType == FileEntryType.File || ((IFolder)e).FolderType != FolderType.COMMON)) result.Add(e);
+                    else if (action == FilesSecurityActions.RoomEdit && e.Access == FileShare.RoomAdministrator) result.Add(e);
+                    else if (e.Access != FileShare.Restrict && e.CreateBy == userId && ((IFolder)e).FolderType != FolderType.RoomsStorage
+                        && (e.FileEntryType == FileEntryType.File || ((IFolder)e).FolderType != FolderType.COMMON)) result.Add(e);
 
                     if (e.CreateBy == userId) e.Access = FileShare.None; //HACK: for client
                 }
@@ -1109,7 +1133,9 @@ namespace ASC.Files.Core.Security
             Create,
             Edit,
             Delete,
-            CustomFilter
+            CustomFilter,
+            CreateRoom,
+            RoomEdit
         }
     }
 }
