@@ -168,6 +168,9 @@
   <data name="CommentCreateByDocuSign" xml:space="preserve">
     <value>Created by DocuSign</value>
   </data>
+  <data name="CommentCreateFillFormDraft" xml:space="preserve">
+    <value>Created to fill in the form</value>
+  </data>
   <data name="CommentEdit" xml:space="preserve">
     <value>Edited</value>
   </data>
@@ -374,6 +377,15 @@
   </data>
   <data name="MessageFileCreated" xml:space="preserve">
     <value>File created in folder "{0}"</value>
+  </data>
+  <data name="MessageFileCreatedForm" xml:space="preserve">
+    <value>The fillable OFORM document is ready. It is saved in the {0}</value>
+  </data>
+  <data name="MessageFillFormDraftCreated" xml:space="preserve">
+    <value>The oform copy is created in the {0} folder. Please fill out the form and download the result as a PDF or DOCX file.</value>
+  </data>
+  <data name="MessageFillFormDraftDiscard" xml:space="preserve">
+    <value>The file is no longer a draft to fill in the form.</value>
   </data>
   <data name="ProductAdminOpportunities" xml:space="preserve">
     <value>Do the same as a user|Link Dropbox, Box and other accounts in the 'Common' section|Set up access rights to the documents and folders in the 'Common' section</value>

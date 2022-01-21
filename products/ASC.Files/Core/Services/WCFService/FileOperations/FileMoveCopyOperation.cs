@@ -252,7 +252,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 }
                             }
 
-                            if (FolderDao.UseRecursiveOperation(folder.ID, toFolderId))
+                            if (toFolder.ProviderId == folder.ProviderId // crossDao operation is always recursive
+                                && FolderDao.UseRecursiveOperation(folder.ID, toFolderId))
                             {
                                 MoveOrCopyFiles(scope, FileDao.GetFiles(folder.ID), newFolder, copy);
                                 MoveOrCopyFolders(scope, FolderDao.GetFolders(folder.ID).Select(f => f.ID).ToList(), newFolder, copy);
@@ -496,6 +497,10 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                         fileDao.SaveThumbnail(newFile, null);
                                     }
 
+                                    if (newFile.ProviderEntry)
+                                    {
+                                        LinkDao.DeleteAllLink(file.ID.ToString());
+                                    }
 
                                     if (Equals(toFolderId.ToString(), DaoFolderId))
                                     {
@@ -552,6 +557,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                         newFile.ThumbnailStatus = Thumbnail.Created;
                                     }
 
+                                    LinkDao.DeleteAllLink(newFile.ID.ToString());
+
                                     needToMark.Add(newFile);
 
                                     if (copy)
@@ -580,6 +587,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                             else
                                             {
                                                 FileDao.DeleteFile(file.ID);
+
+                                                LinkDao.DeleteAllLink(file.ID.ToString());
 
                                                 if (file.RootFolderType != FolderType.USER)
                                                 {
