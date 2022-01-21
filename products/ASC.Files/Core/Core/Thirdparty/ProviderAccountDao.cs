@@ -239,6 +239,22 @@ namespace ASC.Files.Thirdparty
             return forUpdate.Count == 1 ? linkId : default;
         }
 
+        public virtual int UpdateProviderInfo(int linkId, FolderType folderType)
+        {
+            var forUpdate = FilesDbContext.ThirdpartyAccount
+                .Where(r => r.Id == linkId)
+                .Where(r => r.TenantId == TenantID)
+                .FirstOrDefault();
+
+            if (forUpdate == null) return default;
+
+            forUpdate.FolderType = folderType;
+
+            FilesDbContext.SaveChanges();
+
+            return linkId;
+        }
+
         public virtual int UpdateProviderInfo(int linkId, string customerTitle, AuthData newAuthData, FolderType folderType, Guid? userId = null)
         {
             var authData = new AuthData();
