@@ -41,9 +41,7 @@ using ASC.Core.Users;
 using ASC.FederatedLogin.Helpers;
 using ASC.FederatedLogin.LoginProviders;
 using ASC.Files.Core;
-using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Model;
-using ASC.Files.Core.Utils;
 using ASC.Files.Helpers;
 using ASC.Files.Model;
 using ASC.MessagingSystem;
@@ -81,7 +79,6 @@ namespace ASC.Api.Documents
         private FilesControllerHelper<string> FilesControllerHelperString { get; }
         private FilesControllerHelper<int> FilesControllerHelperInt { get; }
         private FileStorageService<int> FileStorageServiceInt { get; }
-        private VirtualRoomsHelper VirtualRoomsHelper { get; }
         private GlobalFolderHelper GlobalFolderHelper { get; }
         private FilesSettingsHelper FilesSettingsHelper { get; }
         private FilesLinkUtility FilesLinkUtility { get; }
@@ -111,7 +108,6 @@ namespace ASC.Api.Documents
             FilesControllerHelper<int> filesControllerHelperInt,
             FileStorageService<string> fileStorageService,
             FileStorageService<int> fileStorageServiceInt,
-            VirtualRoomsHelper virtualRoomsHelper,
             GlobalFolderHelper globalFolderHelper,
             FilesSettingsHelper filesSettingsHelper,
             FilesLinkUtility filesLinkUtility,
@@ -155,7 +151,6 @@ namespace ASC.Api.Documents
             ProductEntryPoint = productEntryPoint;
             TenantManager = tenantManager;
             FileUtility = fileUtility;
-            VirtualRoomsHelper = virtualRoomsHelper;
         }
 
         [Read("info")]
@@ -185,8 +180,7 @@ namespace ASC.Api.Documents
             }
 
             if (!CoreBaseSettings.Personal
-                && !UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOutsider(UserManager)
-                && !CoreBaseSettings.VDR)
+                && !UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOutsider(UserManager))
             {
                 result.Add(GlobalFolderHelper.FolderShare);
             }
@@ -203,14 +197,13 @@ namespace ASC.Api.Documents
                     result.Add(GlobalFolderHelper.FolderRecent);
                 }
 
-                if (!CoreBaseSettings.Personal && PrivacyRoomSettings.IsAvailable(TenantManager)
-                    && !CoreBaseSettings.VDR)
+                if (!CoreBaseSettings.Personal && PrivacyRoomSettings.IsAvailable(TenantManager))
                 {
                     result.Add(GlobalFolderHelper.FolderPrivacy);
                 }
             }
 
-            if (!CoreBaseSettings.Personal && !CoreBaseSettings.VDR)
+            if (!CoreBaseSettings.Personal)
             {
                 result.Add(GlobalFolderHelper.FolderCommon);
             }
@@ -218,13 +211,12 @@ namespace ASC.Api.Documents
             if (!IsVisitor
                && !withoutAdditionalFolder
                && FileUtility.ExtsWebTemplate.Any()
-               && FilesSettingsHelper.TemplatesSection
-               && !CoreBaseSettings.VDR)
+               && FilesSettingsHelper.TemplatesSection)
             {
                 result.Add(GlobalFolderHelper.FolderTemplates);
             }
 
-            if (!withoutTrash && !CoreBaseSettings.VDR)
+            if (!withoutTrash)
             {
                 result.Add((int)GlobalFolderHelper.FolderTrash);
             }
@@ -378,13 +370,25 @@ namespace ASC.Api.Documents
         }
 
         [Update("room/archive")]
-        public IEnumerable<FileOperationWraper> ArchiveVirtualRooms([FromBody] BatchModel model)
+        public IEnumerable<FileOperationWraper> ArchiveVirtualRoomsFromBody([FromBody] BatchModel model)
+        {
+            return FilesControllerHelperInt.ArchiveRoom(model.FolderIds);
+        }
+
+        [Update("room/archive")]
+        public IEnumerable<FileOperationWraper> ArchiveVirtualRoomsFromForm([FromForm] BatchModel model)
         {
             return FilesControllerHelperInt.ArchiveRoom(model.FolderIds);
         }
 
         [Update("room/unarchive")]
-        public IEnumerable<FileOperationWraper> UnarchiveVirtualRoom([FromBody] BatchModel model)
+        public IEnumerable<FileOperationWraper> UnarchiveVirtualRoomFromBody([FromBody] BatchModel model)
+        {
+            return FilesControllerHelperInt.UnarchiveRoom(model.FolderIds);
+        }
+
+        [Update("room/unarchive")]
+        public IEnumerable<FileOperationWraper> UnarchiveVirtulaRoomFromForm([FromForm] BatchModel model)
         {
             return FilesControllerHelperInt.UnarchiveRoom(model.FolderIds);
         }
@@ -393,6 +397,12 @@ namespace ASC.Api.Documents
         public FileUploadResult UploadRoomLogo(int folderId, IFormCollection model)
         {
             return FilesControllerHelperInt.UploalRoomLogo(folderId, model);
+        }
+
+        [Create("{folderId}/logo")]
+        public FileUploadResult UploadRoomLogo(string folderId, IFormCollection model)
+        {
+            return FilesControllerHelperString.UploalRoomLogo(folderId, model);
         }
 
         /// <summary>
