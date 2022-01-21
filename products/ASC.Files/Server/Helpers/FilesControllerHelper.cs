@@ -19,7 +19,6 @@ using ASC.Core;
 using ASC.Core.Common.Settings;
 using ASC.FederatedLogin.Helpers;
 using ASC.Files.Core;
-using ASC.Files.Core.Core;
 using ASC.Files.Core.Model;
 using ASC.Files.Model;
 using ASC.Web.Core.Files;
@@ -49,7 +48,6 @@ namespace ASC.Files.Helpers
     {
         private readonly ApiContext ApiContext;
         private readonly FileStorageService<T> FileStorageService;
-        private readonly VirtualRoomService<T> VirtualRoomService;
 
         private FileWrapperHelper FileWrapperHelper { get; }
         private FilesSettingsHelper FilesSettingsHelper { get; }
@@ -67,7 +65,6 @@ namespace ASC.Files.Helpers
         private ChunkedUploadSessionHelper ChunkedUploadSessionHelper { get; }
         private DocumentServiceTrackerHelper DocumentServiceTracker { get; }
         private SettingsManager SettingsManager { get; }
-        private CoreBaseSettings CoreBaseSettings { get; }
         private EncryptionKeyPairHelper EncryptionKeyPairHelper { get; }
         private IHttpContextAccessor HttpContextAccessor { get; }
         private ILog Logger { get; set; }
@@ -98,7 +95,6 @@ namespace ASC.Files.Helpers
             SettingsManager settingsManager,
             EncryptionKeyPairHelper encryptionKeyPairHelper,
             IHttpContextAccessor httpContextAccessor,
-            VirtualRoomService<T> virtualRoomService,
             CoreBaseSettings coreBaseSettings)
         {
             ApiContext = context;
@@ -121,8 +117,6 @@ namespace ASC.Files.Helpers
             SettingsManager = settingsManager;
             EncryptionKeyPairHelper = encryptionKeyPairHelper;
             HttpContextAccessor = httpContextAccessor;
-            VirtualRoomService = virtualRoomService;
-            CoreBaseSettings = coreBaseSettings;
             Logger = optionMonitor.Get("ASC.Files");
         }
 
@@ -587,17 +581,10 @@ namespace ASC.Files.Helpers
             if (share != null && share.Any())
             {
                 var list = new List<AceWrapper>(share.Select(FileShareParamsHelper.ToAceObject));
-                var filteredIds = new List<T>();
-
-                if (CoreBaseSettings.VDR)
-                {
-                    filteredIds = VirtualRoomService.ProcessAcesForRooms(folderIds, list);
-                }
-
                 var aceCollection = new AceCollection<T>
                 {
                     Files = fileIds,
-                    Folders = CoreBaseSettings.VDR ? filteredIds : folderIds,
+                    Folders = folderIds,
                     Aces = list,
                     Message = sharingMessage
                 };
@@ -660,14 +647,14 @@ namespace ASC.Files.Helpers
             return FileStorageService.UploadRoomLogo(folderId, model);
         }
 
-        public IEnumerable<FileOperationWraper> ArchiveRoom(IEnumerable<JsonElement> folderIds)
+        public IEnumerable<FileOperationWraper> ArchiveRoom(IEnumerable<JsonElement> foldersIds)
         {
-            return FileStorageService.ArchiveRooms(folderIds).Select(FileOperationWraperHelper.Get);
+            return FileStorageService.ArchiveRooms(foldersIds.ToList()).Select(FileOperationWraperHelper.Get);
         }
 
-        public IEnumerable<FileOperationWraper> UnarchiveRoom(IEnumerable<JsonElement> folderIds)
+        public IEnumerable<FileOperationWraper> UnarchiveRoom(IEnumerable<JsonElement> foldersIds)
         {
-            return FileStorageService.UnarchiveRooms(folderIds).Select(FileOperationWraperHelper.Get);
+            return FileStorageService.UnarchiveRooms(foldersIds.ToList()).Select(FileOperationWraperHelper.Get);
         }
         #endregion
 
