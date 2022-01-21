@@ -71,7 +71,7 @@ namespace ASC.Files.Core.Core
 
             var imageExtension = CommonPhotoManager.GetImgFormatName(imageFormat);
 
-            fileName = $"{folderId}\\orig_{width}-{height}.{imageExtension}";
+            fileName = $"{ProcessFolderId(folderId)}\\orig_{width}-{height}.{imageExtension}";
 
             if (imageData == null && imageData.Length == 0) return string.Empty;
 
@@ -85,6 +85,12 @@ namespace ASC.Files.Core.Core
             Cache.Remove(_keyPattern);
 
             return path;
+        }
+
+        public void DeleteLogo<T>(T folderId)
+        {
+            Store.DeleteDirectory(ProcessFolderId(folderId));
+            Cache.Remove(_keyPattern);
         }
 
         public void ResizeLogo<T>(T folderId, byte[] imageData, long maxFileSize, Size size, bool now)
@@ -130,7 +136,7 @@ namespace ASC.Files.Core.Core
                 }
 
                 var extension = CommonPhotoManager.GetImgFormatName(imgFormat);
-                var fileName = string.Format(LOGO_PATH, item.FolderId, item.Size.Width, item.Size.Height, extension);
+                var fileName = string.Format(LOGO_PATH, ProcessFolderId(item.FolderId), item.Size.Width, item.Size.Height, extension);
 
                 using var stream2 = new MemoryStream(data);
                 item.DataStore.Save(fileName, stream2).ToString();
@@ -174,13 +180,22 @@ namespace ASC.Files.Core.Core
 
         public IEnumerable<string> GetAllSizedLogos<T>(T folderId)
         {
-            return Store.ListFiles(folderId.ToString(), string.Empty, false)
+            return Store.ListFiles(ProcessFolderId(folderId), string.Empty, false)
                 .Select(u => u.ToString());
         }
 
         private string GetKey<T>(T folderId, Size size)
         {
             return $"{TenantId}/{folderId}/{size.Width}/{size.Height}";
+        }
+
+        private string ProcessFolderId<T>(T folderId)
+        {
+            if (folderId == null) throw new ArgumentException(null, nameof(folderId));
+
+            return folderId.GetType() != typeof(string)
+                ? folderId.ToString()
+                : folderId.ToString()?.Replace("-", "");
         }
     }
 
