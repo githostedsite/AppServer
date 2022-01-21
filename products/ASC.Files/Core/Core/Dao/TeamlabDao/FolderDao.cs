@@ -39,11 +39,9 @@ using ASC.Core.Common.Settings;
 using ASC.Core.Tenants;
 using ASC.ElasticSearch;
 using ASC.Files.Core.EF;
-using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Thirdparty;
-using ASC.Files.Core.Utils;
 using ASC.Files.Thirdparty.ProviderDao;
 using ASC.Web.Files.Classes;
 using ASC.Web.Files.Core.Search;
@@ -70,7 +68,6 @@ namespace ASC.Files.Core.Data
         private const string trash = "trash";
         private const string projects = "projects";
         private const string roomStorage = "virtualrooms";
-        private const string virtualroom = "virtualroom";
         private const string archive = "archive";
 
         private FactoryIndexerFolder FactoryIndexer { get; }
@@ -388,19 +385,6 @@ namespace ASC.Files.Core.Data
                 }
 
                 FilesDbContext.SaveChanges();
-
-                //if (folder.FolderType == FolderType.VirtualRoom)
-                //{
-                //    var toInsert = new DbFilesBunchObjects
-                //    {
-                //        LeftNode = folder.ID.ToString(),
-                //        RightNode = folder.BunchKey,
-                //        TenantId = TenantID
-                //    };
-
-                //    FilesDbContext.BunchObjects.Add(toInsert);
-                //    FilesDbContext.SaveChanges();
-                //}
             }
 
             if (transaction == null)
@@ -1070,31 +1054,6 @@ namespace ASC.Files.Core.Data
         public int GetFolderIDVirtualRooms(bool createIfNotExists)
         {
             return (this as IFolderDao<int>).GetFolderID(FileConstant.ModuleId, roomStorage, null, createIfNotExists);
-        }
-
-        public (IEnumerable<int>, IEnumerable<string>) GetRoomsIDs(IEnumerable<Guid> groupIDs)
-        {
-            var keys = groupIDs.Select(id => string.Format("{0}/{1}/{2}", FileConstant.ModuleId, virtualroom, id)).ToArray();
-
-            var folderIdsDictionary = Query(FilesDbContext.BunchObjects)
-                .AsNoTracking()
-                .Where(r => keys.Length > 1 ? keys.Any(a => a == r.RightNode) : r.RightNode == keys[0])
-                .ToDictionary(r => r.RightNode, r => r.LeftNode);
-
-            (List<int>, List<string>) customFolderIds = (new List<int>(), new List<string>());
-
-            foreach (var folderId in folderIdsDictionary.Values)
-            {
-                if (int.TryParse(folderId, out int id))
-                {
-                    customFolderIds.Item1.Add(id);
-                    continue;
-                }
-
-                customFolderIds.Item2.Add(folderId);
-            }
-
-            return customFolderIds;
         }
 
         #endregion
