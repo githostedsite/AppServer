@@ -227,8 +227,8 @@ namespace ASC.Web.Files.Utils
 
         private List<AceWrapper> FilterAndProcessAcesForRooms(FileEntry<T> entry, List<AceWrapper> aceWrappers)
         {
-            if (entry.FileEntryType != FileEntryType.Folder
-                && ((IFolder)entry).FolderType != FolderType.VirtualRoom)
+            if (entry.FileEntryType == FileEntryType.File || (entry.FileEntryType == FileEntryType.Folder 
+                && ((IFolder)entry).FolderType != FolderType.VirtualRoom))
                 return aceWrappers;
 
             var result = new List<AceWrapper>(aceWrappers.Count);
