@@ -33,6 +33,7 @@ using ASC.Common;
 using ASC.Core;
 using ASC.Core.Tenants;
 using ASC.Files.Core;
+using ASC.Files.Core.Core;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
@@ -131,7 +132,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFolders(IEnumerable<T> folderIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, virtualRoomsHelper, authManager, userManager, fileSecurityCommon, authContext) = scopeClass;
+            var (fileMarker, filesMessageService, virtualRoomsHelper, 
+                authManager, userManager, fileSecurityCommon, authContext, roomLogoManager) = scopeClass;
             foreach (var folderId in folderIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -166,22 +168,23 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                     {
                         if (ProviderDao != null)
                         {
-                            if (folder.FolderType == FolderType.VirtualRoom)
+                            if (folder.FolderType == FolderType.VirtualRoom && !_immediately)
                             {
-                                var folders = FolderDao.GetFolders(folderId);
-                                var groupIds = folders.Select(f => virtualRoomsHelper.GetLinkedGroupId(f))
-                                    .Where(id => id != Guid.Empty).ToArray();
-
-                                foreach (var group in groupIds)
-                                {
-                                    userManager.DeleteGroup(group);
-                                    authManager.RemoveAllAces(new GroupSecurityObject(group));
-                                }
-
-                                var folderDaoInt = scope.ServiceProvider.GetService<IFolderDao<int>>();
+                                ProviderDao.UpdateProviderInfo(folder.ProviderId, FolderType.Archive);
+                                virtualRoomsHelper.ArchiveLinkedGroup(folder, userManager);
+                            }
+                            else if (folder.FolderType == FolderType.VirtualRoom && _immediately)
+                            {
+                                ProviderDao.RemoveProviderInfo(folder.ProviderId);
+                                var groupId = virtualRoomsHelper.GetLinkedGroupId(folder);
+                                userManager.DeleteGroup(groupId);
+                                roomLogoManager.DeleteLogo(folder.ID);
+                            }
+                            else
+                            {
+                                ProviderDao.RemoveProviderInfo(folder.ProviderId);
                             }
 
-                            ProviderDao.RemoveProviderInfo(folder.ProviderId);
                             filesMessageService.Send(folder, _headers, MessageAction.ThirdPartyDeleted, folder.ID.ToString(), folder.ProviderKey);
                         }
 
@@ -199,8 +202,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                             {
                                 if (folder.FolderType == FolderType.VirtualRoom)
                                 {
-                                    DeleteLinkedFolder(folder, userManager, virtualRoomsHelper,
-                                        authManager);
+                                    DeleteVirtualRoom(folder, userManager, virtualRoomsHelper,
+                                        authManager, roomLogoManager);
 
                                     filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomDeleted, folder.Title);
                                 }
@@ -227,8 +230,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
                                 {
                                     if (folder.FolderType == FolderType.VirtualRoom)
                                     {
-                                        DeleteLinkedFolder(folder, userManager,
-                                            virtualRoomsHelper, authManager);
+                                        DeleteVirtualRoom(folder, userManager,
+                                            virtualRoomsHelper, authManager, roomLogoManager);
 
                                         filesMessageService.Send(folder, _headers, MessageAction.VirtualRoomDeleted, folder.Title);
                                     }
@@ -270,7 +273,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private void DeleteFiles(IEnumerable<T> fileIds, IServiceScope scope)
         {
             var scopeClass = scope.ServiceProvider.GetService<FileDeleteOperationScope>();
-            var (fileMarker, filesMessageService, _, _, _, _, _) = scopeClass;
+            var (fileMarker, filesMessageService, _, _, _, _, _, _) = scopeClass;
             foreach (var fileId in fileIds)
             {
                 CancellationToken.ThrowIfCancellationRequested();
@@ -344,8 +347,8 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             return false;
         }
 
-        private void DeleteLinkedFolder(Folder<T> folder, UserManager userManager, 
-            VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager)
+        private void DeleteVirtualRoom(Folder<T> folder, UserManager userManager, 
+            VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager, RoomLogoManager roomLogoManager)
         {
             var groupId = linkedFolderHelper.GetLinkedGroupId(folder);
 
@@ -353,6 +356,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
 
             userManager.DeleteGroup(groupId);
             authorizationManager.RemoveAllAces(new GroupSecurityObject(groupId));
+            roomLogoManager.DeleteLogo(folder.ID);
         }
     }
 
@@ -366,10 +370,11 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
         private FileSecurityCommon FileSecurityCommon { get; }
         private AuthContext AuthContext { get; }
         private UserManager UserManager => FileMarker.UserManager;
+        private RoomLogoManager RoomLogoManager { get; }
 
         public FileDeleteOperationScope(FileMarker fileMarker, FilesMessageService filesMessageService,
             VirtualRoomsHelper linkedFolderHelper, AuthorizationManager authorizationManager,
-            FileSecurityCommon fileSecurityCommon, AuthContext authContext)
+            FileSecurityCommon fileSecurityCommon, AuthContext authContext, RoomLogoManager roomLogoManager)
         {
             FileMarker = fileMarker;
             FilesMessageService = filesMessageService;
@@ -377,11 +382,13 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             AuthorizationManager = authorizationManager;
             FileSecurityCommon = fileSecurityCommon;
             AuthContext = authContext;
+            RoomLogoManager = roomLogoManager;
         }
 
         public void Deconstruct(out FileMarker fileMarker, out FilesMessageService filesMessageService,
             out VirtualRoomsHelper linkedFolderHelper, out AuthorizationManager authorizationManager, 
-            out UserManager userManager, out FileSecurityCommon fileSecurityCommon, out AuthContext authContext)
+            out UserManager userManager, out FileSecurityCommon fileSecurityCommon, out AuthContext authContext,
+            out RoomLogoManager roomLogoManager)
         {
             fileMarker = FileMarker;
             filesMessageService = FilesMessageService;
@@ -390,6 +397,7 @@ namespace ASC.Web.Files.Services.WCFService.FileOperations
             userManager = UserManager;
             fileSecurityCommon = FileSecurityCommon;
             authContext = AuthContext;
+            roomLogoManager = RoomLogoManager;
         }
     }
 }
