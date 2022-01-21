@@ -41,6 +41,7 @@ using ASC.Core;
 using ASC.Core.Common.Settings;
 using ASC.Core.Users;
 using ASC.Files.Core;
+using ASC.Files.Core.Data;
 using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
@@ -511,6 +512,8 @@ namespace ASC.Web.Files.Utils
                 else
                     entries = fileSecurity.GetArchiveForMe();
 
+                entries = entries.Concat(GetThirpartyFolders(parent));
+
                 CalculateTotal();
             }
             else if (parent.FolderType == FolderType.RoomsStorage)
@@ -617,58 +620,59 @@ namespace ASC.Web.Files.Utils
         {
             var folderList = new List<Folder<string>>();
 
-            if ((parent.ID.Equals(GlobalFolderHelper.FolderMy) || parent.ID.Equals(GlobalFolderHelper.FolderCommon))
-                && ThirdpartyConfiguration.SupportInclusion(DaoFactory)
-                && (FilesSettingsHelper.EnableThirdParty
-                    || CoreBaseSettings.Personal))
+            if (!ThirdpartyConfiguration.SupportInclusion(DaoFactory) 
+                && !(FilesSettingsHelper.EnableThirdParty || CoreBaseSettings.Personal))
+                return folderList;
+
+            if (parent.ID.Equals(GlobalFolderHelper.FolderMy) || parent.ID.Equals(GlobalFolderHelper.FolderCommon) 
+                || parent.ID.Equals(GlobalFolderHelper.FolderArchive))
             {
-                var providerDao = DaoFactory.ProviderDao;
-                if (providerDao == null) return folderList;
-
-                var fileSecurity = FileSecurity;
-
-                var providers = providerDao.GetProvidersInfo(parent.RootFolderType, searchText);
-                folderList = providers
-                    .Select(providerInfo => GetFakeThirdpartyFolder<T>(providerInfo, parent.ID.ToString()))
-                    .Where(r => fileSecurity.CanRead(r)).ToList();
-
-                if (folderList.Any())
-                {
-                    var securityDao = DaoFactory.GetSecurityDao<string>();
-                    securityDao.GetPureShareRecords(folderList)
-                    //.Where(x => x.Owner == SecurityContext.CurrentAccount.ID)
-                    .Select(x => x.EntryId).Distinct().ToList()
-                    .ForEach(id =>
-                    {
-                        folderList.First(y => y.ID.Equals(id)).Shared = true;
-                    });
-                }
+                folderList = GetThirdPartyFolders(parent, parent.RootFolderType, searchText);
             }
 
-            if (parent.ID.Equals(GlobalFolderHelper.FolderVirtualRooms) && ThirdpartyConfiguration.SupportInclusion(DaoFactory)
-                && FilesSettingsHelper.EnableThirdParty)
+            if (parent.ID.Equals(GlobalFolderHelper.FolderVirtualRooms))
             {
-                var providerDao = DaoFactory.ProviderDao;
-                if (providerDao == null) return folderList;
+                folderList = GetThirdPartyFolders(parent, FolderType.VirtualRoom, searchText);
+            }
 
-                var fileSecurity = FileSecurity;
+            return folderList;
+        }
 
-                var providers = providerDao.GetProvidersInfo(FolderType.VirtualRoom, searchText);
+        private List<Folder<string>> GetThirdPartyFolders<T>(Folder<T> parent, FolderType folderType, string searchText = null)
+        {
+            var folderList = new List<Folder<string>>();
+
+            var providerDao = DaoFactory.ProviderDao;
+            if (providerDao == null) return folderList;
+
+            var fileSecurity = FileSecurity;
+
+            var providers = providerDao.GetProvidersInfo(folderType, searchText);
+
+            if (folderType == FolderType.VirtualRoom || folderType == FolderType.Archive)
+            {
+                var folderDao = DaoFactory.GetFolderDao<string>();
+                folderList = providers
+                    .Select(providerInfo => folderDao.GetFolder(providerInfo.RootFolderId))
+                    .Where(r => fileSecurity.CanRead(r)).ToList();
+            }
+            else
+            {
                 folderList = providers
                     .Select(providerInfo => GetFakeThirdpartyFolder<T>(providerInfo, parent.ID.ToString()))
                     .Where(r => fileSecurity.CanRead(r)).ToList();
+            }
 
-                if (folderList.Any())
+            if (folderList.Any())
+            {
+                var securityDao = DaoFactory.GetSecurityDao<string>();
+                securityDao.GetPureShareRecords(folderList)
+                //.Where(x => x.Owner == SecurityContext.CurrentAccount.ID)
+                .Select(x => x.EntryId).Distinct().ToList()
+                .ForEach(id =>
                 {
-                    var securityDao = DaoFactory.GetSecurityDao<string>();
-                    securityDao.GetPureShareRecords(folderList)
-                    //.Where(x => x.Owner == SecurityContext.CurrentAccount.ID)
-                    .Select(x => x.EntryId).Distinct().ToList()
-                    .ForEach(id =>
-                    {
-                        folderList.First(y => y.ID.Equals(id)).Shared = true;
-                    });
-                }
+                    folderList.First(y => y.ID.Equals(id)).Shared = true;
+                });
             }
 
             return folderList;
