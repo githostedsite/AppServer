@@ -34,6 +34,7 @@ using ASC.Common.Logging;
 using ASC.Core;
 using ASC.Core.Users;
 using ASC.Files.Core;
+using ASC.Files.Core.Helpers;
 using ASC.Files.Core.Resources;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Services.NotifyService;
@@ -51,7 +52,6 @@ namespace ASC.Web.Files.Utils
     public class FileSharingAceHelper<T>
     {
         private FileSecurity FileSecurity { get; }
-        private Global Global { get; }
         private CoreBaseSettings CoreBaseSettings { get; }
         private FileUtility FileUtility { get; }
         private UserManager UserManager { get; }
@@ -62,10 +62,11 @@ namespace ASC.Web.Files.Utils
         private GlobalFolderHelper GlobalFolderHelper { get; }
         private FileSharingHelper FileSharingHelper { get; }
         private FileTrackerHelper FileTracker { get; }
+        private VirtualRoomsHelper VirtualRoomsHelper { get; }
+        private FileSecurityCommon FileSecurityCommon { get; }
 
         public FileSharingAceHelper(
             FileSecurity fileSecurity,
-            Global global,
             CoreBaseSettings coreBaseSettings,
             FileUtility fileUtility,
             UserManager userManager,
@@ -75,10 +76,11 @@ namespace ASC.Web.Files.Utils
             NotifyClient notifyClient,
             GlobalFolderHelper globalFolderHelper,
             FileSharingHelper fileSharingHelper,
-            FileTrackerHelper fileTracker)
+            FileTrackerHelper fileTracker,
+            VirtualRoomsHelper virtualRoomsHelper,
+            FileSecurityCommon fileSecurityCommon)
         {
             FileSecurity = fileSecurity;
-            Global = global;
             CoreBaseSettings = coreBaseSettings;
             FileUtility = fileUtility;
             UserManager = userManager;
@@ -89,9 +91,11 @@ namespace ASC.Web.Files.Utils
             GlobalFolderHelper = globalFolderHelper;
             FileSharingHelper = fileSharingHelper;
             FileTracker = fileTracker;
+            VirtualRoomsHelper = virtualRoomsHelper;
+            FileSecurityCommon = fileSecurityCommon;
         }
 
-        public bool SetAceObject(List<AceWrapper> aceWrappers, FileEntry<T> entry, bool notify, string message)
+        public bool SetAceObject(List<AceWrapper> aceWrappers, FileEntry<T> entry, bool notify, string message, bool handleForRooms = false)
         {
             if (entry == null) throw new ArgumentNullException(FilesCommonResource.ErrorMassage_BadRequest);
             if (!FileSharingHelper.CanSetAccess(entry)) throw new SecurityException(FilesCommonResource.ErrorMassage_SecurityException);
@@ -102,6 +106,8 @@ namespace ASC.Web.Files.Utils
             var recipients = new Dictionary<Guid, FileShare>();
             var usersWithoutRight = new List<Guid>();
             var changed = false;
+
+            aceWrappers = handleForRooms ? FilterAndProcessAcesForRooms(entry, aceWrappers) : aceWrappers;
 
             foreach (var w in aceWrappers.OrderByDescending(ace => ace.SubjectGroup))
             {
@@ -218,6 +224,50 @@ namespace ASC.Web.Files.Utils
                     FileMarker.RemoveMarkAsNew(entry);
                 });
         }
+
+        private List<AceWrapper> FilterAndProcessAcesForRooms(FileEntry<T> entry, List<AceWrapper> aceWrappers)
+        {
+            if (entry.FileEntryType != FileEntryType.Folder
+                && ((IFolder)entry).FolderType != FolderType.VirtualRoom)
+                return aceWrappers;
+
+            var result = new List<AceWrapper>(aceWrappers.Count);
+            var groupId = VirtualRoomsHelper.GetLinkedGroupId(entry as Folder<T>);
+            var group = UserManager.GetGroupInfo(groupId);
+
+            if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return result;
+
+            var isAdmin = FileSecurityCommon.IsAdministrator(AuthContext.CurrentAccount.ID);
+            var isRoomAdmin = !isAdmin ? FileSecurity.CanRoomEdit(entry) : true;
+
+            foreach (var ace in aceWrappers)
+            {
+                if (ace.SubjectGroup) continue;
+
+                if (!UserManager.IsUserInGroup(ace.SubjectId, groupId)) continue;
+
+                if (ace.Share == FileShare.RoomAdministrator && isAdmin)
+                {
+                    VirtualRoomsHelper.AddAdminRoomPrivilege(ace.SubjectId, groupId);
+                    result.Add(ace);
+                    continue;
+                }
+
+                if ((ace.Share == FileShare.None || ace.Share == FileShare.Restrict) && isAdmin)
+                {
+                    VirtualRoomsHelper.DeleteAdminRoomPrivilege(ace.SubjectId, groupId);
+                    result.Add(ace);
+                    continue;
+                }
+
+                if (FileSecurity.CanRoomEdit(entry, ace.SubjectId)) continue;
+
+                if (ace.Share != FileShare.RoomAdministrator && isRoomAdmin)
+                    result.Add(ace);
+            }
+
+            return result;
+        }
     }
 
     [Scope]
@@ -247,7 +297,7 @@ namespace ASC.Web.Files.Utils
         {
             return
                 entry != null
-                && ((entry.RootFolderType == FolderType.COMMON && Global.IsAdministrator) 
+                && ((entry.RootFolderType == FolderType.COMMON && Global.IsAdministrator)
                 || (entry.RootFolderType == FolderType.VirtualRoom && (Global.IsAdministrator || FileSecurity.CanEdit(entry)))
                     || (entry.RootFolderType == FolderType.Archive && Global.IsAdministrator)
                     || (entry.RootFolderType == FolderType.RoomsStorage && Global.IsAdministrator || FileSecurity.CanEdit(entry))
@@ -553,7 +603,7 @@ namespace ASC.Web.Files.Utils
 
         public List<AceShortWrapper> GetSharedInfoShortFile<T>(T fileID)
         {
-            var aces = GetSharedInfo(new List<T> { fileID}, new List<T>());
+            var aces = GetSharedInfo(new List<T> { fileID }, new List<T>());
 
             return GetAceShortWrappers(aces);
         }
