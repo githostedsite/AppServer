@@ -14,7 +14,6 @@ using ASC.Files.Core;
 using ASC.Files.Core.EF;
 using ASC.Files.Core.Security;
 using ASC.Files.Core.Thirdparty;
-using ASC.Files.Core.Utils;
 using ASC.Security.Cryptography;
 using ASC.Web.Core.Files;
 using ASC.Web.Files.Services.DocumentService;
@@ -28,7 +27,7 @@ using FileShare = ASC.Files.Core.Security.FileShare;
 
 namespace ASC.Files.Thirdparty
 {
-    internal abstract class ThirdPartyProviderDao 
+    internal abstract class ThirdPartyProviderDao
     {
         #region FileDao
 
@@ -189,11 +188,6 @@ namespace ASC.Files.Thirdparty
             return null;
         }
 
-        public (IEnumerable<int>, IEnumerable<string>) GetRoomsIDs(IEnumerable<Guid> groupIDs)
-        {
-            return (null, null);
-        }
-
         public string GetFolderIDArchive(bool createIfNotExists)
         {
             return null;
@@ -351,8 +345,8 @@ namespace ASC.Files.Thirdparty
 
         protected void AddFolderType(Folder<string> folder)
         {
-            if (folder.RootFolderType == FolderType.VirtualRoom && (folder.ID == PathPrefix
-                || folder.FolderID == PathPrefix))
+            if ((folder.RootFolderType == FolderType.VirtualRoom || folder.RootFolderType == FolderType.Archive)
+                && (folder.ID == PathPrefix))
             {
                 folder.FolderType = FolderType.VirtualRoom;
                 return;
