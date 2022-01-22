@@ -26,21 +26,23 @@ const StyledTableContainer = styled.div`
     margin: 14px 8px 0 auto;
     z-index: 1;
     border-right: 2px solid #d0d5da;
+    &:hover {
+      border-color: #657077;
+    }
   }
 
   .table-container_group-menu,
   .table-container_header {
     padding: 0 24px;
-    margin: 0 -24px;
 
     border-bottom: 1px solid;
     border-image-slice: 1;
     border-image-source: linear-gradient(
       to right,
-      #ffffff 24px,
-      #eceef1 24px,
-      #eceef1 calc(100% - 24px),
-      #ffffff calc(100% - 24px)
+      #ffffff 21px,
+      #eceef1 21px,
+      #eceef1 calc(100% - 31px),
+      #ffffff calc(100% - 31px)
     );
     border-top: 0;
   }
@@ -177,6 +179,9 @@ const StyledTableHeaderCell = styled.div`
     height: 38px;
     display: flex;
     align-items: center;
+    &:hover {
+      color: #657077;
+    }
   }
 `;
 

@@ -209,14 +209,14 @@ class SettingsSetupStore {
 
   setLanguageAndTime = async (lng, timeZoneID) => {
     const res = await api.settings.setLanguageAndTime(lng, timeZoneID);
-    console.log("setLanguageAndTime", res);
-    if (res) this.setLanguageAndTime({ lng, timeZoneID });
+    //console.log("setLanguageAndTime", res);
+    //if (res) this.setPortalLanguageAndTime({ lng, timeZoneID });
   };
 
   setGreetingTitle = async (greetingTitle) => {
     const res = await api.settings.setGreetingSettings(greetingTitle);
 
-    if (res) this.setGreetingSettings(greetingTitle);
+    //if (res) this.setGreetingSettings(greetingTitle);
   };
 
   setCurrentSchema = async (id) => {
@@ -249,7 +249,7 @@ class SettingsSetupStore {
 
   restoreGreetingTitle = async () => {
     const res = await api.settings.restoreGreetingSettings();
-    if (res) this.setGreetingSettings(res.Content);
+    //if (res) this.setGreetingSettings(res.Content);
   };
 
   getConsumers = async () => {

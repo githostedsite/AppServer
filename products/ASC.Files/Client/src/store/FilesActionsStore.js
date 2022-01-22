@@ -56,10 +56,23 @@ class FilesActionStore {
     }
   };
 
-  updateCurrentFolder = () => {
+  updateCurrentFolder = (selectionLength) => {
     const {
       clearSecondaryProgressData,
     } = this.uploadDataStore.secondaryProgressDataStore;
+
+    const {
+      filter,
+      fetchFiles,
+      isEmptyLastPageAfterOperation,
+      resetFilterPage,
+    } = this.filesStore;
+
+    let newFilter;
+
+    if (selectionLength && isEmptyLastPageAfterOperation(selectionLength)) {
+      newFilter = resetFilterPage();
+    }
 
     let updatedFolder = this.selectedFolderStore.id;
 
@@ -67,8 +80,12 @@ class FilesActionStore {
       updatedFolder = this.selectedFolderStore.parentId;
     }
 
-    const { filter, fetchFiles } = this.filesStore;
-    fetchFiles(updatedFolder, filter, true, true).finally(() => {
+    fetchFiles(
+      updatedFolder,
+      newFilter ? newFilter : filter,
+      true,
+      true
+    ).finally(() => {
       this.dialogsStore.setIsFolderActions(false);
       return setTimeout(() => clearSecondaryProgressData(), TIMEOUT);
     });
@@ -131,7 +148,18 @@ class FilesActionStore {
               label: translations.deleteOperation,
             };
             await this.uploadDataStore.loopFilesOperations(data, pbData);
-            this.updateCurrentFolder();
+            this.updateCurrentFolder(selection.length);
+            if (isRecycleBinFolder) {
+              return toastr.success(translations.deleteFromTrash);
+            }
+
+            if (selection.length > 1) {
+              return toastr.success(translations.deleteSelectedElem);
+            }
+            if (selection[0].fileExst) {
+              return toastr.success(translations.FileRemoved);
+            }
+            return toastr.success(translations.FolderRemoved);
           }
         );
       } catch (err) {
@@ -167,6 +195,7 @@ class FilesActionStore {
           label: translations.deleteOperation,
         };
         await this.uploadDataStore.loopFilesOperations(data, pbData);
+        toastr.success(translations.successOperation);
         this.updateCurrentFolder();
       });
     } catch (err) {
@@ -178,8 +207,6 @@ class FilesActionStore {
       return toastr.error(err.message ? err.message : err);
     }
   };
-
-  downloadFilesOperation = () => {};
 
   downloadFiles = async (fileConvertIds, folderIds, label) => {
     const {
@@ -293,7 +320,13 @@ class FilesActionStore {
           setTreeFolders(treeFolders);
         }
       }
-      setAction({ type: null, id: null, extension: null });
+      setAction({
+        type: null,
+        id: null,
+        extension: null,
+        title: "",
+        templateId: null,
+      });
       setIsLoading(false);
       type === FileAction.Rename &&
         this.onSelectItem({
@@ -358,13 +391,15 @@ class FilesActionStore {
       label: translations.deleteOperation,
     };
 
+    const selectionFilesLength = 1;
+
     if (isFile) {
       this.isMediaOpen();
       return deleteFile(itemId)
         .then(async (res) => {
           const data = res[0] ? res[0] : null;
           await this.uploadDataStore.loopFilesOperations(data, pbData);
-          this.updateCurrentFolder();
+          this.updateCurrentFolder(selectionFilesLength);
         })
         .then(() => toastr.success(translations.successRemoveFile));
     } else {
@@ -372,7 +407,7 @@ class FilesActionStore {
         .then(async (res) => {
           const data = res[0] ? res[0] : null;
           await this.uploadDataStore.loopFilesOperations(data, pbData);
-          this.updateCurrentFolder();
+          this.updateCurrentFolder(selectionFilesLength);
         })
         .then(() => toastr.success(translations.successRemoveFolder));
     }
@@ -525,6 +560,7 @@ class FilesActionStore {
   markAsRead = (folderIds, fileId, item) => {
     const {
       setSecondaryProgressBarData,
+      clearSecondaryProgressData,
     } = this.uploadDataStore.secondaryProgressDataStore;
 
     setSecondaryProgressBarData({
@@ -541,7 +577,8 @@ class FilesActionStore {
         await this.uploadDataStore.loopFilesOperations(data, pbData);
       })
       .then(() => item && this.setNewBadgeCount(item))
-      .catch((err) => toastr.error(err));
+      .catch((err) => toastr.error(err))
+      .finally(() => setTimeout(() => clearSecondaryProgressData(), TIMEOUT));
   };
 
   moveDragItems = (destFolderId, folderTitle, translations) => {
@@ -697,6 +734,7 @@ class FilesActionStore {
             label: t("Share"),
             onClick: () => setSharingPanelVisible(true),
             iconUrl: "/static/images/share.react.svg",
+            title: t("Translations:ButtonShareAccess"),
           };
 
       case "copy":
@@ -751,6 +789,8 @@ class FilesActionStore {
                   deleteOperation: t("Translations:DeleteOperation"),
                   deleteFromTrash: t("Translations:DeleteFromTrash"),
                   deleteSelectedElem: t("Translations:DeleteSelectedElem"),
+                  FileRemoved: t("Home:FileRemoved"),
+                  FolderRemoved: t("Home:FolderRemoved"),
                 };
 
                 this.deleteAction(translations).catch((err) =>
@@ -876,12 +916,7 @@ class FilesActionStore {
         onClick: () => setMoveToPanelVisible(true),
         iconUrl: "/static/images/move.react.svg",
       })
-      .set("delete", deleteOption)
-      .set("emptyRecycleBin", {
-        label: t("EmptyRecycleBin"),
-        onClick: () => setEmptyTrashDialogVisible(true),
-        iconUrl: "/static/images/delete.react.svg",
-      });
+      .set("delete", deleteOption);
     return this.convertToArray(itemsCollection);
   };
   getHeaderMenu = (t) => {

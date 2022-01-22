@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -33,6 +34,8 @@ using Microsoft.Extensions.Hosting;
 
 using NLog;
 using NLog.Extensions.Logging;
+
+using StackExchange.Redis.Extensions.Core.Configuration;
 
 namespace ASC.Api.Core
 {
@@ -71,19 +74,19 @@ namespace ASC.Api.Core
             DIHelper.Configure(services);
 
             Action<JsonOptions> jsonOptions = options =>
-                               {
-                                   options.JsonSerializerOptions.WriteIndented = false;
-                                   options.JsonSerializerOptions.IgnoreNullValues = true;
-                                   options.JsonSerializerOptions.Converters.Add(new ApiDateTimeConverter());
+                {
+                    options.JsonSerializerOptions.WriteIndented = false;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                    options.JsonSerializerOptions.Converters.Add(new ApiDateTimeConverter());
 
-                                   if (Converters != null)
-                                   {
-                                       foreach (var c in Converters)
-                                       {
-                                           options.JsonSerializerOptions.Converters.Add(c);
-                                       }
-                                   }
-                               };
+                    if (Converters != null)
+                    {
+                        foreach (var c in Converters)
+                        {
+                            options.JsonSerializerOptions.Converters.Add(c);
+                        }
+                    }
+                };
 
             services.AddControllers()
                 .AddXmlSerializerFormatters()
@@ -101,7 +104,18 @@ namespace ASC.Api.Core
             DIHelper.TryAdd<CookieAuthHandler>();
             DIHelper.TryAdd<WebhooksGlobalFilterAttribute>();
 
-            DIHelper.TryAdd(typeof(ICacheNotify<>), typeof(KafkaCache<>));
+            var redisConfiguration = Configuration.GetSection("Redis").Get<RedisConfiguration>();
+
+            if (redisConfiguration != null)
+            {
+                DIHelper.TryAdd(typeof(ICacheNotify<>), typeof(RedisCache<>));
+            }
+            else
+            {
+                DIHelper.TryAdd(typeof(ICacheNotify<>), typeof(MemoryCacheNotify<>));
+            }
+
+
             DIHelper.TryAdd(typeof(IWebhookPublisher), typeof(WebhookPublisher));
 
             if (LoadProducts)
