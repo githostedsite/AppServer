@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 
 using ASC.Api.Core;
 using ASC.Api.Utils;
@@ -136,12 +137,18 @@ namespace ASC.Employee.Core.Controllers
 
         private GroupWrapperFull UpdateGroup(Guid groupid, GroupModel groupModel)
         {
-            PermissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var group = UserManager.GetGroups().SingleOrDefault(x => x.ID == groupid).NotFoundIfNull("group not found");
+
+            if (group.CategoryID == Constants.LinkedGroupCategoryId)
+                PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
+            else
+                PermissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
+
             if (groupid == Constants.LostGroupInfo.ID)
-            {
                 throw new ItemNotFoundException("group not found");
-            }
+
+            if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
+                throw new SecurityException("Unable to edit archived group");
 
             group.Name = groupModel.GroupName ?? group.Name;
             UserManager.SaveGroupInfo(group);
@@ -171,7 +178,7 @@ namespace ASC.Employee.Core.Controllers
 
             if (CoreBaseSettings.VDR && group.CategoryID == Constants.LinkedGroupCategoryId ||
                 group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
-                throw new Exception("Unable to delete linked group");
+                throw new SecurityException("Unable to delete linked group");
 
             UserManager.DeleteGroup(groupid);
 
