@@ -485,7 +485,7 @@ namespace ASC.Web.Files.Services.WCFService
                         FilesCommonResource.ErrorMessage_SecurityException_EditArchivedRoom);
 
                     group.Name = title;
-                    UserManager.SaveGroupInfo(group);
+                    UserManager.SaveLinkedGroupInfo(group);
                 }
 
                 var newFolderID = folderDao.RenameFolder(folder, title);
