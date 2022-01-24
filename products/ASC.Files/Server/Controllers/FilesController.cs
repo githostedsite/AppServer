@@ -370,39 +370,73 @@ namespace ASC.Api.Documents
         {
             ErrorIfNotVDR();
 
-            return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderVirtualRooms, Guid.Empty, FilterType.None, false);
+            return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderVirtualRooms, Guid.Empty, FilterType.None, true);
         }
 
+        /// <summary>
+        /// Archive virtual rooms with the IDs specified in the request
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Operation result</returns>
         [Update("room/archive")]
         public IEnumerable<FileOperationWraper> ArchiveVirtualRoomsFromBody([FromBody] BatchModel model)
         {
             return FilesControllerHelperInt.ArchiveRoom(model.FolderIds);
         }
 
+        /// <summary>
+        /// Archive virtual rooms with the IDs specified in the request
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Operation result</returns>
         [Update("room/archive")]
+        [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileOperationWraper> ArchiveVirtualRoomsFromForm([FromForm] BatchModel model)
         {
             return FilesControllerHelperInt.ArchiveRoom(model.FolderIds);
         }
 
+        /// <summary>
+        /// Archive virtual rooms with the IDs specified in the request
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Operation result</returns>
         [Update("room/unarchive")]
         public IEnumerable<FileOperationWraper> UnarchiveVirtualRoomFromBody([FromBody] BatchModel model)
         {
             return FilesControllerHelperInt.UnarchiveRoom(model.FolderIds);
         }
 
+        /// <summary>
+        /// Archive virtual rooms with the IDs specified in the request
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Operation result</returns>
         [Update("room/unarchive")]
+        [Consumes("application/x-www-form-urlencoded")]
         public IEnumerable<FileOperationWraper> UnarchiveVirtulaRoomFromForm([FromForm] BatchModel model)
         {
             return FilesControllerHelperInt.UnarchiveRoom(model.FolderIds);
         }
 
+        /// <summary>
+        /// Upload logo for virtual room
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>File upload result</returns>
         [Create("{folderId:int}/logo")]
         public FileUploadResult UploadRoomLogo(int folderId, IFormCollection model)
         {
             return FilesControllerHelperInt.UploalRoomLogo(folderId, model);
         }
 
+        /// <summary>
+        /// Upload logo for virtual room
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="model"></param>
+        /// <returns>File upload result</returns>
         [Create("{folderId}/logo")]
         public FileUploadResult UploadRoomLogo(string folderId, IFormCollection model)
         {
@@ -421,12 +455,6 @@ namespace ASC.Api.Documents
         public FolderContentWrapper<int> GetShareFolder(Guid userIdOrGroupId, FilterType filterType, bool withsubfolders)
         {
             return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderShare, userIdOrGroupId, filterType, withsubfolders);
-        }
-
-        [Read("@vrooms")]
-        public FolderContentWrapper<int> GetVirtulaRooms()
-        {
-            return FilesControllerHelperInt.GetFolder(GlobalFolderHelper.FolderVirtualRooms, Guid.Empty, FilterType.None, false);
         }
 
         /// <summary>
