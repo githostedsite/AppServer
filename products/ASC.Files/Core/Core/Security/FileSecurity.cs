@@ -566,6 +566,12 @@ namespace ASC.Files.Core.Security
                             result.Add(e);
                             continue;
                         }
+
+                        if (folder.FolderType == FolderType.VirtualRoom && FileSecurityCommon.IsAdministrator(userId))
+                        {
+                            result.Add(e);
+                            continue;
+                        }
                     }
 
                     if (e.RootFolderType == FolderType.COMMON && FileSecurityCommon.IsAdministrator(userId))
@@ -591,8 +597,8 @@ namespace ASC.Files.Core.Security
                         continue;
                     }
 
-                    if ((action == FilesSecurityActions.CreateRoom || action == FilesSecurityActions.Delete) && e.RootFolderType == FolderType.RoomsStorage 
-                        && FileSecurityCommon.IsAdministrator(userId))
+                    if ((action == FilesSecurityActions.CreateRoom || action == FilesSecurityActions.Delete || action == FilesSecurityActions.Edit) 
+                        && e.RootFolderType == FolderType.RoomsStorage && FileSecurityCommon.IsAdministrator(userId))
                     {
                         result.Add(e);
                         continue;
@@ -600,7 +606,9 @@ namespace ASC.Files.Core.Security
 
                     if (subjects == null)
                     {
-                        subjects = GetUserSubjects(userId);
+                        subjects = folder != null && folder.FolderType == FolderType.VirtualRoom ?
+                            GetUserSubjects(userId, Constants.LinkedGroupCategoryId)
+                            : GetUserSubjects(userId);
 
                         if (shares == null)
                         {
@@ -642,9 +650,9 @@ namespace ASC.Files.Core.Security
                             ? FileShare.Restrict
                             : e.RootFolderType == FolderType.USER
                             ? DefaultMyShare
-                        : e.RootFolderType == FolderType.Privacy
+                            : e.RootFolderType == FolderType.Privacy
                             ? DefaultPrivacyShare
-                            : e.RootFolderType == FolderType.VirtualRoom
+                            : folder != null && folder.FolderType == FolderType.VirtualRoom
                             ? DefaultVirtualRoomShare
                             : e.RootFolderType == FolderType.Archive
                             ? DefaultArchiveShare
@@ -655,16 +663,16 @@ namespace ASC.Files.Core.Security
                     e.Access = ace != null ? ace.Share : defaultShare;
 
                     if (action == FilesSecurityActions.Read && e.Access != FileShare.Restrict) result.Add(e);
-                    else if (action == FilesSecurityActions.Comment && (e.Access == FileShare.Comment || e.Access == FileShare.Review || e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite)) result.Add(e);
+                    else if (action == FilesSecurityActions.Comment && (e.Access == FileShare.Comment || e.Access == FileShare.Review || e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.FillForms && (e.Access == FileShare.FillForms || e.Access == FileShare.Review || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Review && (e.Access == FileShare.Review || (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator))) result.Add(e);
-                    else if (action == FilesSecurityActions.CustomFilter && (e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite)) result.Add(e);
+                    else if (action == FilesSecurityActions.CustomFilter && (e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Edit && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Create && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Delete && e.Access == FileShare.RoomAdministrator) result.Add(e);
                     else if (action == FilesSecurityActions.RoomEdit && e.Access == FileShare.RoomAdministrator) result.Add(e);
-                    else if (e.Access != FileShare.Restrict && e.CreateBy == userId && ((IFolder)e).FolderType != FolderType.RoomsStorage
-                        && (e.FileEntryType == FileEntryType.File || folder.FolderType != FolderType.COMMON)) result.Add(e);
+                    else if (e.Access != FileShare.Restrict && e.CreateBy == userId && (e.FileEntryType == FileEntryType.File || (folder.FolderType != FolderType.COMMON && 
+                        folder.FolderType != FolderType.RoomsStorage && folder.FolderType != FolderType.Archive))) result.Add(e);
 
                     if (e.CreateBy == userId) e.Access = FileShare.None; //HACK: for client
                 }
