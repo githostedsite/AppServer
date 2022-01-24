@@ -518,8 +518,6 @@ namespace ASC.Web.Files.Utils
             }
             else if (parent.FolderType == FolderType.RoomsStorage)
             {
-                withSubfolders = false;
-
                 if (Global.IsAdministrator)
                 {
                     var folderDao = DaoFactory.GetFolderDao<T>();
