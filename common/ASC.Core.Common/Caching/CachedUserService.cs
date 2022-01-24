@@ -68,9 +68,9 @@ namespace ASC.Core.Caching
             CacheGroupCacheItem = cacheGroupCacheItem;
             CacheUserGroupRefItem = cacheUserGroupRefItem;
 
-            cacheUserInfoItem.Subscribe((u) => InvalidateCache(u), CacheNotifyAction.Any);
+            cacheUserInfoItem.Subscribe((u) => InvalidateUserCache(u), CacheNotifyAction.Any);
             cacheUserPhotoItem.Subscribe((p) => Cache.Remove(p.Key), CacheNotifyAction.Remove);
-            cacheGroupCacheItem.Subscribe((g) => InvalidateCache(), CacheNotifyAction.Any);
+            cacheGroupCacheItem.Subscribe((g) => InvalidateGroupCache(g), CacheNotifyAction.Any);
 
             cacheUserGroupRefItem.Subscribe((r) => UpdateUserGroupRefCache(r, true), CacheNotifyAction.Remove);
             cacheUserGroupRefItem.Subscribe((r) => UpdateUserGroupRefCache(r, false), CacheNotifyAction.InsertOrUpdate);
@@ -78,10 +78,23 @@ namespace ASC.Core.Caching
 
         public void InvalidateCache()
         {
-            InvalidateCache(null);
+            InvalidateUserCache(null);
         }
 
-        private void InvalidateCache(UserInfoCacheItem userInfo)
+        public void InvalidateGroupCache(GroupCacheItem group)
+        {
+            var key = GetGroupCacheKey(group.TenantId, new Guid(group.Id));
+            Cache.Remove(key);
+            Cache.Remove(GetGroupCacheKey(group.TenantId));
+        }
+
+        public void InvalidateUserGroupRefCache(UserGroupRefCacheItem userGroupRef)
+        {
+            var key = GetRefCacheKey(userGroupRef.Tenant);
+            Cache.Remove(key);
+        }
+
+        private void InvalidateUserCache(UserInfoCacheItem userInfo)
         {
             if (userInfo != null)
             {
@@ -103,7 +116,7 @@ namespace ASC.Core.Caching
             }
             else
             {
-                InvalidateCache();
+                InvalidateUserGroupRefCache(new UserGroupRefCacheItem { Tenant = r.Tenant });
             }
         }
 
@@ -330,14 +343,14 @@ namespace ASC.Core.Caching
         public Group SaveGroup(int tenant, Group group)
         {
             group = Service.SaveGroup(tenant, group);
-            CacheGroupCacheItem.Publish(new GroupCacheItem { Id = group.Id.ToString() }, CacheNotifyAction.Any);
+            CacheGroupCacheItem.Publish(new GroupCacheItem { Id = group.Id.ToString(), TenantId = tenant }, CacheNotifyAction.Any);
             return group;
         }
 
         public void RemoveGroup(int tenant, Guid id)
         {
             Service.RemoveGroup(tenant, id);
-            CacheGroupCacheItem.Publish(new GroupCacheItem { Id = id.ToString() }, CacheNotifyAction.Any);
+            CacheGroupCacheItem.Publish(new GroupCacheItem { Id = id.ToString(), TenantId = tenant }, CacheNotifyAction.Any);
         }
 
 
