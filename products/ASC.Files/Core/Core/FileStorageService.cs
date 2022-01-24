@@ -2445,7 +2445,7 @@ namespace ASC.Web.Files.Services.WCFService
         {
             var folder = GetFolder(folderId);
 
-            ErrorIf(!Global.IsAdministrator && !FileSecurity.CanRoomEdit(folder),
+            ErrorIf(folder.RootFolderType == FolderType.Archive && Global.IsAdministrator && !FileSecurity.CanRoomEdit(folder),
                 FilesCommonResource.ErrorMassage_SecurityException_UploadLogo);
 
             var result = new FileUploadResult();
