@@ -1385,8 +1385,13 @@ namespace ASC.Web.Files.Services.WCFService
             ErrorIf(!FileSecurity.CanDelete(folder), FilesCommonResource.ErrorMassage_SecurityException_DeleteFolder);
 
             if (providerInfo.RootFolderType == FolderType.COMMON)
-            {
                 FileMarker.RemoveMarkAsNewForAll(folder);
+
+            else if (providerInfo.RootFolderType == FolderType.VirtualRoom)
+            {
+                var groupId = VirtualRoomsHelper.GetLinkedGroupId(folder);
+                UserManager.DeleteGroup(groupId);
+                RoomLogoManager.DeleteLogo(folder.ID);
             }
 
             providerDao.RemoveProviderInfo(folder.ProviderId);
