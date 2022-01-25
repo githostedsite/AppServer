@@ -26,10 +26,6 @@ namespace ASC.Files.Core.Helpers
 
         public Guid GetLinkedGroupId<T>(Folder<T> folder)
         {
-            if (folder.FolderType != FolderType.VirtualRoom
-                && folder.FolderType != FolderType.PrivacyVirtualRoom)
-                return default(Guid);
-
             var ace = FileSharing.
                 GetSharedInfo(new List<T>(), new List<T> { folder.ID })
                 .SingleOrDefault(i => i.SubjectGroup);
