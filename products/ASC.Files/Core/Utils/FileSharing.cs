@@ -244,7 +244,8 @@ namespace ASC.Web.Files.Utils
             {
                 if (ace.SubjectGroup) continue;
 
-                if (!UserManager.IsUserInGroup(ace.SubjectId, groupId)) continue;
+                if (ace.Share != FileShare.None && !UserManager.IsUserInGroup(ace.SubjectId, groupId))
+                    continue;
 
                 if (ace.Share == FileShare.RoomAdministrator && isAdmin)
                 {
