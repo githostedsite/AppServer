@@ -147,8 +147,7 @@ namespace ASC.Employee.Core.Controllers
             if (groupid == Constants.LostGroupInfo.ID)
                 throw new ItemNotFoundException("group not found");
 
-            if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
-                throw new SecurityException("Unable to edit archived group");
+            ErrorIfArchived(group);
 
             group.Name = groupModel.GroupName ?? group.Name;
             UserManager.SaveGroupInfo(group);
@@ -203,6 +202,9 @@ namespace ASC.Employee.Core.Controllers
 
             var newgroup = GetGroupInfo(newgroupid);
 
+            ErrorIfArchived(oldgroup);
+            ErrorIfArchived(newgroup);
+
             var users = UserManager.GetUsersByGroup(oldgroup.ID);
             foreach (var userInfo in users)
             {
@@ -248,6 +250,8 @@ namespace ASC.Employee.Core.Controllers
         {
             var group = GetGroupInfo(groupid);
 
+            ErrorIfArchived(group);
+
             if (group.CategoryID == Constants.LinkedGroupCategoryId)
             {
                 PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
@@ -281,6 +285,9 @@ namespace ASC.Employee.Core.Controllers
         private GroupWrapperFull SetManager(Guid groupid, SetManagerModel setManagerModel)
         {
             var group = GetGroupInfo(groupid);
+
+            ErrorIfArchived(group);
+
             if (UserManager.UserExists(setManagerModel.UserId))
             {
                 UserManager.SetDepartmentManager(group.ID, setManagerModel.UserId);
@@ -309,6 +316,8 @@ namespace ASC.Employee.Core.Controllers
         {
             var group = GetGroupInfo(groupid);
 
+            ErrorIfArchived(group);
+
             if (group.CategoryID == Constants.LinkedGroupCategoryId)
             {
                 PermissionContext.DemandPermissions(new GroupSecurityObject(groupid), Constants.Action_EditLinkedGroups);
@@ -328,19 +337,16 @@ namespace ASC.Employee.Core.Controllers
 
         private void RemoveUserFromDepartment(Guid userId, GroupInfo @group)
         {
-            if (!UserManager.UserExists(userId) && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
+            if (!UserManager.UserExists(userId)) return;
 
             var user = UserManager.GetUsers(userId);
-
             UserManager.RemoveUserFromGroup(user.ID, @group.ID);
-
             UserManager.SaveUserInfo(user);
         }
 
         private void TransferUserToDepartment(Guid userId, GroupInfo group, bool setAsManager)
         {
-            if (!UserManager.UserExists(userId) && userId != Guid.Empty
-                && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
+            if (!UserManager.UserExists(userId) && userId != Guid.Empty) return;
 
             if (setAsManager)
             {
@@ -349,12 +355,10 @@ namespace ASC.Employee.Core.Controllers
             UserManager.AddUserIntoGroup(userId, @group.ID);
         }
 
-        private void TransferUserToLinkedGroup(Guid userId, GroupInfo group)
+        private void ErrorIfArchived(GroupInfo group)
         {
-            if (!UserManager.UserExists(userId) && userId != Guid.Empty
-                && group.CategoryID == Constants.ArchivedLinkedGroupCategoryId) return;
-
-            UserManager.AddUserIntoLinkedGroup(userId, @group.ID);
+            if (group.CategoryID == Constants.ArchivedLinkedGroupCategoryId)
+                throw new SecurityException("The archived group cannot be changed");
         }
     }
 }
