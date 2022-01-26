@@ -299,15 +299,15 @@ namespace ASC.Web.Files.Utils
             return
                 entry != null
                 && ((entry.RootFolderType == FolderType.COMMON && Global.IsAdministrator)
-                || (entry.RootFolderType == FolderType.VirtualRoom && (Global.IsAdministrator || FileSecurity.CanEdit(entry)))
+                || (entry.RootFolderType == FolderType.VirtualRoom && (Global.IsAdministrator || FileSecurity.CanSetAccess(entry)))
                     || (entry.RootFolderType == FolderType.Archive && Global.IsAdministrator)
-                    || (entry.RootFolderType == FolderType.RoomsStorage && Global.IsAdministrator || FileSecurity.CanEdit(entry))
+                    || (entry.RootFolderType == FolderType.RoomsStorage && Global.IsAdministrator || FileSecurity.CanSetAccess(entry))
                     || !UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)
                         && (entry.RootFolderType == FolderType.USER
-                            && (Equals(entry.RootFolderId, GlobalFolderHelper.FolderMy) || FileSecurity.CanEdit(entry))
+                            && (Equals(entry.RootFolderId, GlobalFolderHelper.FolderMy) || FileSecurity.CanSetAccess(entry))
                             || entry.RootFolderType == FolderType.Privacy
                                 && entry is File<T>
-                                && (Equals(entry.RootFolderId, GlobalFolderHelper.FolderPrivacy) || FileSecurity.CanEdit(entry))));
+                                && (Equals(entry.RootFolderId, GlobalFolderHelper.FolderPrivacy) || FileSecurity.CanSetAccess(entry))));
         }
     }
 
