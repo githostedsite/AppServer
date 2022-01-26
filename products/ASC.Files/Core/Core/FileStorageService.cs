@@ -467,8 +467,8 @@ namespace ASC.Web.Files.Services.WCFService
             var folderDao = GetFolderDao();
             var folder = folderDao.GetFolder(folderId);
             ErrorIf(folder == null, FilesCommonResource.ErrorMassage_FolderNotFound);
-            ErrorIf(!FileSecurity.CanEdit(folder), FilesCommonResource.ErrorMassage_SecurityException_RenameFolder);
-            if (!FileSecurity.CanDelete(folder) && UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)) throw new SecurityException(FilesCommonResource.ErrorMassage_SecurityException_RenameFolder);
+            ErrorIf(!FileSecurity.CanRename(folder), FilesCommonResource.ErrorMassage_SecurityException_RenameFolder);
+            if (!FileSecurity.CanRename(folder) && UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)) throw new SecurityException(FilesCommonResource.ErrorMassage_SecurityException_RenameFolder);
             ErrorIf(folder.RootFolderType == FolderType.TRASH, FilesCommonResource.ErrorMassage_ViewTrashItem);
 
             var folderAccess = folder.Access;
