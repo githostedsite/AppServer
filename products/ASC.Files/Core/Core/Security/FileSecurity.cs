@@ -174,6 +174,16 @@ namespace ASC.Files.Core.Security
             return Can(entry, userId, FilesSecurityActions.Edit);
         }
 
+        public bool CanRename<T>(FileEntry<T> entry, Guid userId)
+        {
+            return Can(entry, userId, FilesSecurityActions.Rename);
+        }
+
+        public bool CanSetAccess<T>(FileEntry<T> entry, Guid userId)
+        {
+            return Can(entry, userId, FilesSecurityActions.SetAccess);
+        }
+
         public bool CanDelete<T>(FileEntry<T> entry, Guid userId)
         {
             return Can(entry, userId, FilesSecurityActions.Delete);
@@ -192,6 +202,16 @@ namespace ASC.Files.Core.Security
         public bool CanComment<T>(FileEntry<T> entry)
         {
             return CanComment(entry, AuthContext.CurrentAccount.ID);
+        }
+
+        public bool CanRename<T>(FileEntry<T> entry)
+        {
+            return CanRename(entry, AuthContext.CurrentAccount.ID);
+        }
+
+        public bool CanSetAccess<T>(FileEntry<T> entry)
+        {
+            return CanSetAccess(entry, AuthContext.CurrentAccount.ID);
         }
 
         public bool CanCustomFilterEdit<T>(FileEntry<T> entry)
@@ -663,15 +683,17 @@ namespace ASC.Files.Core.Security
                     e.Access = ace != null ? ace.Share : defaultShare;
 
                     if (action == FilesSecurityActions.Read && e.Access != FileShare.Restrict) result.Add(e);
-                    else if (action == FilesSecurityActions.Comment && (e.Access == FileShare.Comment || e.Access == FileShare.Review || e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
-                    else if (action == FilesSecurityActions.FillForms && (e.Access == FileShare.FillForms || e.Access == FileShare.Review || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
-                    else if (action == FilesSecurityActions.Review && (e.Access == FileShare.Review || (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator))) result.Add(e);
-                    else if (action == FilesSecurityActions.CustomFilter && (e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
-                    else if (action == FilesSecurityActions.Edit && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
+                    else if (action == FilesSecurityActions.Comment && (e.Access == FileShare.Comment || e.Access == FileShare.Review || e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator || e.Access == FileShare.Editing)) result.Add(e);
+                    else if (action == FilesSecurityActions.FillForms && (e.Access == FileShare.FillForms || e.Access == FileShare.Review || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator || e.Access == FileShare.Editing)) result.Add(e);
+                    else if (action == FilesSecurityActions.Review && (e.Access == FileShare.Review || (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator || e.Access == FileShare.Editing))) result.Add(e);
+                    else if (action == FilesSecurityActions.CustomFilter && (e.Access == FileShare.CustomFilter || e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator || e.Access == FileShare.Editing)) result.Add(e);
+                    else if (action == FilesSecurityActions.Edit && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator || e.Access == FileShare.Editing)) result.Add(e);
                     else if (action == FilesSecurityActions.Create && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
                     else if (action == FilesSecurityActions.Delete && e.Access == FileShare.RoomAdministrator) result.Add(e);
                     else if (action == FilesSecurityActions.RoomEdit && e.Access == FileShare.RoomAdministrator) result.Add(e);
-                    else if (e.Access != FileShare.Restrict && e.CreateBy == userId && (e.FileEntryType == FileEntryType.File || (folder.FolderType != FolderType.COMMON && 
+                    else if (action == FilesSecurityActions.Rename && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
+                    else if (action == FilesSecurityActions.SetAccess && (e.Access == FileShare.ReadWrite || e.Access == FileShare.RoomAdministrator)) result.Add(e);
+                    else if (e.Access != FileShare.Restrict && e.CreateBy == userId && (e.FileEntryType == FileEntryType.File || (folder.FolderType != FolderType.COMMON &&
                         folder.FolderType != FolderType.RoomsStorage && folder.FolderType != FolderType.Archive))) result.Add(e);
 
                     if (e.CreateBy == userId) e.Access = FileShare.None; //HACK: for client
@@ -1163,7 +1185,9 @@ namespace ASC.Files.Core.Security
             Delete,
             CustomFilter,
             CreateRoom,
-            RoomEdit
+            RoomEdit,
+            Rename,
+            SetAccess
         }
     }
 }
