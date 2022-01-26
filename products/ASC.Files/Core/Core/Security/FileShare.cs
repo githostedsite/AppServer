@@ -36,6 +36,7 @@ namespace ASC.Files.Core.Security
         Comment,
         FillForms,
         CustomFilter,
-        RoomAdministrator
+        RoomAdministrator,
+        Editing
     }
 }
