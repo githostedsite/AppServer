@@ -1383,7 +1383,7 @@ namespace ASC.Web.Files.Utils
             var fileDao = DaoFactory.GetFileDao<T>();
             file = fileDao.GetFile(fileId);
             if (file == null) throw new FileNotFoundException(FilesCommonResource.ErrorMassage_FileNotFound);
-            if (!FileSecurity.CanEdit(file)) throw new SecurityException(FilesCommonResource.ErrorMassage_SecurityException_RenameFile);
+            if (!FileSecurity.CanRename(file)) throw new SecurityException(FilesCommonResource.ErrorMassage_SecurityException_RenameFile);
             if (!FileSecurity.CanDelete(file) && UserManager.GetUsers(AuthContext.CurrentAccount.ID).IsVisitor(UserManager)) throw new SecurityException(FilesCommonResource.ErrorMassage_SecurityException_RenameFile);
             if (FileLockedForMe(file.ID)) throw new Exception(FilesCommonResource.ErrorMassage_LockedFile);
             if (file.ProviderEntry && FileTracker.IsEditing(file.ID)) throw new Exception(FilesCommonResource.ErrorMassage_UpdateEditingFile);
