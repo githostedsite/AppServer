@@ -16,6 +16,7 @@ using ASC.Core.Users;
 using ASC.Employee.Core.Controllers;
 using ASC.Files.Core.Core;
 using ASC.Files.Core.Helpers;
+using ASC.Files.Core.VirtualRooms;
 using ASC.Files.Helpers;
 using ASC.Files.Model;
 using ASC.Files.Tests.Infrastructure;
@@ -26,6 +27,7 @@ using ASC.Web.Files.Services.WCFService.FileOperations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using NUnit.Framework;
@@ -86,6 +88,7 @@ namespace ASC.Files.Tests
         protected SecurityContext SecurityContext { get; set; }
         protected UserOptions UserOptions { get; set; }
         protected CoreBaseSettings CoreBaseSettings { get; set; }
+        protected VirtualRoomsMembersManager VirtualRoomsMembersManager { get; set; }
         protected IServiceScope scope { get; set; }
 
         public const string TestConnection = "Server=localhost;Database=onlyoffice_test;User ID=root;Password=root;Pooling=true;Character Set=utf8;AutoEnlist=false;SSL Mode=none;AllowPublicKeyRetrieval=True";
@@ -94,7 +97,8 @@ namespace ASC.Files.Tests
             var host = Program.CreateHostBuilder(new string[] {
                 "--pathToConf" , Path.Combine("..", "..", "..", "..","..", "..", "config"),
                 "--ConnectionStrings:default:connectionString", TestConnection,
-                 "--migration:enabled", "true" }).Build();
+                 "--migration:enabled", "true" }).ConfigureWebHost(webBuilder =>
+                 webBuilder.ConfigureServices(services => services.AddScoped<VirtualRoomsMembersManager>())).Build();
 
             scope = host.Services.CreateScope();
 
@@ -102,7 +106,6 @@ namespace ASC.Files.Tests
             var tenant = tenantManager.GetTenant(1);
             tenantManager.SetCurrentTenant(tenant);
             CurrentTenant = tenant;
-
             FilesControllerHelper = scope.ServiceProvider.GetService<FilesControllerHelper<int>>();
             GlobalFolderHelper = scope.ServiceProvider.GetService<GlobalFolderHelper>();
             UserManager = scope.ServiceProvider.GetService<UserManager>();
@@ -111,6 +114,7 @@ namespace ASC.Files.Tests
             FileStorageService = scope.ServiceProvider.GetService<FileStorageService<int>>();
             VirtualRoomsHelper = scope.ServiceProvider.GetService<VirtualRoomsHelper>();
             CoreBaseSettings = scope.ServiceProvider.GetService<CoreBaseSettings>();
+            VirtualRoomsMembersManager = scope.ServiceProvider.GetService<VirtualRoomsMembersManager>();
             Log = scope.ServiceProvider.GetService<IOptionsMonitor<ILog>>().CurrentValue;
 
 
@@ -182,29 +186,11 @@ namespace ASC.Files.Tests
             return UserManager.SaveUserInfo(userInfo);
         }
 
-        public void SetSecurity(int folderId, Guid userId, Core.Security.FileShare fileShare)
+        protected void SetSecurity(int folderId, Guid userId, Core.Security.FileShare fileShare)
         {
             var shareParam = new FileShareParams { Access = fileShare, ShareTo = userId };
             FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { folderId },
                 new List<FileShareParams> { shareParam }, false, string.Empty);
-        }
-
-        public void SetRoomAdmin(int folderId, Guid userId)
-        {
-            FilesControllerHelper.AddMembersIntoRoom(folderId, new List<Guid> { userId });
-
-            var shareParam = new FileShareParams { Access = Core.Security.FileShare.ReadWrite, ShareTo = userId };
-            FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { folderId },
-                new List<FileShareParams> { shareParam }, false, string.Empty);
-        }
-
-        public (FolderWrapper<int>, Guid) CreateVirtualRoom(string title)
-        {
-            var roomFolder = FilesControllerHelper.CreateVirtualRoom(title, false);
-            var groupId = FileStorageService.GetSharedInfo(new List<int>(), new List<int> { roomFolder.Id })
-                .SingleOrDefault(s => s.SubjectGroup).SubjectId;
-
-            return (roomFolder, groupId);
         }
     }
 }

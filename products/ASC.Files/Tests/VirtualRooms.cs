@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 using ASC.Api.Documents;
-using ASC.Common.Security.Authorizing;
+using ASC.Files.Core;
 using ASC.Web.Api.Models;
 
 using NUnit.Framework;
@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace ASC.Files.Tests
 {
     [TestFixture]
-    public class VirtualRooms : BaseFilesTests
+    public class VirtualRooms : RoomTestsBase
     {
         private Guid UserId1 { get; set; }
         private Guid UserId2 { get; set; }
@@ -49,11 +49,11 @@ namespace ASC.Files.Tests
 
             var roomFolder = FilesControllerHelper.CreateVirtualRoom(title, false);
             var groupName = FileStorageService.GetSharedInfo(new List<int>(), new List<int> { roomFolder.Id })
-                .SingleOrDefault(s => s.SubjectGroup).SubjectName;
+                .SingleOrDefault(s => s.SubjectGroup)?.SubjectName;
 
             Assert.IsNotNull(roomFolder);
-            Assert.IsTrue(roomFolder.RootFolderType == Core.FolderType.VirtualRoom);
-            Assert.IsTrue(roomFolder.ParentId == 0);
+            Assert.IsTrue(roomFolder.RootFolderType == FolderType.RoomsStorage);
+            Assert.AreEqual(GlobalFolderHelper.FolderVirtualRooms, roomFolder.ParentId);
             Assert.AreEqual(roomFolder.Title, groupName);
         }
 
@@ -63,7 +63,7 @@ namespace ASC.Files.Tests
         {
             SecurityContext.AuthenticateMe(UserId1);
 
-            Assert.Throws<AuthorizingException>(() =>
+            Assert.Throws<InvalidOperationException>(() =>
                 FilesControllerHelper.CreateVirtualRoom("TestVirtualRoom", false));
         }
 
@@ -76,13 +76,10 @@ namespace ASC.Files.Tests
             var newTitle = "RenamedVirtualRoom";
             var roomFolder = FilesControllerHelper.CreateVirtualRoom("TestVirtualRoom", false);
 
-            var renamedRoomFolder = FilesControllerHelper.RenameVirtualRoom(roomFolder.Id, newTitle);
+            var renamedRoomFolder = FilesControllerHelper.RenameFolder(roomFolder.Id, newTitle);
             var renamedGroupName = FileStorageService.GetSharedInfo(new List<int>(), new List<int> { renamedRoomFolder.Id })
-                .SingleOrDefault(s => s.SubjectGroup).SubjectName;
+                .SingleOrDefault(s => s.SubjectGroup)?.SubjectName;
 
-            Assert.IsNotNull(renamedRoomFolder);
-            Assert.IsTrue(renamedRoomFolder.RootFolderType == Core.FolderType.VirtualRoom);
-            Assert.IsTrue(renamedRoomFolder.ParentId == 0);
             Assert.AreEqual(renamedRoomFolder.Title, newTitle);
             Assert.AreEqual(renamedGroupName, newTitle);
         }
@@ -97,7 +94,7 @@ namespace ASC.Files.Tests
             SecurityContext.AuthenticateMe(UserId1);
 
             Assert.Throws<InvalidOperationException>(() =>
-                FilesControllerHelper.RenameVirtualRoom(room.Id, "RenamedVirtualRoom"));
+                FilesControllerHelper.RenameFolder(room.Id, "RenamedVirtualRoom"));
         }
 
         [Test]
@@ -106,10 +103,11 @@ namespace ASC.Files.Tests
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
             var room = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(room.Item2);
 
-            FilesControllerHelper.AddMembersIntoRoom(room.Item1.Id, new[] { UserId1 });
+            VirtualRoomsMembersManager.AddMembers(group, new[] { UserId1 });
 
-            Assert.Contains(room.Item2, UserManager.GetUserGroupsId(UserId1).ToArray());
+            Assert.IsTrue(UserManager.IsUserInGroup(UserId1, group.ID));
         }
 
         [Test]
@@ -118,12 +116,13 @@ namespace ASC.Files.Tests
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
             var room = CreateVirtualRoom($"TestRoom{Counter}");
-            FilesControllerHelper.AddMembersIntoRoom(room.Item1.Id, new[] { UserId1 });
+            var group = UserManager.GetGroupInfo(room.Item2);
 
-            FilesControllerHelper.RemoveMembersFromRoom(room.Item1.Id, new[] { UserId1 });
+            VirtualRoomsMembersManager.AddMembers(group, new[] { UserId1 });
 
-            Assert.IsTrue(UserManager.GetUserGroupsId(UserId1)
-                .FirstOrDefault(id => id == room.Item2) == Guid.Empty);
+            VirtualRoomsMembersManager.RemoveMembers(group, new[] { UserId1 });
+
+            Assert.IsTrue(!UserManager.IsUserInGroup(UserId1, group.ID));
         }
 
         [Test]
@@ -131,13 +130,14 @@ namespace ASC.Files.Tests
         public void AddUserIntoRoom_WithRoomAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = CreateVirtualRoom($"TestRoom{Counter}");
-            SetRoomAdmin(room.Item1.Id, UserId1);
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(folder.Id, group ,UserId1);
 
             SecurityContext.AuthenticateMe(UserId1);
-            FilesControllerHelper.AddMembersIntoRoom(room.Item1.Id, new[] { UserId2 });
+            VirtualRoomsMembersManager.AddMembers(group, new[] { UserId2 });
 
-            Assert.Contains(room.Item2, UserManager.GetUserGroupsId(UserId2).ToArray());
+            Assert.IsTrue(UserManager.IsUserInGroup(UserId2, group.ID));
         }
 
         [Test]
@@ -145,15 +145,15 @@ namespace ASC.Files.Tests
         public void RemoveUserFromRoom_WithRoomAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var roomPair = CreateVirtualRoom($"TestRoom{Counter}");
-            FilesControllerHelper.AddMembersIntoRoom(roomPair.Item1.Id, new List<Guid> { UserId2 });
-            SetRoomAdmin(roomPair.Item1.Id, UserId1);
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            VirtualRoomsMembersManager.AddMembers(group, new List<Guid> { UserId2 });
+            AddUserInRoomAsAdmin(folder.Id, group, UserId1);
             SecurityContext.AuthenticateMe(UserId1);
 
-            FilesControllerHelper.RemoveMembersFromRoom(roomPair.Item1.Id, new[] { UserId2 });
+            VirtualRoomsMembersManager.RemoveMembers(group, new[] { UserId2 });
 
-            Assert.IsTrue(UserManager.GetUserGroupsId(UserId2)
-                .FirstOrDefault(id => id == roomPair.Item2) == Guid.Empty);
+            Assert.IsTrue(!UserManager.IsUserInGroup(UserId2, group.ID));
         }
 
         [Test]
@@ -161,18 +161,19 @@ namespace ASC.Files.Tests
         public void SetRoomSecurity_FullAccess_WithRoomAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var roomPair = CreateVirtualRoom($"TestRoom{Counter}");
-            SetRoomAdmin(roomPair.Item1.Id, UserId1);
-            FilesControllerHelper.AddMembersIntoRoom(roomPair.Item1.Id, new[] { UserId2 });
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(folder.Id, group ,UserId1);
+            VirtualRoomsMembersManager.AddMembers(group, new[] { UserId2 });
             SecurityContext.AuthenticateMe(UserId1);
 
-            var shareParam = new FileShareParams { Access = Core.Security.FileShare.ReadWrite, ShareTo = UserId2 };
-            FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { roomPair.Item1.Id },
+            var shareParam = new FileShareParams { Access = Core.Security.FileShare.RoomAdministrator, ShareTo = UserId2 };
+            FilesControllerHelper.SetSecurityInfo(new List<int>(), new List<int> { folder.Id },
                 new List<FileShareParams> { shareParam }, false, string.Empty);
 
             Assert.IsTrue(FilesControllerHelper
-                .GetSecurityInfo(new List<int>(), new List<int> { roomPair.Item1.Id })
-                .FirstOrDefault(s => s.SharedTo.Equals(UserId2) && s.Access == Core.Security.FileShare.ReadWrite) == null);
+                .GetSecurityInfo(new List<int>(), new List<int> { folder.Id })
+                .FirstOrDefault(s => s.SharedTo.Equals(UserId2) && s.Access == Core.Security.FileShare.RoomAdministrator) == null);
         }
 
         [Test]
@@ -181,76 +182,80 @@ namespace ASC.Files.Tests
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
             var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
-
-            var file = FilesControllerHelper.CreateFile(room.Id, "TestFile.docx", 0);
+            var templateId = JsonSerializer.SerializeToElement(0);
+            
+            var file = FilesControllerHelper.CreateFile(room.Id, "TestFile.docx", templateId);
 
             Assert.AreEqual(room.Id, file.FolderId);
-            Assert.AreEqual(room.Id, file.RootFolderId);
-            Assert.AreEqual(room.RootFolderType, file.RootFolderType);
+            Assert.AreEqual(room.RootFolderType, FolderType.RoomsStorage);
         }
 
-        [Test]
-        [Description("Portal owner or administrator can create folders in the virtual room")]
-        public void CreateFolderInRoom_WithAdminPriveleges()
-        {
-            SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
+        //[Test]
+        //[Description("Portal owner or administrator can create folders in the virtual room")]
+        //public void CreateFolderInRoom_WithAdminPrivileges()
+        //{
+        //    SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
+        //    var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
 
-            var folder = FilesControllerHelper.CreateFolder(room.Id, "TestFolder");
+        //    var folder = FilesControllerHelper.CreateFolder(room.Id, "TestFolder");
 
-            Assert.AreEqual(room.Id, folder.RootFolderId);
-            Assert.AreEqual(room.RootFolderType, folder.RootFolderType);
-        }
+        //    Assert.AreEqual(room.Id, folder.RootFolderId);
+        //    Assert.AreEqual(room.RootFolderType, folder.RootFolderType);
+        //}
 
-        [Test]
-        [Description("The room administrator can create files in the virtual room")]
-        public void CreateFileInRoom_WithAdminRoomPriveleges()
-        {
-            SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var roomFolder = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
-            SetRoomAdmin(roomFolder.Id, UserId1);
+        //[Test]
+        //[Description("The room administrator can create files in the virtual room")]
+        //public void CreateFileInRoom_WithAdminRoomPrivileges()
+        //{
+        //    SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
+        //    var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+        //    var group = UserManager.GetGroupInfo(groupId);
+        //    AddUserInRoomAsAdmin(folder.Id, group, UserId1);
+        //    SecurityContext.AuthenticateMe(UserId1);
+        //    var templateId = JsonSerializer.SerializeToElement(0);
+            
+        //    var file = FilesControllerHelper.CreateFile(folder.Id, "TestFile.docx", templateId);
 
-            SecurityContext.AuthenticateMe(UserId1);
+        //    Assert.AreEqual(folder.Id, file.FolderId);
+        //    Assert.AreEqual(folder.Id, file.RootFolderId);
+        //    Assert.AreEqual(folder.RootFolderType, file.RootFolderType);
+        //}
 
-            var file = FilesControllerHelper.CreateFile(roomFolder.Id, "TestFile.docx", 0);
+        //[Test]
+        //[Description("The room administrator can create folders in the virtual room")]
+        //public void CreateFolderInRoom_WithAdminRoomPrivileges()
+        //{
+        //    SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
+        //    var (roomFolder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+        //    var group = UserManager.GetGroupInfo(groupId);
+        //    AddUserInRoomAsAdmin(roomFolder.Id, group, UserId1);
 
-            Assert.AreEqual(roomFolder.Id, file.FolderId);
-            Assert.AreEqual(roomFolder.Id, file.RootFolderId);
-            Assert.AreEqual(roomFolder.RootFolderType, file.RootFolderType);
-        }
+        //    SecurityContext.AuthenticateMe(UserId1);
 
-        [Test]
-        [Description("The room administrator can create folders in the virtual room")]
-        public void CreateFolderInRoom_WithAdminRoomPrivileges()
-        {
-            SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
-            SetRoomAdmin(room.Id, UserId1);
+        //    var folder = FilesControllerHelper.CreateFolder(roomFolder.Id, "TestFolder");
 
-            SecurityContext.AuthenticateMe(UserId1);
-
-            var folder = FilesControllerHelper.CreateFolder(room.Id, "TestFolder");
-
-            Assert.AreEqual(room.Id, folder.RootFolderId);
-            Assert.AreEqual(room.RootFolderType, folder.RootFolderType);
-        }
+        //    Assert.AreEqual(roomFolder.Id, folder.RootFolderId);
+        //    Assert.AreEqual(roomFolder.RootFolderType, folder.RootFolderType);
+        //}
 
         [Test]
         [Description("The room administrator can assign rights to room members")]
         public void SetRoomSecurity_WithRoomAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
-            SetRoomAdmin(room.Id, UserId1);
-            FilesControllerHelper.AddMembersIntoRoom(room.Id, new[] { UserId2 });
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+
+            AddUserInRoomAsAdmin(folder.Id, group, UserId1);
+            VirtualRoomsMembersManager.AddMembers(group, new[] { UserId2 });
 
             SecurityContext.AuthenticateMe(UserId1);
-            SetSecurity(room.Id, UserId2, Core.Security.FileShare.FillForms);
+            SetSecurity(folder.Id, UserId2, Core.Security.FileShare.FillForms);
 
-            var info = FilesControllerHelper.GetSecurityInfo(new List<int>(), new List<int> { room.Id }).ToList();
+            var info = FilesControllerHelper.GetSecurityInfo(new List<int>(), new List<int> { folder.Id }).ToList();
 
             Assert.IsTrue(FilesControllerHelper
-                .GetSecurityInfo(new List<int>(), new List<int> { room.Id })
+                .GetSecurityInfo(new List<int>(), new List<int> { folder.Id })
                 .FirstOrDefault(s => ((EmployeeWraperFull)s.SharedTo).Id.Equals(UserId2) && s.Access == Core.Security.FileShare.FillForms) != null);
         }
 
@@ -259,9 +264,9 @@ namespace ASC.Files.Tests
         public void DeleteRoom_WithAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = CreateVirtualRoom($"TestRoom{Counter}");
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
 
-            FilesControllerHelper.DeleteFolder(room.Item1.Id, false, true);
+            FilesControllerHelper.DeleteFolder(folder.Id, false, true);
 
             while (true)
             {
@@ -274,7 +279,10 @@ namespace ASC.Files.Tests
             }
 
             Assert.IsTrue(FileStorageService.GetTasksStatuses().TrueForAll(r => string.IsNullOrEmpty(r.Error)));
-            Assert.AreEqual(ASC.Core.Users.Constants.LostGroupInfo, UserManager.GetGroupInfo(room.Item2));
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                FilesControllerHelper.GetFolder(folder.Id, Guid.Empty, FilterType.None, false);
+            });
         }
 
         [Test]
@@ -282,12 +290,13 @@ namespace ASC.Files.Tests
         public void DeleteRoom_WithRoomAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = CreateVirtualRoom($"TestRoom{Counter}");
-            SetRoomAdmin(room.Item1.Id, UserId1);
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(folder.Id, group, UserId1);
 
             SecurityContext.AuthenticateMe(UserId1);
 
-            FilesControllerHelper.DeleteFolder(room.Item1.Id, false, true);
+            FilesControllerHelper.DeleteFolder(folder.Id, false, true);
 
             while (true)
             {
@@ -300,7 +309,7 @@ namespace ASC.Files.Tests
             }
 
             Assert.IsTrue(FileStorageService.GetTasksStatuses().TrueForAll(r => !string.IsNullOrEmpty(r.Error)));
-            Assert.AreEqual(ASC.Core.Users.Constants.LinkedGroupCategoryId, UserManager.GetGroupInfo(room.Item2).CategoryID);
+            Assert.AreEqual(ASC.Core.Users.Constants.LinkedGroupCategoryId, UserManager.GetGroupInfo(groupId).CategoryID);
         }
 
         [Test]
@@ -331,15 +340,16 @@ namespace ASC.Files.Tests
         }
 
         [Test]
-        [Description("Room administrator cannot archive virtual room")]
+        [Description("Room administrator can archive virtual room")]
         public void ArchiveRoom_WithRoomAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var roomPair = CreateVirtualRoom($"TestRoom{Counter}");
-            SetRoomAdmin(roomPair.Item1.Id, UserId1);
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(folder.Id, group, UserId1);
             SecurityContext.AuthenticateMe(UserId1);
 
-            FilesControllerHelper.DeleteFolder(roomPair.Item1.Id, false, false);
+            FilesControllerHelper.ArchiveRoom(new List<JsonElement> { JsonSerializer.SerializeToElement(folder.Id) });
 
             while (true)
             {
@@ -351,12 +361,55 @@ namespace ASC.Files.Tests
                 Task.Delay(100);
             }
 
-            var room = FilesControllerHelper.GetFolderInfo(roomPair.Item1.Id);
+            var roomFolder = FilesControllerHelper.GetFolderInfo(folder.Id);
 
-            Assert.AreNotEqual(Core.FolderType.Archive, room.RootFolderType);
-            Assert.AreEqual(0, room.ParentId);
-            Assert.AreEqual(Core.FolderType.VirtualRoom, room.RootFolderType);
-            Assert.AreEqual(ASC.Core.Users.Constants.LinkedGroupCategoryId, UserManager.GetGroupInfo(roomPair.Item2).CategoryID);
+            Assert.AreEqual(FolderType.Archive, roomFolder.RootFolderType);
+            Assert.AreEqual(GlobalFolderHelper.FolderArchive, roomFolder.ParentId);
+            Assert.AreEqual(ASC.Core.Users.Constants.ArchivedLinkedGroupCategoryId, UserManager.GetGroupInfo(groupId).CategoryID);
+        }
+
+        [Test]
+        [Description("Room administartor can unarchive the virtual room")]
+        public void UnarchiveRoom_WithRoomAdminPrivileges()
+        {
+            SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(folder.Id, group, UserId1);
+
+            FilesControllerHelper.ArchiveRoom(new List<JsonElement> { JsonSerializer.SerializeToElement(folder.Id) });
+
+            while (true)
+            {
+                var statuses = FileStorageService.GetTasksStatuses();
+
+                if (statuses.TrueForAll(r => r.Finished))
+                    break;
+
+                Task.Delay(100);
+            }
+
+            var json = " [ { \"folderIds\": [" + folder.Id + "] }, { \"fileIds\": [ ] }, { \"destFolderId\": 0 } ]";
+
+            SecurityContext.AuthenticateMe(UserId1);
+
+            FilesControllerHelper.UnarchiveRoom(new List<JsonElement> { JsonSerializer.SerializeToElement(folder.Id) });
+
+            while (true)
+            {
+                var statuses = FileStorageService.GetTasksStatuses();
+
+                if (statuses.TrueForAll(r => r.Finished))
+                    break;
+
+                Task.Delay(100);
+            }
+
+            var room = FilesControllerHelper.GetFolderInfo(folder.Id);
+
+            Assert.AreEqual(GlobalFolderHelper.FolderVirtualRooms, room.ParentId);
+            Assert.AreEqual(FolderType.RoomsStorage, room.RootFolderType);
+            Assert.AreEqual(ASC.Core.Users.Constants.LinkedGroupCategoryId, UserManager.GetGroupInfo(groupId).CategoryID);
         }
 
         [Test]
@@ -364,23 +417,9 @@ namespace ASC.Files.Tests
         public void UnarchiveRoom_WithAdminPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var roomPair = CreateVirtualRoom($"TestRoom{Counter}");
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
 
-            FilesControllerHelper.DeleteFolder(roomPair.Item1.Id, false, false);
-
-            while (true)
-            {
-                var statuses = FileStorageService.GetTasksStatuses();
-
-                if (statuses.TrueForAll(r => r.Finished))
-                    break;
-
-                Task.Delay(100);
-            }
-
-            var json = " [ { \"folderIds\": [" + roomPair.Item1.Id + "] }, { \"fileIds\": [ ] }, { \"destFolderId\": 0 } ]";
-
-            FilesControllerHelper.MoveBatchItems(GetBatchModel(json));
+            FilesControllerHelper.ArchiveRoom(new List<JsonElement> { JsonSerializer.SerializeToElement(folder.Id) });
 
             while (true)
             {
@@ -392,11 +431,25 @@ namespace ASC.Files.Tests
                 Task.Delay(100);
             }
 
-            var room = FilesControllerHelper.GetFolderInfo(roomPair.Item1.Id);
+            var json = " [ { \"folderIds\": [" + folder.Id + "] }, { \"fileIds\": [ ] }, { \"destFolderId\": 0 } ]";
 
-            Assert.AreEqual(0, room.ParentId);
-            Assert.AreEqual(Core.FolderType.VirtualRoom, room.RootFolderType);
-            Assert.AreEqual(ASC.Core.Users.Constants.LinkedGroupCategoryId, UserManager.GetGroupInfo(roomPair.Item2).CategoryID);
+            FilesControllerHelper.UnarchiveRoom(new List<JsonElement> { JsonSerializer.SerializeToElement(folder.Id) });
+
+            while (true)
+            {
+                var statuses = FileStorageService.GetTasksStatuses();
+
+                if (statuses.TrueForAll(r => r.Finished))
+                    break;
+
+                Task.Delay(100);
+            }
+
+            var room = FilesControllerHelper.GetFolderInfo(folder.Id);
+
+            Assert.AreEqual(GlobalFolderHelper.FolderVirtualRooms, room.ParentId);
+            Assert.AreEqual(FolderType.RoomsStorage, room.RootFolderType);
+            Assert.AreEqual(ASC.Core.Users.Constants.LinkedGroupCategoryId, UserManager.GetGroupInfo(groupId).CategoryID);
         }
     }
 }
