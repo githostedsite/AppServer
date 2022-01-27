@@ -177,66 +177,36 @@ namespace ASC.Files.Tests
         }
 
         [Test]
-        [Description("Portal owner or administrator can create files in the virtual room")]
-        public void CreateFileInRoom_WithAdminPrivileges()
+        [Description("The room administrator can create files in the virtual room")]
+        public void CreateFileInRoom_WithAdminRoomPrivileges()
         {
             SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-            var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
+            var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(folder.Id, group, UserId1);
+            SecurityContext.AuthenticateMe(UserId1);
             var templateId = JsonSerializer.SerializeToElement(0);
-            
-            var file = FilesControllerHelper.CreateFile(room.Id, "TestFile.docx", templateId);
 
-            Assert.AreEqual(room.Id, file.FolderId);
-            Assert.AreEqual(room.RootFolderType, FolderType.RoomsStorage);
+            var file = FilesControllerHelper.CreateFile(folder.Id, "TestFile.docx", templateId);
+
+            Assert.AreEqual(folder.Id, file.FolderId);
         }
 
-        //[Test]
-        //[Description("Portal owner or administrator can create folders in the virtual room")]
-        //public void CreateFolderInRoom_WithAdminPrivileges()
-        //{
-        //    SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-        //    var room = FilesControllerHelper.CreateVirtualRoom($"TestRoom{Counter}", false);
+        [Test]
+        [Description("The room administrator can create folders in the virtual room")]
+        public void CreateFolderInRoom_WithAdminRoomPrivileges()
+        {
+            SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
+            var (roomFolder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
+            var group = UserManager.GetGroupInfo(groupId);
+            AddUserInRoomAsAdmin(roomFolder.Id, group, UserId1);
 
-        //    var folder = FilesControllerHelper.CreateFolder(room.Id, "TestFolder");
+            SecurityContext.AuthenticateMe(UserId1);
 
-        //    Assert.AreEqual(room.Id, folder.RootFolderId);
-        //    Assert.AreEqual(room.RootFolderType, folder.RootFolderType);
-        //}
+            var folder = FilesControllerHelper.CreateFolder(roomFolder.Id, "TestFolder");
 
-        //[Test]
-        //[Description("The room administrator can create files in the virtual room")]
-        //public void CreateFileInRoom_WithAdminRoomPrivileges()
-        //{
-        //    SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-        //    var (folder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
-        //    var group = UserManager.GetGroupInfo(groupId);
-        //    AddUserInRoomAsAdmin(folder.Id, group, UserId1);
-        //    SecurityContext.AuthenticateMe(UserId1);
-        //    var templateId = JsonSerializer.SerializeToElement(0);
-            
-        //    var file = FilesControllerHelper.CreateFile(folder.Id, "TestFile.docx", templateId);
-
-        //    Assert.AreEqual(folder.Id, file.FolderId);
-        //    Assert.AreEqual(folder.Id, file.RootFolderId);
-        //    Assert.AreEqual(folder.RootFolderType, file.RootFolderType);
-        //}
-
-        //[Test]
-        //[Description("The room administrator can create folders in the virtual room")]
-        //public void CreateFolderInRoom_WithAdminRoomPrivileges()
-        //{
-        //    SecurityContext.AuthenticateMe(CurrentTenant.OwnerId);
-        //    var (roomFolder, groupId) = CreateVirtualRoom($"TestRoom{Counter}");
-        //    var group = UserManager.GetGroupInfo(groupId);
-        //    AddUserInRoomAsAdmin(roomFolder.Id, group, UserId1);
-
-        //    SecurityContext.AuthenticateMe(UserId1);
-
-        //    var folder = FilesControllerHelper.CreateFolder(roomFolder.Id, "TestFolder");
-
-        //    Assert.AreEqual(roomFolder.Id, folder.RootFolderId);
-        //    Assert.AreEqual(roomFolder.RootFolderType, folder.RootFolderType);
-        //}
+            Assert.AreEqual(FolderType.RoomsStorage, folder.RootFolderType);
+        }
 
         [Test]
         [Description("The room administrator can assign rights to room members")]
