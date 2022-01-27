@@ -701,9 +701,9 @@ namespace ASC.Files.Helpers
         }
 
         #region VirtualRooms
-        public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy, T parentId = default(T))
+        public FolderWrapper<T> CreateVirtualRoom(string title, bool privacy)
         {
-            var folder = FileStorageService.CreateRoom(parentId, title);
+            var folder = FileStorageService.CreateRoom(title);
 
             return FolderWrapperHelper.Get(folder);
         }

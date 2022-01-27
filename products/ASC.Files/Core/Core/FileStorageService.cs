@@ -431,12 +431,12 @@ namespace ASC.Web.Files.Services.WCFService
             return folder;
         }
 
-        public Folder<T> CreateRoom(T parentId, string title)
+        public Folder<T> CreateRoom(string title)
         {
-            if (string.IsNullOrEmpty(title) || parentId == null) throw new ArgumentException();
+            if (string.IsNullOrEmpty(title)) throw new ArgumentException(null, nameof(title));
 
             var folderDao = GetFolderDao();
-            var parent = folderDao.GetFolder(parentId);
+            var parent = folderDao.GetFolder(GlobalFolderHelper.GetFolderVirtualRoom<T>());
             ErrorIf(parent == null, FilesCommonResource.ErrorMassage_FolderNotFound);
             ErrorIf(!FileSecurity.CanRoomCreate(parent), FilesCommonResource.ErrorMassage_SecurityException_Create);
 

@@ -315,7 +315,7 @@ namespace ASC.Api.Documents
         {
             ErrorIfNotVDR();
 
-            return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy, GlobalFolderHelper.FolderVirtualRooms);
+            return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
         }
 
         /// <summary>
@@ -330,35 +330,6 @@ namespace ASC.Api.Documents
             ErrorIfNotVDR();
 
             return FilesControllerHelperInt.CreateVirtualRoom(model.Title, model.Privacy);
-        }
-
-        /// <summary>
-        /// Creates a root folder with an associated group (virtual room) in third-party storage
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="model"></param>
-        /// <returns>Detailed information about the virtual room</returns>
-        [Create("room/{folderId}")]
-        public FolderWrapper<string> CreateVirtualRoomFromBody(string folderId, [FromBody] CreateRoomModel model)
-        {
-            ErrorIfNotVDR();
-
-            return FilesControllerHelperString.CreateVirtualRoom(model.Title, model.Privacy, folderId);
-        }
-
-        /// <summary>
-        /// Creates a root folder with an associated group (virtual room) in third-party storage
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="model"></param>
-        /// <returns>Detailed information about the virtual room</returns>
-        [Create("room/{folderId}")]
-        [Consumes("application/x-www-form-urlencoded")]
-        public FolderWrapper<string> CreateVirtualRoomFromForm(string folderId, [FromForm] CreateRoomModel model)
-        {
-            ErrorIfNotVDR();
-
-            return FilesControllerHelperString.CreateVirtualRoom(model.Title, model.Privacy, folderId);
         }
 
         /// <summary>
