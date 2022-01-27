@@ -725,6 +725,11 @@ namespace ASC.Web.Files.Classes
             return (T)Convert.ChangeType(FolderShare, typeof(T));
         }
 
+        public T GetFolderVirtualRoom<T>()
+        {
+            return (T)Convert.ChangeType(FolderVirtualRooms, typeof(T));
+        }
+
         public int FolderShare => GlobalFolder.GetFolderShare(DaoFactory);
 
         public object FolderTrash
