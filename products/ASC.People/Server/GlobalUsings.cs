@@ -42,8 +42,10 @@ global using ASC.Web.Studio.Core.Notify;
 global using ASC.Web.Studio.UserControls.Statistics;
 global using ASC.Web.Studio.Utility;
 
+global using Autofac;
 global using Autofac.Extensions.DependencyInjection;
 
+global using Microsoft.AspNetCore.Builder;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Hosting;
 global using Microsoft.AspNetCore.Http;
@@ -51,6 +53,7 @@ global using Microsoft.AspNetCore.Http.Extensions;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Hosting.WindowsServices;
 global using Microsoft.Extensions.Hosting;
 global using Microsoft.Extensions.Options;
 
