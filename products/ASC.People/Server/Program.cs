@@ -23,7 +23,10 @@ namespace ASC.People
                     {
                         var kestrelConfig = hostingContext.Configuration.GetSection("Kestrel");
 
-                        if (!kestrelConfig.Exists()) return;
+                        if (!kestrelConfig.Exists())
+                        {
+                            return;
+                        }
 
                         var unixSocket = kestrelConfig.GetValue<string>("ListenUnixSocket");
 

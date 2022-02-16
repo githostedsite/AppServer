@@ -143,6 +143,7 @@ namespace ASC.Employee.Core.Controllers
         {
             var product = new PeopleProduct();
             product.Init();
+
             return new Module(product);
         }
 
@@ -155,13 +156,18 @@ namespace ASC.Employee.Core.Controllers
         [Read("status/{status}")]
         public IQueryable<EmployeeWraper> GetByStatus(EmployeeStatus status)
         {
-            if (_coreBaseSettings.Personal) throw new Exception("Method not available");
+            if (_coreBaseSettings.Personal)
+            {
+                throw new Exception("Method not available");
+            }
+
             Guid? groupId = null;
             if ("group".Equals(_apiContext.FilterBy, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(_apiContext.FilterValue))
             {
                 groupId = new Guid(_apiContext.FilterValue);
                 _apiContext.SetDataFiltered();
             }
+
             return GetFullByFilter(status, groupId, null, null, null);
         }
 
@@ -175,7 +181,10 @@ namespace ASC.Employee.Core.Controllers
         public EmployeeWraperFull GetByEmail([FromQuery] string email)
         {
             if (_coreBaseSettings.Personal && !_userManager.GetUsers(_securityContext.CurrentAccount.ID).IsOwner(Tenant))
+            {
                 throw new MethodAccessException("Method not available");
+            }
+
             var user = _userManager.GetUserByEmail(email);
             if (user.ID == Constants.LostUser.ID)
             {
@@ -188,7 +197,11 @@ namespace ASC.Employee.Core.Controllers
         [Read("{username}", order: int.MaxValue)]
         public EmployeeWraperFull GetById(string username)
         {
-            if (_coreBaseSettings.Personal) throw new MethodAccessException("Method not available");
+            if (_coreBaseSettings.Personal)
+            {
+                throw new MethodAccessException("Method not available");
+            }
+
             var user = _userManager.GetUserByUserName(username);
             if (user.ID == Constants.LostUser.ID)
             {
@@ -213,7 +226,11 @@ namespace ASC.Employee.Core.Controllers
         [Read("@search/{query}")]
         public IEnumerable<EmployeeWraperFull> GetSearch(string query)
         {
-            if (_coreBaseSettings.Personal) throw new MethodAccessException("Method not available");
+            if (_coreBaseSettings.Personal)
+            {
+                throw new MethodAccessException("Method not available");
+            }
+
             try
             {
                 var groupId = Guid.Empty;
@@ -228,6 +245,7 @@ namespace ASC.Employee.Core.Controllers
             {
                 _logger.Error(error);
             }
+
             return null;
         }
 
@@ -240,7 +258,11 @@ namespace ASC.Employee.Core.Controllers
         [Read("status/{status}/search")]
         public IEnumerable<EmployeeWraperFull> GetAdvanced(EmployeeStatus status, [FromQuery] string query)
         {
-            if (_coreBaseSettings.Personal) throw new MethodAccessException("Method not available");
+            if (_coreBaseSettings.Personal)
+            {
+                throw new MethodAccessException("Method not available");
+            }
+
             try
             {
                 var list = _userManager.GetUsers(status).AsEnumerable();
@@ -262,6 +284,7 @@ namespace ASC.Employee.Core.Controllers
             {
                 _logger.Error(error);
             }
+
             return null;
         }
 
@@ -322,6 +345,7 @@ namespace ASC.Employee.Core.Controllers
         public IQueryable<EmployeeWraperFull> GetFullByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
         {
             var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
+
             return users.Select(r => _employeeWraperFullHelper.GetFull(r));
         }
 
@@ -329,12 +353,17 @@ namespace ASC.Employee.Core.Controllers
         public IEnumerable<EmployeeWraper> GetSimpleByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
         {
             var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
+
             return users.Select(_employeeWraperHelper.Get);
         }
 
         private IQueryable<UserInfo> GetByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
         {
-            if (_coreBaseSettings.Personal) throw new MethodAccessException("Method not available");
+            if (_coreBaseSettings.Personal)
+            {
+                throw new MethodAccessException("Method not available");
+            }
+
             var isAdmin = _userManager.GetUsers(_securityContext.CurrentAccount.ID).IsAdmin(_userManager) ||
                           _webItemSecurity.IsProductAdministrator(WebItemManager.PeopleProductID, _securityContext.CurrentAccount.ID);
 
@@ -383,11 +412,17 @@ namespace ASC.Employee.Core.Controllers
         [Create(@"register")]
         public string RegisterUserOnPersonal(RegisterPersonalUserModel model)
         {
-            if (!_coreBaseSettings.Personal) throw new MethodAccessException("Method is only available on personal.onlyoffice.com");
+            if (!_coreBaseSettings.Personal)
+            {
+                throw new MethodAccessException("Method is only available on personal.onlyoffice.com");
+            }
 
             try
             {
-                if (_coreBaseSettings.CustomMode) model.Lang = "ru-RU";
+                if (_coreBaseSettings.CustomMode)
+                {
+                    model.Lang = "ru-RU";
+                }
 
                 var cultureInfo = _setupInfo.GetPersonalCulture(model.Lang).Value;
 
@@ -398,7 +433,10 @@ namespace ASC.Employee.Core.Controllers
 
                 model.Email.ThrowIfNull(new ArgumentException(Resource.ErrorEmailEmpty, "email"));
 
-                if (!model.Email.TestEmailRegex()) throw new ArgumentException(Resource.ErrorNotCorrectEmail, "email");
+                if (!model.Email.TestEmailRegex())
+                {
+                    throw new ArgumentException(Resource.ErrorNotCorrectEmail, "email");
+                }
 
                 if (!SetupInfo.IsSecretEmail(model.Email)
                     && !string.IsNullOrEmpty(_setupInfo.RecaptchaPublicKey) && !string.IsNullOrEmpty(_setupInfo.RecaptchaPrivateKey))
@@ -459,6 +497,7 @@ namespace ASC.Employee.Core.Controllers
             {
                 return ex.Message;
             }
+
             return string.Empty;
         }
 
@@ -621,7 +660,9 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             _permissionContext.DemandPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
 
@@ -669,7 +710,9 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             _permissionContext.DemandPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
 
@@ -697,7 +740,9 @@ namespace ASC.Employee.Core.Controllers
             }
 
             if (!_userFormatter.IsValidUserName(user.FirstName, user.LastName))
+            {
                 throw new Exception(Resource.ErrorIncorrectUserName);
+            }
 
             user.Notes = memberModel.Comment ?? user.Notes;
             user.Sex = ("male".Equals(memberModel.Sex, StringComparison.OrdinalIgnoreCase)
@@ -780,10 +825,14 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID) || user.IsLDAP())
+            {
                 throw new SecurityException();
+            }
 
             if (user.Status != EmployeeStatus.Terminated)
+            {
                 throw new Exception("The user is not suspended");
+            }
 
             CheckReassignProccess(new[] { user.ID });
 
@@ -805,15 +854,21 @@ namespace ASC.Employee.Core.Controllers
             _apiContext.AuthByClaim();
 
             if (_userManager.IsSystemUser(_securityContext.CurrentAccount.ID))
+            {
                 throw new SecurityException();
+            }
 
             var user = GetUserInfo(_securityContext.CurrentAccount.ID.ToString());
 
             if (!_userManager.UserExists(user))
+            {
                 throw new Exception(Resource.ErrorUserNotFound);
+            }
 
             if (user.IsLDAP())
+            {
                 throw new SecurityException();
+            }
 
             _securityContext.AuthenticateMeWithoutCookie(ASC.Core.Configuration.Constants.CoreSystem);
 
@@ -860,10 +915,13 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             UpdateContacts(memberModel.Contacts, user);
             _userManager.SaveUserInfo(user);
+
             return _employeeWraperFullHelper.GetFull(user);
         }
 
@@ -885,11 +943,14 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             user.ContactsList.Clear();
             UpdateContacts(memberModel.Contacts, user);
             _userManager.SaveUserInfo(user);
+
             return _employeeWraperFullHelper.GetFull(user);
         }
 
@@ -911,10 +972,13 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             DeleteContacts(memberModel.Contacts, user);
             _userManager.SaveUserInfo(user);
+
             return _employeeWraperFullHelper.GetFull(user);
         }
 
@@ -924,7 +988,9 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             return new ThumbnailsDataWrapper(user.ID, _userPhotoManager);
         }
@@ -957,6 +1023,7 @@ namespace ASC.Employee.Core.Controllers
                     {
                         result.Success = false;
                         result.Message = _fileSizeComment.FileImageSizeExceptionString;
+
                         return result;
                     }
 
@@ -972,7 +1039,9 @@ namespace ASC.Employee.Core.Controllers
                     if (autosave)
                     {
                         if (data.Length > _setupInfo.MaxImageUploadSize)
+                        {
                             throw new ImageSizeLimitException();
+                        }
 
                         var mainPhoto = _userPhotoManager.SaveOrUpdatePhoto(userId, data);
 
@@ -1043,7 +1112,9 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             if (model.Files != _userPhotoManager.GetPhotoAbsoluteWebPath(user.ID))
             {
@@ -1062,7 +1133,9 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             _permissionContext.DemandPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
 
@@ -1093,7 +1166,9 @@ namespace ASC.Employee.Core.Controllers
             var user = GetUserInfo(userid);
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             _permissionContext.DemandPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
 
@@ -1169,10 +1244,15 @@ namespace ASC.Employee.Core.Controllers
 
             var user = _userManager.GetUsers(userid);
 
-            if (!_userManager.UserExists(user)) return null;
+            if (!_userManager.UserExists(user))
+            {
+                return null;
+            }
 
             if (_userManager.IsSystemUser(user.ID))
+            {
                 throw new SecurityException();
+            }
 
             if (!string.IsNullOrEmpty(memberModel.Email))
             {
@@ -1226,27 +1306,42 @@ namespace ASC.Employee.Core.Controllers
         {
             Guid.TryParse(model.UserId, out var userid);
 
-            if (userid == Guid.Empty) throw new ArgumentNullException("userid");
+            if (userid == Guid.Empty)
+            {
+                throw new ArgumentNullException("userid");
+            }
 
             var email = (model.Email ?? "").Trim();
 
-            if (string.IsNullOrEmpty(email)) throw new Exception(Resource.ErrorEmailEmpty);
+            if (string.IsNullOrEmpty(email))
+            {
+                throw new Exception(Resource.ErrorEmailEmpty);
+            }
 
-            if (!email.TestEmailRegex()) throw new Exception(Resource.ErrorNotCorrectEmail);
+            if (!email.TestEmailRegex())
+            {
+                throw new Exception(Resource.ErrorNotCorrectEmail);
+            }
 
             var viewer = _userManager.GetUsers(_securityContext.CurrentAccount.ID);
             var user = _userManager.GetUsers(userid);
 
             if (user == null)
+            {
                 throw new Exception(Resource.ErrorUserNotFound);
+            }
 
             if (viewer == null || (user.IsOwner(Tenant) && viewer.ID != user.ID))
+            {
                 throw new Exception(Resource.ErrorAccessDenied);
+            }
 
             var existentUser = _userManager.GetUserByEmail(email);
 
             if (existentUser.ID != Constants.LostUser.ID)
+            {
                 throw new Exception(_customNamingPeople.Substitute<Resource>("ErrorEmailAlreadyExists"));
+            }
 
             if (!viewer.IsAdmin(_userManager))
             {
@@ -1255,7 +1350,9 @@ namespace ASC.Employee.Core.Controllers
             else
             {
                 if (email == user.Email)
+                {
                     throw new Exception(Resource.ErrorEmailsAreTheSame);
+                }
 
                 user.Email = email;
                 user.ActivationStatus = EmployeeActivationStatus.NotActivated;
@@ -1280,8 +1377,12 @@ namespace ASC.Employee.Core.Controllers
             {
                 user = _userManager.GetUserByUserName(userNameOrId);
             }
+
             if (user == null || user.ID == Constants.LostUser.ID)
+            {
                 throw new ItemNotFoundException("user not found");
+            }
+
             return user;
         }
 
@@ -1309,7 +1410,10 @@ namespace ASC.Employee.Core.Controllers
             {
                 _permissionContext.DemandPermissions(new UserSecurityProvider(id), Constants.Action_EditUser);
                 var u = _userManager.GetUsers(id);
-                if (u.ID == Constants.LostUser.ID || u.IsLDAP()) continue;
+                if (u.ID == Constants.LostUser.ID || u.IsLDAP())
+                {
+                    continue;
+                }
 
                 u.ActivationStatus = activationstatus;
                 _userManager.SaveUserInfo(u);
@@ -1341,8 +1445,11 @@ namespace ASC.Employee.Core.Controllers
 
             foreach (var user in users)
             {
-                if (user.IsOwner(Tenant) || user.IsAdmin(_userManager) || user.IsMe(_authContext) || user.GetListAdminModules(_webItemSecurity).Count > 0)
+                if (user.IsOwner(Tenant) || user.IsAdmin(_userManager) 
+                    || user.IsMe(_authContext) || user.GetListAdminModules(_webItemSecurity).Count > 0)
+                {
                     continue;
+                }
 
                 switch (type)
                 {
@@ -1395,7 +1502,9 @@ namespace ASC.Employee.Core.Controllers
             foreach (var user in users)
             {
                 if (user.IsOwner(Tenant) || user.IsMe(_authContext))
+                {
                     continue;
+                }
 
                 switch (status)
                 {
@@ -1447,10 +1556,17 @@ namespace ASC.Employee.Core.Controllers
 
             foreach (var user in users)
             {
-                if (user.IsActive) continue;
+                if (user.IsActive)
+                {
+                    continue;
+                }
+
                 var viewer = _userManager.GetUsers(_securityContext.CurrentAccount.ID);
 
-                if (viewer == null) throw new Exception(Resource.ErrorAccessDenied);
+                if (viewer == null)
+                {
+                    throw new Exception(Resource.ErrorAccessDenied);
+                }
 
                 if (viewer.IsAdmin(_userManager) || viewer.ID == user.ID)
                 {
@@ -1514,7 +1630,10 @@ namespace ASC.Employee.Core.Controllers
 
             foreach (var user in users)
             {
-                if (user.Status != EmployeeStatus.Terminated) continue;
+                if (user.Status != EmployeeStatus.Terminated)
+                {
+                    continue;
+                }
 
                 _userPhotoManager.RemovePhoto(user.ID);
                 _userManager.DeleteUser(user.ID);
@@ -1533,7 +1652,9 @@ namespace ASC.Employee.Core.Controllers
             var user = _userManager.GetUsers(_securityContext.CurrentAccount.ID);
 
             if (user.IsLDAP())
+            {
                 throw new SecurityException();
+            }
 
             _studioNotifyService.SendMsgProfileDeletion(user);
             _messageService.Send(MessageAction.UserSentDeleteInstructions);
@@ -1657,7 +1778,9 @@ namespace ASC.Employee.Core.Controllers
             {
                 // ignore cancellation
                 if (thirdPartyProfile.AuthorizationError != "Canceled at provider")
+                {
                     throw new Exception(thirdPartyProfile.AuthorizationError);
+                }
 
                 return;
             }
@@ -1702,8 +1825,9 @@ namespace ASC.Employee.Core.Controllers
 
             _userHelpTourHelper.IsNewUser = true;
             if (_coreBaseSettings.Personal)
+            {
                 _personalSettingsHelper.IsNewUser = true;
-
+            }
         }
 
         [Create("phone")]
@@ -1731,7 +1855,9 @@ namespace ASC.Employee.Core.Controllers
                 || _permissionContext.CheckPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
 
             if (!canChange)
+            {
                 throw new SecurityAccessDeniedException(Resource.ErrorAccessDenied);
+            }
 
             user.MobilePhoneActivationStatus = MobilePhoneActivationStatus.NotActivated;
             _userManager.SaveUserInfo(user);
@@ -1742,13 +1868,16 @@ namespace ASC.Employee.Core.Controllers
             }
 
             _studioNotifyService.SendMsgMobilePhoneChange(user);
+
             return string.Empty;
         }
 
         protected string GetEmailAddress(SignupAccountModel model)
         {
             if (!string.IsNullOrEmpty(model.Email))
+            {
                 return model.Email.Trim();
+            }
 
             return string.Empty;
         }
@@ -1756,32 +1885,43 @@ namespace ASC.Employee.Core.Controllers
         private string GetEmailAddress(SignupAccountModel model, LoginProfile account)
         {
             var value = GetEmailAddress(model);
+
             return string.IsNullOrEmpty(value) ? account.EMail : value;
         }
 
         protected string GetFirstName(SignupAccountModel model)
         {
             var value = string.Empty;
-            if (!string.IsNullOrEmpty(model.FirstName)) value = model.FirstName.Trim();
+            if (!string.IsNullOrEmpty(model.FirstName))
+            {
+                value = model.FirstName.Trim();
+            }
+
             return HtmlUtil.GetText(value);
         }
 
         private string GetFirstName(SignupAccountModel model, LoginProfile account)
         {
             var value = GetFirstName(model);
+
             return string.IsNullOrEmpty(value) ? account.FirstName : value;
         }
 
         protected string GetLastName(SignupAccountModel model)
         {
             var value = string.Empty;
-            if (!string.IsNullOrEmpty(model.LastName)) value = model.LastName.Trim();
+            if (!string.IsNullOrEmpty(model.LastName))
+            {
+                value = model.LastName.Trim();
+            }
+
             return HtmlUtil.GetText(value);
         }
 
         private string GetLastName(SignupAccountModel model, LoginProfile account)
         {
             var value = GetLastName(model);
+
             return string.IsNullOrEmpty(value) ? account.LastName : value;
         }
 
@@ -1824,7 +1964,10 @@ namespace ASC.Employee.Core.Controllers
                     var buffer = new byte[512];
                     int bytesRead;
                     while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
                         memstream.Write(buffer, 0, bytesRead);
+                    }
+
                     var bytes = memstream.ToArray();
 
                     _userPhotoManager.SaveOrUpdatePhoto(userID, bytes);
@@ -1901,18 +2044,26 @@ namespace ASC.Employee.Core.Controllers
             var fromUser = _userManager.GetUsers(model.FromUserId);
 
             if (fromUser == null || fromUser.ID == Constants.LostUser.ID)
+            {
                 throw new ArgumentException("User with id = " + model.FromUserId + " not found");
+            }
 
             if (fromUser.IsOwner(Tenant) || fromUser.IsMe(_authContext) || fromUser.Status != EmployeeStatus.Terminated)
+            {
                 throw new ArgumentException("Can not delete user with id = " + model.FromUserId);
+            }
 
             var toUser = _userManager.GetUsers(model.ToUserId);
 
             if (toUser == null || toUser.ID == Constants.LostUser.ID)
+            {
                 throw new ArgumentException("User with id = " + model.ToUserId + " not found");
+            }
 
             if (toUser.IsVisitor(_userManager) || toUser.Status == EmployeeStatus.Terminated)
+            {
                 throw new ArgumentException("Can not reassign data to user with id = " + model.ToUserId);
+            }
 
             return _queueWorkerReassign.Start(Tenant.TenantId, model.FromUserId, model.ToUserId, _securityContext.CurrentAccount.ID, model.DeleteProfile);
         }
@@ -1923,7 +2074,9 @@ namespace ASC.Employee.Core.Controllers
             {
                 var reassignStatus = _queueWorkerReassign.GetProgressItemStatus(Tenant.TenantId, userId);
                 if (reassignStatus == null || reassignStatus.IsCompleted)
+                {
                     continue;
+                }
 
                 var userName = _userManager.GetUsers(userId).DisplayUserName(_displayUserSettingsHelper);
                 throw new Exception(string.Format(Resource.ReassignDataRemoveUserError, userName));
@@ -1980,10 +2133,14 @@ namespace ASC.Employee.Core.Controllers
             var user = _userManager.GetUsers(model.UserId);
 
             if (user == null || user.ID == Constants.LostUser.ID)
+            {
                 throw new ArgumentException("User with id = " + model.UserId + " not found");
+            }
 
             if (user.IsOwner(Tenant) || user.IsMe(_authContext) || user.Status != EmployeeStatus.Terminated)
+            {
                 throw new ArgumentException("Can not delete user with id = " + model.UserId);
+            }
 
             return _queueWorkerRemove.Start(Tenant.TenantId, user, _securityContext.CurrentAccount.ID, true);
         }
@@ -1992,8 +2149,15 @@ namespace ASC.Employee.Core.Controllers
 
         private void UpdateDepartments(IEnumerable<Guid> department, UserInfo user)
         {
-            if (!_permissionContext.CheckPermissions(Constants.Action_EditGroups)) return;
-            if (department == null) return;
+            if (!_permissionContext.CheckPermissions(Constants.Action_EditGroups))
+            {
+                return;
+            }
+
+            if (department == null)
+            {
+                return;
+            }
 
             var groups = _userManager.GetUserGroups(user.ID);
             var managerGroups = new List<Guid>();
@@ -2025,7 +2189,11 @@ namespace ASC.Employee.Core.Controllers
         {
             _permissionContext.DemandPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
 
-            if (contacts == null) return;
+            if (contacts == null)
+            {
+                return;
+            }
+
             var values = contacts.Where(r => !string.IsNullOrEmpty(r.Value)).Select(r => $"{r.Type}|{r.Value}");
             user.Contacts = string.Join('|', values);
         }
@@ -2033,7 +2201,10 @@ namespace ASC.Employee.Core.Controllers
         private void DeleteContacts(IEnumerable<Contact> contacts, UserInfo user)
         {
             _permissionContext.DemandPermissions(new UserSecurityProvider(user.ID), Constants.Action_EditUser);
-            if (contacts == null) return;
+            if (contacts == null)
+            {
+                return;
+            }
 
             if (user.ContactsList == null)
             {

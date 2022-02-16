@@ -36,6 +36,7 @@
             {
                 result = result.Where(r => r.Name.Contains(_apiContext.FilterValue, StringComparison.InvariantCultureIgnoreCase));
             }
+
             return result.Select(x => new GroupWrapperSummary(x, _userManager));
         }
 
@@ -47,6 +48,7 @@
             {
                 result = result.Where(r => r.Name.Contains(_apiContext.FilterValue, StringComparison.InvariantCultureIgnoreCase));
             }
+
             return result.Select(r=> _groupWraperFullHelper.Get(r, true));
         }
 
@@ -154,7 +156,10 @@
         {
             var group = _userManager.GetGroups().SingleOrDefault(x => x.ID == groupid).NotFoundIfNull("group not found");
             if (group.ID == Constants.LostGroupInfo.ID)
+            {
                 throw new ItemNotFoundException("group not found");
+            }
+
             return @group;
         }
 
@@ -171,6 +176,7 @@
             {
                 TransferUserToDepartment(userInfo.ID, newgroup, false);
             }
+
             return GetById(newgroupid);
         }
 
@@ -191,6 +197,7 @@
         {
             RemoveMembersFrom(groupid, new GroupModel {Members = _userManager.GetUsersByGroup(groupid).Select(x => x.ID) });
             AddMembersTo(groupid, groupModel);
+
             return GetById(groupid);
         }
 
@@ -216,6 +223,7 @@
             {
                 TransferUserToDepartment(userId, group, false);
             }
+
             return GetById(group.ID);
         }
 
@@ -243,6 +251,7 @@
             {
                 throw new ItemNotFoundException("user not found");
             }
+
             return GetById(groupid);
         }
 
@@ -268,12 +277,16 @@
             {
                 RemoveUserFromDepartment(userId, group);
             }
+
             return GetById(group.ID);
         }
 
         private void RemoveUserFromDepartment(Guid userId, GroupInfo @group)
         {
-            if (!_userManager.UserExists(userId)) return;
+            if (!_userManager.UserExists(userId))
+            {
+                return;
+            }
 
             var user = _userManager.GetUsers(userId);
             _userManager.RemoveUserFromGroup(user.ID, @group.ID);
@@ -282,7 +295,10 @@
 
         private void TransferUserToDepartment(Guid userId, GroupInfo group, bool setAsManager)
         {
-            if (!_userManager.UserExists(userId) && userId != Guid.Empty) return;
+            if (!_userManager.UserExists(userId) && userId != Guid.Empty)
+            {
+                return;
+            }
 
             if (setAsManager)
             {
