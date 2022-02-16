@@ -1,4 +1,5 @@
 ﻿using SecurityContext = ASC.Core.SecurityContext;
+using Module = ASC.Api.Core.Module;
 
 namespace ASC.Employee.Core.Controllers
 {
