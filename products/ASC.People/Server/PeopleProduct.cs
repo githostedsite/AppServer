@@ -3,65 +3,21 @@
     public class PeopleProduct : Product
     {
         internal const string ProductPath = "/products/people/";
+        
+        public override bool IsPrimary { get => false; }
+        public override bool Visible => true;
+        public override Guid ProductID => ID;
+        public override ProductContext Context => _context;
+        public override string ApiURL => "api/2.0/people/info.json";
+        public override string Description => PeopleResource.ProductDescription;
+        public override string ExtendedDescription => PeopleResource.ProductDescription;
+        public override string HelpURL => string.Concat(ProductPath, "help.aspx");
+        public override string Name => PeopleResource.ProductName;
+        public override string ProductClassName => "people";
+        public override string StartURL => ProductPath;
+        public static Guid ID => new Guid("{F4D98AFD-D336-4332-8778-3C6945C81EA0}");
 
         private ProductContext _context;
-
-        public static Guid ID
-        {
-            get { return new Guid("{F4D98AFD-D336-4332-8778-3C6945C81EA0}"); }
-        }
-
-        public override bool Visible { get { return true; } }
-
-        public override ProductContext Context
-        {
-            get { return _context; }
-        }
-
-        public override string Name
-        {
-            get { return PeopleResource.ProductName; }
-        }
-
-        public override string Description
-        {
-            get { return PeopleResource.ProductDescription; }
-        }
-
-        public override string ExtendedDescription
-        {
-            get { return PeopleResource.ProductDescription; }
-        }
-
-        public override Guid ProductID
-        {
-            get { return ID; }
-        }
-
-        public override string StartURL
-        {
-            get { return ProductPath; }
-        }
-
-        public override string HelpURL
-        {
-            get { return string.Concat(ProductPath, "help.aspx"); }
-        }
-
-        public override string ProductClassName
-        {
-            get { return "people"; }
-        }
-
-        public override string ApiURL
-        {
-            get
-            {
-                return "api/2.0/people/info.json";
-            }
-        }
-
-        public override bool IsPrimary { get => false; }
 
         public override void Init()
         {
