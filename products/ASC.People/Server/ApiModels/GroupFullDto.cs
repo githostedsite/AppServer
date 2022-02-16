@@ -25,7 +25,7 @@
 
 namespace ASC.Web.Api.Models
 {
-    public class GroupWrapperFull
+    public class GroupFullDto
     {
         public string Description { get; set; }
 
@@ -41,9 +41,9 @@ namespace ASC.Web.Api.Models
 
         public List<EmployeeWraper> Members { get; set; }
 
-        public static GroupWrapperFull GetSample()
+        public static GroupFullDto GetSample()
         {
-            return new GroupWrapperFull
+            return new GroupFullDto
             {
                 Id = Guid.NewGuid(),
                 Manager = EmployeeWraper.GetSample(),
@@ -67,9 +67,9 @@ namespace ASC.Web.Api.Models
             EmployeeWraperHelper = employeeWraperHelper;
         }
 
-        public GroupWrapperFull Get(GroupInfo group, bool includeMembers)
+        public GroupFullDto Get(GroupInfo group, bool includeMembers)
         {
-            var result = new GroupWrapperFull
+            var result = new GroupFullDto
             {
                 Id = group.ID,
                 Category = group.CategoryID,

@@ -1,6 +1,6 @@
 ﻿namespace ASC.People.Models
 {
-    public class UpdateMembersModel
+    public class UpdateMembersDto
     {
         public IEnumerable<Guid> UserIds { get; set; }
     }

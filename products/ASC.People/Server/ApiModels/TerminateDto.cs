@@ -1,6 +1,6 @@
 ﻿namespace ASC.People.Models
 {
-    public class SetManagerModel
+    public class TerminateDto
     {
         public Guid UserId { get; set; }
     }

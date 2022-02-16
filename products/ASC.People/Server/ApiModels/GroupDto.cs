@@ -1,6 +1,6 @@
 ﻿namespace ASC.People.Models
 {
-    public class GroupModel
+    public class GroupDto
     {
         public Guid GroupManager { get; set; }
         public string GroupName { get; set; }

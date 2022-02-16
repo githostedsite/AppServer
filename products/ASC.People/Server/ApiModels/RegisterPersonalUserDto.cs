@@ -1,6 +1,6 @@
 ﻿namespace ASC.People.Models
 {
-    public class RegisterPersonalUserModel
+    public class RegisterPersonalUserDto
     {
         public string Email { get; set; }
         public string Lang { get; set; }
