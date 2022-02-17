@@ -7,11 +7,11 @@ namespace ASC.People.Api;
 public class ThirdpartyController : BaseApiController
 {
     private readonly IOptionsSnapshot<AccountLinker> _accountLinker;
-    private readonly ProviderManager _providerManager;
-    private readonly MobileDetector _mobileDetector;
-    private readonly Signature _signature;
     private readonly InstanceCrypto _instanceCrypto;
+    private readonly MobileDetector _mobileDetector;
     private readonly PersonalSettingsHelper _personalSettingsHelper;
+    private readonly ProviderManager _providerManager;
+    private readonly Signature _signature;
     private readonly UserHelpTourHelper _userHelpTourHelper;
 
     public ThirdpartyController(
@@ -242,9 +242,44 @@ public class ThirdpartyController : BaseApiController
         MessageService.Send(MessageAction.UserUnlinkedSocialAccount, GetMeaningfulProviderName(provider));
     }
 
-    private AccountLinker GetLinker()
+    protected string GetFirstName(SignupAccountModel model)
     {
-        return _accountLinker.Get("webstudio");
+        var value = string.Empty;
+        if (!string.IsNullOrEmpty(model.FirstName))
+        {
+            value = model.FirstName.Trim();
+        }
+
+        return HtmlUtil.GetText(value);
+    }
+
+    protected string GetLastName(SignupAccountModel model)
+    {
+        var value = string.Empty;
+        if (!string.IsNullOrEmpty(model.LastName))
+        {
+            value = model.LastName.Trim();
+        }
+
+        return HtmlUtil.GetText(value);
+    }
+
+    private static string GetMeaningfulProviderName(string providerName)
+    {
+        switch (providerName)
+        {
+            case "google":
+            case "openid":
+                return "Google";
+            case "facebook":
+                return "Facebook";
+            case "twitter":
+                return "Twitter";
+            case "linkedin":
+                return "LinkedIn";
+            default:
+                return "Unknown Provider";
+        }
     }
 
     private UserInfo CreateNewUser(string firstName, string lastName, string email, string passwordHash, EmployeeType employeeType, bool fromInviteLink)
@@ -267,11 +302,46 @@ public class ThirdpartyController : BaseApiController
         {
             userInfo.ActivationStatus = EmployeeActivationStatus.Activated;
             userInfo.CultureName = CoreBaseSettings.CustomMode ? "ru-RU" : Thread.CurrentThread.CurrentUICulture.Name;
-}
+        }
 
         return UserManagerWrapper.AddUser(userInfo, passwordHash, true, true, isVisitor, fromInviteLink);
     }
 
+    private string GetEmailAddress(SignupAccountModel model)
+    {
+        if (!string.IsNullOrEmpty(model.Email))
+        {
+            return model.Email.Trim();
+        }
+
+        return string.Empty;
+    }
+
+    private string GetEmailAddress(SignupAccountModel model, LoginProfile account)
+    {
+        var value = GetEmailAddress(model);
+
+        return string.IsNullOrEmpty(value) ? account.EMail : value;
+    }
+
+    private string GetFirstName(SignupAccountModel model, LoginProfile account)
+    {
+        var value = GetFirstName(model);
+
+        return string.IsNullOrEmpty(value) ? account.FirstName : value;
+    }
+
+    private string GetLastName(SignupAccountModel model, LoginProfile account)
+    {
+        var value = GetLastName(model);
+
+        return string.IsNullOrEmpty(value) ? account.LastName : value;
+    }
+
+    private AccountLinker GetLinker()
+    {
+        return _accountLinker.Get("webstudio");
+    }
     private void SaveContactImage(Guid userID, string url)
     {
         using (var memstream = new MemoryStream())
@@ -295,76 +365,5 @@ public class ThirdpartyController : BaseApiController
                 UserPhotoManager.SaveOrUpdatePhoto(userID, bytes);
             }
         }
-    }
-
-    private static string GetMeaningfulProviderName(string providerName)
-    {
-        switch (providerName)
-        {
-            case "google":
-            case "openid":
-                return "Google";
-            case "facebook":
-                return "Facebook";
-            case "twitter":
-                return "Twitter";
-            case "linkedin":
-                return "LinkedIn";
-            default:
-                return "Unknown Provider";
-        }
-    }
-
-    protected string GetFirstName(SignupAccountModel model)
-    {
-        var value = string.Empty;
-        if (!string.IsNullOrEmpty(model.FirstName))
-        {
-            value = model.FirstName.Trim();
-        }
-
-        return HtmlUtil.GetText(value);
-    }
-
-    private string GetFirstName(SignupAccountModel model, LoginProfile account)
-    {
-        var value = GetFirstName(model);
-
-        return string.IsNullOrEmpty(value) ? account.FirstName : value;
-    }
-
-    protected string GetLastName(SignupAccountModel model)
-    {
-        var value = string.Empty;
-        if (!string.IsNullOrEmpty(model.LastName))
-        {
-            value = model.LastName.Trim();
-        }
-
-        return HtmlUtil.GetText(value);
-    }
-
-    private string GetLastName(SignupAccountModel model, LoginProfile account)
-    {
-        var value = GetLastName(model);
-
-        return string.IsNullOrEmpty(value) ? account.LastName : value;
-    }
-
-    private string GetEmailAddress(SignupAccountModel model)
-    {
-        if (!string.IsNullOrEmpty(model.Email))
-        {
-            return model.Email.Trim();
-        }
-
-        return string.Empty;
-    }
-
-    private string GetEmailAddress(SignupAccountModel model, LoginProfile account)
-    {
-        var value = GetEmailAddress(model);
-
-        return string.IsNullOrEmpty(value) ? account.EMail : value;
     }
 }
