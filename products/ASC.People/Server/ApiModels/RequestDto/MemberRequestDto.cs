@@ -1,6 +1,6 @@
-﻿namespace ASC.People.ApiModels
+﻿namespace ASC.People.ApiModels.RequestDto
 {
-    public class MemberDto
+    public class MemberRequestDto
     {
         public bool IsVisitor { get; set; }
         public string Email { get; set; }
@@ -21,7 +21,7 @@
         public bool FromInviteLink { get; set; }
     }
 
-    public class UpdateMemberModel : MemberDto
+    public class UpdateMemberModel : MemberRequestDto
     {
         public string UserId { get; set; }
         public bool? Disable { get; set; }

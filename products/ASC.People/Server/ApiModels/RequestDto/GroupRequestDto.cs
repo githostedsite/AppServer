@@ -1,6 +1,6 @@
-﻿namespace ASC.People.ApiModels
+﻿namespace ASC.People.ApiModels.RequestDto
 {
-    public class GroupDto
+    public class GroupRequestDto
     {
         public Guid GroupManager { get; set; }
         public string GroupName { get; set; }

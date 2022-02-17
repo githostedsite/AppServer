@@ -69,19 +69,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create]
-        public GroupFullDto AddGroupFromBody([FromBody]GroupDto groupModel)
+        public GroupFullDto AddGroupFromBody([FromBody]GroupRequestDto groupModel)
         {
             return AddGroup(groupModel);
         }
 
         [Create]
         [Consumes("application/x-www-form-urlencoded")]
-        public GroupFullDto AddGroupFromForm([FromForm] GroupDto groupModel)
+        public GroupFullDto AddGroupFromForm([FromForm] GroupRequestDto groupModel)
         {
             return AddGroup(groupModel);
         }
 
-        private GroupFullDto AddGroup(GroupDto groupModel)
+        private GroupFullDto AddGroup(GroupRequestDto groupModel)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
 
@@ -102,19 +102,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("{groupid}")]
-        public GroupFullDto UpdateGroupFromBody(Guid groupid, [FromBody]GroupDto groupModel)
+        public GroupFullDto UpdateGroupFromBody(Guid groupid, [FromBody]GroupRequestDto groupModel)
         {
             return UpdateGroup(groupid, groupModel);
         }
 
         [Update("{groupid}")]
         [Consumes("application/x-www-form-urlencoded")]
-        public GroupFullDto UpdateGroupFromForm(Guid groupid, [FromForm] GroupDto groupModel)
+        public GroupFullDto UpdateGroupFromForm(Guid groupid, [FromForm] GroupRequestDto groupModel)
         {
             return UpdateGroup(groupid, groupModel);
         }
 
-        private GroupFullDto UpdateGroup(Guid groupid, GroupDto groupModel)
+        private GroupFullDto UpdateGroup(Guid groupid, GroupRequestDto groupModel)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var group = _userManager.GetGroups().SingleOrDefault(x => x.ID == groupid).NotFoundIfNull("group not found");
@@ -126,7 +126,7 @@ namespace ASC.Employee.Core.Controllers
             group.Name = groupModel.GroupName ?? group.Name;
             _userManager.SaveGroupInfo(group);
 
-            RemoveMembersFrom(groupid, new GroupDto {Members = _userManager.GetUsersByGroup(groupid, EmployeeStatus.All).Select(u => u.ID).Where(id => !groupModel.Members.Contains(id)) });
+            RemoveMembersFrom(groupid, new GroupRequestDto {Members = _userManager.GetUsersByGroup(groupid, EmployeeStatus.All).Select(u => u.ID).Where(id => !groupModel.Members.Contains(id)) });
 
             TransferUserToDepartment(groupModel.GroupManager, @group, true);
             if (groupModel.Members != null)
@@ -185,40 +185,40 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create("{groupid}/members")]
-        public GroupFullDto SetMembersToFromBody(Guid groupid, [FromBody]GroupDto groupModel)
+        public GroupFullDto SetMembersToFromBody(Guid groupid, [FromBody]GroupRequestDto groupModel)
         {
             return SetMembersTo(groupid, groupModel);
         }
 
         [Create("{groupid}/members")]
         [Consumes("application/x-www-form-urlencoded")]
-        public GroupFullDto SetMembersToFromForm(Guid groupid, [FromForm] GroupDto groupModel)
+        public GroupFullDto SetMembersToFromForm(Guid groupid, [FromForm] GroupRequestDto groupModel)
         {
             return SetMembersTo(groupid, groupModel);
         }
 
-        private GroupFullDto SetMembersTo(Guid groupid, GroupDto groupModel)
+        private GroupFullDto SetMembersTo(Guid groupid, GroupRequestDto groupModel)
         {
-            RemoveMembersFrom(groupid, new GroupDto {Members = _userManager.GetUsersByGroup(groupid).Select(x => x.ID) });
+            RemoveMembersFrom(groupid, new GroupRequestDto {Members = _userManager.GetUsersByGroup(groupid).Select(x => x.ID) });
             AddMembersTo(groupid, groupModel);
 
             return GetById(groupid);
         }
 
         [Update("{groupid}/members")]
-        public GroupFullDto AddMembersToFromBody(Guid groupid, [FromBody]GroupDto groupModel)
+        public GroupFullDto AddMembersToFromBody(Guid groupid, [FromBody]GroupRequestDto groupModel)
         {
             return AddMembersTo(groupid, groupModel);
         }
 
         [Update("{groupid}/members")]
         [Consumes("application/x-www-form-urlencoded")]
-        public GroupFullDto AddMembersToFromForm(Guid groupid, [FromForm] GroupDto groupModel)
+        public GroupFullDto AddMembersToFromForm(Guid groupid, [FromForm] GroupRequestDto groupModel)
         {
             return AddMembersTo(groupid, groupModel);
         }
 
-        private GroupFullDto AddMembersTo(Guid groupid, GroupDto groupModel)
+        private GroupFullDto AddMembersTo(Guid groupid, GroupRequestDto groupModel)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var group = GetGroupInfo(groupid);
@@ -232,19 +232,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("{groupid}/manager")]
-        public GroupFullDto SetManagerFromBody(Guid groupid, [FromBody]SetManagerDto setManagerModel)
+        public GroupFullDto SetManagerFromBody(Guid groupid, [FromBody]SetManagerRequestDto setManagerModel)
         {
             return SetManager(groupid, setManagerModel);
         }
 
         [Update("{groupid}/manager")]
         [Consumes("application/x-www-form-urlencoded")]
-        public GroupFullDto SetManagerFromForm(Guid groupid, [FromForm] SetManagerDto setManagerModel)
+        public GroupFullDto SetManagerFromForm(Guid groupid, [FromForm] SetManagerRequestDto setManagerModel)
         {
             return SetManager(groupid, setManagerModel);
         }
 
-        private GroupFullDto SetManager(Guid groupid, SetManagerDto setManagerModel)
+        private GroupFullDto SetManager(Guid groupid, SetManagerRequestDto setManagerModel)
         {
             var group = GetGroupInfo(groupid);
             if (_userManager.UserExists(setManagerModel.UserId))
@@ -260,19 +260,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Delete("{groupid}/members")]
-        public GroupFullDto RemoveMembersFromFromBody(Guid groupid, [FromBody]GroupDto groupModel)
+        public GroupFullDto RemoveMembersFromFromBody(Guid groupid, [FromBody]GroupRequestDto groupModel)
         {
             return RemoveMembersFrom(groupid, groupModel);
         }
 
         [Delete("{groupid}/members")]
         [Consumes("application/x-www-form-urlencoded")]
-        public GroupFullDto RemoveMembersFromFromForm(Guid groupid, [FromForm] GroupDto groupModel)
+        public GroupFullDto RemoveMembersFromFromForm(Guid groupid, [FromForm] GroupRequestDto groupModel)
         {
             return RemoveMembersFrom(groupid, groupModel);
         }
 
-        private GroupFullDto RemoveMembersFrom(Guid groupid, GroupDto groupModel)
+        private GroupFullDto RemoveMembersFrom(Guid groupid, GroupRequestDto groupModel)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var group = GetGroupInfo(groupid);

@@ -1,6 +1,6 @@
-﻿namespace ASC.People.ApiModels
+﻿namespace ASC.People.ApiModels.RequestDto
 {
-    public class RegisterPersonalUserDto
+    public class RegisterPersonalUserRequestDto
     {
         public string Email { get; set; }
         public string Lang { get; set; }

@@ -29,6 +29,8 @@ global using ASC.FederatedLogin.Profile;
 global using ASC.MessagingSystem;
 global using ASC.People;
 global using ASC.People.ApiModels;
+global using ASC.People.ApiModels.RequestDto;
+global using ASC.People.ApiModels.ResponseDto;
 global using ASC.People.Mapping;
 global using ASC.People.Resources;
 global using ASC.Security.Cryptography;

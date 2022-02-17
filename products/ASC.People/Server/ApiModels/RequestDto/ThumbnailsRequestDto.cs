@@ -1,6 +1,6 @@
-﻿namespace ASC.People.ApiModels
+﻿namespace ASC.People.ApiModels.RequestDto
 {
-    public class ThumbnailsDto
+    public class ThumbnailsRequestDto
     {
         public string TmpFile { get; set; }
         public int X { get; set; }

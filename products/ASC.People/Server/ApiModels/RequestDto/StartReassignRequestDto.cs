@@ -1,6 +1,6 @@
-﻿namespace ASC.People.ApiModels
+﻿namespace ASC.People.ApiModels.RequestDto
 {
-    public class StartReassignDto
+    public class StartReassignRequestDto
     {
         public Guid FromUserId { get; set; }
         public Guid ToUserId { get; set; }

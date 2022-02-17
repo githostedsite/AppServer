@@ -411,7 +411,7 @@ namespace ASC.Employee.Core.Controllers
 
         [AllowAnonymous]
         [Create(@"register")]
-        public string RegisterUserOnPersonal(RegisterPersonalUserDto model)
+        public string RegisterUserOnPersonal(RegisterPersonalUserRequestDto model)
         {
             if (!_coreBaseSettings.Personal)
             {
@@ -504,7 +504,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Create]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "LinkInvite,Everyone")]
-        public EmployeeFullDto AddMemberFromBody([FromBody] MemberDto memberModel)
+        public EmployeeFullDto AddMemberFromBody([FromBody] MemberRequestDto memberModel)
         {
             return AddMember(memberModel);
         }
@@ -512,12 +512,12 @@ namespace ASC.Employee.Core.Controllers
         [Create]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "LinkInvite,Everyone")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeFullDto AddMemberFromForm([FromForm] MemberDto memberModel)
+        public EmployeeFullDto AddMemberFromForm([FromForm] MemberRequestDto memberModel)
         {
             return AddMember(memberModel);
         }
 
-        private EmployeeFullDto AddMember(MemberDto memberModel)
+        private EmployeeFullDto AddMember(MemberRequestDto memberModel)
         {
             _apiContext.AuthByClaim();
 
@@ -576,19 +576,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create("active")]
-        public EmployeeFullDto AddMemberAsActivatedFromBody([FromBody] MemberDto memberModel)
+        public EmployeeFullDto AddMemberAsActivatedFromBody([FromBody] MemberRequestDto memberModel)
         {
             return AddMemberAsActivated(memberModel);
         }
 
         [Create("active")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeFullDto AddMemberAsActivatedFromForm([FromForm] MemberDto memberModel)
+        public EmployeeFullDto AddMemberAsActivatedFromForm([FromForm] MemberRequestDto memberModel)
         {
             return AddMemberAsActivated(memberModel);
         }
 
-        private EmployeeFullDto AddMemberAsActivated(MemberDto memberModel)
+        private EmployeeFullDto AddMemberAsActivated(MemberRequestDto memberModel)
         {
             _permissionContext.DemandPermissions(Constants.Action_AddRemoveUser);
 
@@ -997,9 +997,9 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create("{userid}/photo")]
-        public FileUploadResult UploadMemberPhoto(string userid, IFormCollection model)
+        public FileUploadResultDto UploadMemberPhoto(string userid, IFormCollection model)
         {
-            var result = new FileUploadResult();
+            var result = new FileUploadResultDto();
             var autosave = bool.Parse(model["Autosave"]);
 
             try
@@ -1150,19 +1150,19 @@ namespace ASC.Employee.Core.Controllers
 
 
         [Create("{userid}/photo/thumbnails")]
-        public ThumbnailsDataDto CreateMemberPhotoThumbnailsFromBody(string userid, [FromBody] ThumbnailsDto thumbnailsModel)
+        public ThumbnailsDataDto CreateMemberPhotoThumbnailsFromBody(string userid, [FromBody] ThumbnailsRequestDto thumbnailsModel)
         {
             return CreateMemberPhotoThumbnails(userid, thumbnailsModel);
         }
 
         [Create("{userid}/photo/thumbnails")]
         [Consumes("application/x-www-form-urlencoded")]
-        public ThumbnailsDataDto CreateMemberPhotoThumbnailsFromForm(string userid, [FromForm] ThumbnailsDto thumbnailsModel)
+        public ThumbnailsDataDto CreateMemberPhotoThumbnailsFromForm(string userid, [FromForm] ThumbnailsRequestDto thumbnailsModel)
         {
             return CreateMemberPhotoThumbnails(userid, thumbnailsModel);
         }
 
-        private ThumbnailsDataDto CreateMemberPhotoThumbnails(string userid, ThumbnailsDto thumbnailsModel)
+        private ThumbnailsDataDto CreateMemberPhotoThumbnails(string userid, ThumbnailsRequestDto thumbnailsModel)
         {
             var user = GetUserInfo(userid);
 
@@ -1199,7 +1199,7 @@ namespace ASC.Employee.Core.Controllers
 
         [AllowAnonymous]
         [Create("password", false)]
-        public object SendUserPasswordFromBody([FromBody] MemberDto memberModel)
+        public object SendUserPasswordFromBody([FromBody] MemberRequestDto memberModel)
         {
             return SendUserPassword(memberModel);
         }
@@ -1207,12 +1207,12 @@ namespace ASC.Employee.Core.Controllers
         [AllowAnonymous]
         [Create("password", false)]
         [Consumes("application/x-www-form-urlencoded")]
-        public object SendUserPasswordFromForm([FromForm] MemberDto memberModel)
+        public object SendUserPasswordFromForm([FromForm] MemberRequestDto memberModel)
         {
             return SendUserPassword(memberModel);
         }
 
-        private object SendUserPassword(MemberDto memberModel)
+        private object SendUserPassword(MemberRequestDto memberModel)
         {
             string error = _userManagerWrapper.SendUserPassword(memberModel.Email);
             if (!string.IsNullOrEmpty(error))
@@ -1225,7 +1225,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Update("{userid}/password")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "PasswordChange,EmailChange,Activation,EmailActivation,Everyone")]
-        public EmployeeFullDto ChangeUserPasswordFromBody(Guid userid, [FromBody] MemberDto memberModel)
+        public EmployeeFullDto ChangeUserPasswordFromBody(Guid userid, [FromBody] MemberRequestDto memberModel)
         {
             return ChangeUserPassword(userid, memberModel);
         }
@@ -1233,12 +1233,12 @@ namespace ASC.Employee.Core.Controllers
         [Update("{userid}/password")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "PasswordChange,EmailChange,Activation,EmailActivation,Everyone")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeFullDto ChangeUserPasswordFromForm(Guid userid, [FromForm] MemberDto memberModel)
+        public EmployeeFullDto ChangeUserPasswordFromForm(Guid userid, [FromForm] MemberRequestDto memberModel)
         {
             return ChangeUserPassword(userid, memberModel);
         }
 
-        private EmployeeFullDto ChangeUserPassword(Guid userid, MemberDto memberModel)
+        private EmployeeFullDto ChangeUserPassword(Guid userid, MemberRequestDto memberModel)
         {
             _apiContext.AuthByClaim();
             _permissionContext.DemandPermissions(new UserSecurityProvider(userid), Constants.Action_EditUser);
@@ -1389,7 +1389,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Update("activationstatus/{activationstatus}")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "Activation,Everyone")]
-        public IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatusFromBody(EmployeeActivationStatus activationstatus, [FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatusFromBody(EmployeeActivationStatus activationstatus, [FromBody] UpdateMembersRequestDto model)
         {
             return UpdateEmployeeActivationStatus(activationstatus, model);
         }
@@ -1397,12 +1397,12 @@ namespace ASC.Employee.Core.Controllers
         [Update("activationstatus/{activationstatus}")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "Activation,Everyone")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatusFromForm(EmployeeActivationStatus activationstatus, [FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatusFromForm(EmployeeActivationStatus activationstatus, [FromForm] UpdateMembersRequestDto model)
         {
             return UpdateEmployeeActivationStatus(activationstatus, model);
         }
 
-        private IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatus(EmployeeActivationStatus activationstatus, UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatus(EmployeeActivationStatus activationstatus, UpdateMembersRequestDto model)
         {
             _apiContext.AuthByClaim();
 
@@ -1425,19 +1425,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("type/{type}")]
-        public IEnumerable<EmployeeFullDto> UpdateUserTypeFromBody(EmployeeType type, [FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserTypeFromBody(EmployeeType type, [FromBody] UpdateMembersRequestDto model)
         {
             return UpdateUserType(type, model);
         }
 
         [Update("type/{type}")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeFullDto> UpdateUserTypeFromForm(EmployeeType type, [FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserTypeFromForm(EmployeeType type, [FromForm] UpdateMembersRequestDto model)
         {
             return UpdateUserType(type, model);
         }
 
-        private IEnumerable<EmployeeFullDto> UpdateUserType(EmployeeType type, UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> UpdateUserType(EmployeeType type, UpdateMembersRequestDto model)
         {
             var users = model.UserIds
                 .Where(userId => !_userManager.IsSystemUser(userId))
@@ -1480,19 +1480,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("status/{status}")]
-        public IEnumerable<EmployeeFullDto> UpdateUserStatusFromBody(EmployeeStatus status, [FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserStatusFromBody(EmployeeStatus status, [FromBody] UpdateMembersRequestDto model)
         {
             return UpdateUserStatus(status, model);
         }
 
         [Update("status/{status}")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeFullDto> UpdateUserStatusFromForm(EmployeeStatus status, [FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserStatusFromForm(EmployeeStatus status, [FromForm] UpdateMembersRequestDto model)
         {
             return UpdateUserStatus(status, model);
         }
 
-        private IEnumerable<EmployeeFullDto> UpdateUserStatus(EmployeeStatus status, UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> UpdateUserStatus(EmployeeStatus status, UpdateMembersRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -1536,19 +1536,19 @@ namespace ASC.Employee.Core.Controllers
 
 
         [Update("invite")]
-        public IEnumerable<EmployeeFullDto> ResendUserInvitesFromBody([FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> ResendUserInvitesFromBody([FromBody] UpdateMembersRequestDto model)
         {
             return ResendUserInvites(model);
         }
 
         [Update("invite")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeFullDto> ResendUserInvitesFromForm([FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> ResendUserInvitesFromForm([FromForm] UpdateMembersRequestDto model)
         {
             return ResendUserInvites(model);
         }
 
-        private IEnumerable<EmployeeFullDto> ResendUserInvites(UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> ResendUserInvites(UpdateMembersRequestDto model)
         {
             var users = model.UserIds
                 .Where(userId => !_userManager.IsSystemUser(userId))
@@ -1605,19 +1605,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("delete", Order = -1)]
-        public IEnumerable<EmployeeFullDto> RemoveUsersFromBody([FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> RemoveUsersFromBody([FromBody] UpdateMembersRequestDto model)
         {
             return RemoveUsers(model);
         }
 
         [Update("delete", Order = -1)]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeFullDto> RemoveUsersFromForm([FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> RemoveUsersFromForm([FromForm] UpdateMembersRequestDto model)
         {
             return RemoveUsers(model);
         }
 
-        private IEnumerable<EmployeeFullDto> RemoveUsers(UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> RemoveUsers(UpdateMembersRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_AddRemoveUser);
 
@@ -1707,19 +1707,19 @@ namespace ASC.Employee.Core.Controllers
 
 
         [Update("thirdparty/linkaccount")]
-        public void LinkAccountFromBody([FromBody] LinkAccountDto model)
+        public void LinkAccountFromBody([FromBody] LinkAccountRequestDto model)
         {
             LinkAccount(model);
         }
 
         [Update("thirdparty/linkaccount")]
         [Consumes("application/x-www-form-urlencoded")]
-        public void LinkAccountFromForm([FromForm] LinkAccountDto model)
+        public void LinkAccountFromForm([FromForm] LinkAccountRequestDto model)
         {
             LinkAccount(model);
         }
 
-        public void LinkAccount(LinkAccountDto model)
+        public void LinkAccount(LinkAccountRequestDto model)
         {
             var profile = new LoginProfile(_signature, _instanceCrypto, model.SerializedProfile);
 
@@ -2012,7 +2012,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update(@"reassign/terminate")]
-        public void TerminateReassignFromBody([FromBody] TerminateDto model)
+        public void TerminateReassignFromBody([FromBody] TerminateRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -2021,7 +2021,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Update(@"reassign/terminate")]
         [Consumes("application/x-www-form-urlencoded")]
-        public void TerminateReassignFromForm([FromForm] TerminateDto model)
+        public void TerminateReassignFromForm([FromForm] TerminateRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -2029,19 +2029,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create(@"reassign/start")]
-        public ReassignProgressItem StartReassignFromBody([FromBody] StartReassignDto model)
+        public ReassignProgressItem StartReassignFromBody([FromBody] StartReassignRequestDto model)
         {
             return StartReassign(model);
         }
 
         [Create(@"reassign/start")]
         [Consumes("application/x-www-form-urlencoded")]
-        public ReassignProgressItem StartReassignFromForm([FromForm] StartReassignDto model)
+        public ReassignProgressItem StartReassignFromForm([FromForm] StartReassignRequestDto model)
         {
             return StartReassign(model);
         }
 
-        private ReassignProgressItem StartReassign(StartReassignDto model)
+        private ReassignProgressItem StartReassign(StartReassignRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -2101,7 +2101,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update(@"remove/terminate")]
-        public void TerminateRemoveFromBody([FromBody] TerminateDto model)
+        public void TerminateRemoveFromBody([FromBody] TerminateRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -2110,7 +2110,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Update(@"remove/terminate")]
         [Consumes("application/x-www-form-urlencoded")]
-        public void TerminateRemoveFromForm([FromForm] TerminateDto model)
+        public void TerminateRemoveFromForm([FromForm] TerminateRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -2118,19 +2118,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create(@"remove/start")]
-        public RemoveProgressItem StartRemoveFromBody([FromBody] TerminateDto model)
+        public RemoveProgressItem StartRemoveFromBody([FromBody] TerminateRequestDto model)
         {
             return StartRemove(model);
         }
 
         [Create(@"remove/start")]
         [Consumes("application/x-www-form-urlencoded")]
-        public RemoveProgressItem StartRemoveFromForm([FromForm] TerminateDto model)
+        public RemoveProgressItem StartRemoveFromForm([FromForm] TerminateRequestDto model)
         {
             return StartRemove(model);
         }
 
-        private RemoveProgressItem StartRemove(TerminateDto model)
+        private RemoveProgressItem StartRemove(TerminateRequestDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
