@@ -141,11 +141,11 @@ public class GroupController : ControllerBase
     }
 
     [Delete("{groupid}")]
-    public GroupSimpleDto DeleteGroup(Guid groupid)
+    public GroupDto DeleteGroup(Guid groupid)
     {
         _permissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
         var @group = GetGroupInfo(groupid);
-        var groupWrapperFull = _mapper.Map<GroupInfo, GroupSimpleDto>(@group);
+        var groupWrapperFull = _mapper.Map<GroupInfo, GroupDto>(@group);
 
         _userManager.DeleteGroup(groupid);
 

@@ -1,6 +1,6 @@
 ﻿namespace ASC.People.ApiModels.ResponseDto;
 
-public class GroupSimpleDto
+public class GroupDto
 {
     public EmployeeDto Manager { get; set; }
     public Guid Category { get; set; }

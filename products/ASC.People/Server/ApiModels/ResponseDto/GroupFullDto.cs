@@ -25,7 +25,7 @@
 
 namespace ASC.Web.Api.Models;
 
-public class GroupFullDto : GroupSimpleDto, IMapFrom<GroupInfo>
+public class GroupFullDto : GroupDto, IMapFrom<GroupInfo>
 {
     public List<EmployeeDto> Members { get; set; }
 
