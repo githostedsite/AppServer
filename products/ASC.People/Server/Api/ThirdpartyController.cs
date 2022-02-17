@@ -1,6 +1,4 @@
-﻿using ASC.Core;
-using ASC.FederatedLogin;
-using ASC.Web.Core.Users;
+﻿using SecurityContext = ASC.Core.SecurityContext;
 
 namespace ASC.People.Api;
 
@@ -19,7 +17,7 @@ public class ThirdpartyController : BaseApiController
         AuthContext authContext,
         ApiContext apiContext,
         PermissionContext permissionContext,
-        Core.SecurityContext securityContext,
+        SecurityContext securityContext,
         DisplayUserSettingsHelper displayUserSettingsHelper,
         QueueWorkerReassign queueWorkerReassign,
         QueueWorkerRemove queueWorkerRemove,

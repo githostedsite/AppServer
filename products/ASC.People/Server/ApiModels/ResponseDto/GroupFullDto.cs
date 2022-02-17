@@ -23,29 +23,28 @@
  *
 */
 
-namespace ASC.Web.Api.Models
+namespace ASC.Web.Api.Models;
+
+public class GroupFullDto : GroupSimpleDto, IMapFrom<GroupInfo>
 {
-    public class GroupFullDto : GroupSimpleDto, IMapFrom<GroupInfo>
+    public List<EmployeeDto> Members { get; set; }
+
+    public static GroupFullDto GetSample()
     {
-        public List<EmployeeDto> Members { get; set; }
-
-        public static GroupFullDto GetSample()
+        return new GroupFullDto
         {
-            return new GroupFullDto
-            {
-                Id = Guid.NewGuid(),
-                Manager = EmployeeDto.GetSample(),
-                Category = Guid.NewGuid(),
-                Name = "Sample group",
-                Parent = Guid.NewGuid(),
-                Members = new List<EmployeeDto> { EmployeeDto.GetSample() }
-            };
-        }
+            Id = Guid.NewGuid(),
+            Manager = EmployeeDto.GetSample(),
+            Category = Guid.NewGuid(),
+            Name = "Sample group",
+            Parent = Guid.NewGuid(),
+            Members = new List<EmployeeDto> { EmployeeDto.GetSample() }
+        };
+    }
 
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<GroupInfo, GroupFullDto>()
-                .ConvertUsing<GroupTypeConverter>();
-        }
+    public void Mapping(Profile profile)
+    {
+        profile.CreateMap<GroupInfo, GroupFullDto>()
+            .ConvertUsing<GroupTypeConverter>();
     }
 }

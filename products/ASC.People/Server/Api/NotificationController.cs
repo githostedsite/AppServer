@@ -1,4 +1,6 @@
-﻿namespace ASC.People.Api;
+﻿using SecurityContext = ASC.Core.SecurityContext;
+
+namespace ASC.People.Api;
 
 public class NotificationController : BaseApiController
 {
@@ -9,7 +11,7 @@ public class NotificationController : BaseApiController
         AuthContext authContext,
         ApiContext apiContext,
         PermissionContext permissionContext,
-        Core.SecurityContext securityContext,
+        SecurityContext securityContext,
         DisplayUserSettingsHelper displayUserSettingsHelper,
         QueueWorkerReassign queueWorkerReassign,
         QueueWorkerRemove queueWorkerRemove,

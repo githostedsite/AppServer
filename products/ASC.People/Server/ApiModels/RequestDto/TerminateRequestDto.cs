@@ -1,7 +1,6 @@
-﻿namespace ASC.People.ApiModels.RequestDto
+﻿namespace ASC.People.ApiModels.RequestDto;
+
+public class TerminateRequestDto
 {
-    public class TerminateRequestDto
-    {
-        public Guid UserId { get; set; }
-    }
+    public Guid UserId { get; set; }
 }
