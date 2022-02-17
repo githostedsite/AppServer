@@ -93,7 +93,7 @@ public class EmployeeWraperFullHelper : EmployeeWraperHelper
 {
     private readonly ApiContext _context;
     private readonly WebItemSecurity _webItemSecurity;
-    private readonly ApiDateTimeHelper _apiDateTimeHelper;
+    private readonly ApiDateTimeHelper _apiDateTimeHelper; 
 
     public EmployeeWraperFullHelper(
         ApiContext context,
@@ -223,7 +223,7 @@ public class EmployeeWraperFullHelper : EmployeeWraperHelper
         if (_context.Check("listAdminModules"))
         {
             var listAdminModules = userInfo.GetListAdminModules(_webItemSecurity);
-                if (listAdminModules.Count > 0)
+            if (listAdminModules.Count > 0)
             {
                 result.ListAdminModules = listAdminModules;
             }
@@ -249,7 +249,7 @@ public class EmployeeWraperFullHelper : EmployeeWraperHelper
             }
         }
 
-            if (contacts.Count > 0)
+        if (contacts.Count > 0)
         {
             employeeWraperFull.Contacts = contacts;
         }
