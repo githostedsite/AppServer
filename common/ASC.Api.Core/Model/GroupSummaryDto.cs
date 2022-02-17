@@ -23,29 +23,39 @@
  *
 */
 
-namespace ASC.Web.Api.Models
+using GroupInfo = ASC.Core.Users.GroupInfo;
+using Profile = AutoMapper.Profile;
+
+namespace ASC.Web.Api.Models;
+
+public class GroupSummaryDto : IMapFrom<GroupInfo>
 {
-    public class GroupFullDto : GroupSimpleDto, IMapFrom<GroupInfo>
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public string Manager { get; set; }
+
+    public GroupSummaryDto() { }
+
+    public GroupSummaryDto(GroupInfo group, UserManager userManager)
     {
-        public List<EmployeeDto> Members { get; set; }
+        Id = group.ID;
+        Name = group.Name;
+        Manager = userManager.GetUsers(userManager.GetDepartmentManager(group.ID)).UserName;
+    }
 
-        public static GroupFullDto GetSample()
+    public static GroupSummaryDto GetSample()
+    {
+        return new GroupSummaryDto 
         {
-            return new GroupFullDto
-            {
-                Id = Guid.NewGuid(),
-                Manager = EmployeeDto.GetSample(),
-                Category = Guid.NewGuid(),
-                Name = "Sample group",
-                Parent = Guid.NewGuid(),
-                Members = new List<EmployeeDto> { EmployeeDto.GetSample() }
-            };
-        }
+            Id = Guid.Empty, 
+            Manager = "Jake.Zazhitski", 
+            Name = "Group Name" 
+        };
+    }
 
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<GroupInfo, GroupFullDto>()
-                .ConvertUsing<GroupTypeConverter>();
-        }
+    public void Mapping(Profile profile)
+    {
+        profile.CreateMap<GroupInfo, GroupSummaryDto>()
+            .ConvertUsing<GroupSummaryTypeConverter>();
     }
 }

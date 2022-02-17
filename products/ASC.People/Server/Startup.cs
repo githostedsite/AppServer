@@ -14,6 +14,8 @@
 
             DIHelper.TryAdd<PeopleController>();
             DIHelper.TryAdd<GroupController>();
+            DIHelper.TryAdd<GroupSummaryTypeConverter>();
+            DIHelper.TryAdd<GroupTypeConverter>();
         }
     }
 }

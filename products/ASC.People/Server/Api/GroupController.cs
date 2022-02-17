@@ -1,4 +1,6 @@
-﻿namespace ASC.Employee.Core.Controllers
+﻿using ASC.People.ApiModels;
+
+namespace ASC.Employee.Core.Controllers
 {
     [Scope]
     [DefaultRoute]
@@ -10,7 +12,7 @@
         private readonly UserManager _userManager;
         private readonly PermissionContext _permissionContext;
         private readonly MessageTarget _messageTarget;
-        private readonly GroupWraperFullHelper _groupWraperFullHelper;
+        private readonly IMapper _mapper;
 
         public GroupController(
             ApiContext apiContext,
@@ -18,18 +20,18 @@
             UserManager userManager,
             PermissionContext permissionContext,
             MessageTarget messageTarget,
-            GroupWraperFullHelper groupWraperFullHelper)
+            IMapper mapper)
         {
             _apiContext = apiContext;
             _messageService = messageService;
             _userManager = userManager;
             _permissionContext = permissionContext;
             _messageTarget = messageTarget;
-            _groupWraperFullHelper = groupWraperFullHelper;
+            _mapper = mapper;
         }
 
         [Read]
-        public IEnumerable<GroupWrapperSummary> GetAll()
+        public IEnumerable<GroupSummaryDto> GetAll()
         {
             var result = _userManager.GetDepartments().Select(r => r);
             if (!string.IsNullOrEmpty(_apiContext.FilterValue))
@@ -37,7 +39,7 @@
                 result = result.Where(r => r.Name.Contains(_apiContext.FilterValue, StringComparison.InvariantCultureIgnoreCase));
             }
 
-            return result.Select(x => new GroupWrapperSummary(x, _userManager));
+            return _mapper.Map<IEnumerable<GroupInfo>, IEnumerable<GroupSummaryDto>>(result);
         }
 
         [Read("full")]
@@ -49,19 +51,21 @@
                 result = result.Where(r => r.Name.Contains(_apiContext.FilterValue, StringComparison.InvariantCultureIgnoreCase));
             }
 
-            return result.Select(r=> _groupWraperFullHelper.Get(r, true));
+            return _mapper.Map<IEnumerable<GroupInfo>, IEnumerable<GroupFullDto>>(result);
         }
 
         [Read("{groupid}")]
         public GroupFullDto GetById(Guid groupid)
         {
-            return _groupWraperFullHelper.Get(GetGroupInfo(groupid), true);
+            return _mapper.Map<GroupInfo, GroupFullDto>(GetGroupInfo(groupid));
         }
 
         [Read("user/{userid}")]
-        public IEnumerable<GroupWrapperSummary> GetByUserId(Guid userid)
+        public IEnumerable<GroupSummaryDto> GetByUserId(Guid userid)
         {
-            return _userManager.GetUserGroups(userid).Select(x => new GroupWrapperSummary(x, _userManager));
+            var result = _userManager.GetUserGroups(userid);
+
+            return _mapper.Map<IEnumerable<GroupInfo>, IEnumerable<GroupSummaryDto>>(result);
         }
 
         [Create]
@@ -94,7 +98,7 @@
 
             _messageService.Send(MessageAction.GroupCreated, _messageTarget.Create(group.ID), group.Name);
 
-            return _groupWraperFullHelper.Get(group, true);
+            return _mapper.Map<GroupInfo, GroupFullDto>(group);
         }
 
         [Update("{groupid}")]
@@ -139,11 +143,11 @@
         }
 
         [Delete("{groupid}")]
-        public GroupFullDto DeleteGroup(Guid groupid)
+        public GroupSimpleDto DeleteGroup(Guid groupid)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditGroups, Constants.Action_AddRemoveUser);
             var @group = GetGroupInfo(groupid);
-            var groupWrapperFull = _groupWraperFullHelper.Get(group, false);
+            var groupWrapperFull = _mapper.Map<GroupInfo, GroupSimpleDto>(@group);
 
             _userManager.DeleteGroup(groupid);
 
@@ -304,6 +308,7 @@
             {
                 _userManager.SetDepartmentManager(@group.ID, userId);
             }
+
             _userManager.AddUserIntoGroup(userId, @group.ID);
         }
     }

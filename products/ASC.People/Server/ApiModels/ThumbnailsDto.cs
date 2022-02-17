@@ -1,4 +1,4 @@
-﻿namespace ASC.People.Models
+﻿namespace ASC.People.ApiModels
 {
     public class ThumbnailsDto
     {

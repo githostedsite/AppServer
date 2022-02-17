@@ -38,6 +38,7 @@ global using ASC.Core.Tenants;
 global using ASC.Core.Users;
 global using ASC.Security.Cryptography;
 global using ASC.Web.Api.Routing;
+global using ASC.Web.Api.Models;
 global using ASC.Web.Core;
 global using ASC.Web.Core.Helpers;
 global using ASC.Web.Core.Users;
@@ -45,6 +46,8 @@ global using ASC.Web.Studio.Utility;
 global using ASC.Webhooks.Core;
 
 global using Autofac;
+
+global using AutoMapper;
 
 global using Confluent.Kafka;
 

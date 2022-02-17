@@ -8,12 +8,12 @@ global using System.Runtime.InteropServices;
 global using System.Security;
 global using System.ServiceModel.Security;
 global using System.Threading;
-global using System.Threading.Tasks;
 global using System.Web;
 
 global using ASC.Api.Core;
 global using ASC.Api.Utils;
 global using ASC.Common;
+global using ASC.Common.Mapping;
 global using ASC.Common.Logging;
 global using ASC.Common.Utils;
 global using ASC.Common.Web;
@@ -28,7 +28,8 @@ global using ASC.FederatedLogin.LoginProviders;
 global using ASC.FederatedLogin.Profile;
 global using ASC.MessagingSystem;
 global using ASC.People;
-global using ASC.People.Models;
+global using ASC.People.ApiModels;
+global using ASC.People.Mapping;
 global using ASC.People.Resources;
 global using ASC.Security.Cryptography;
 global using ASC.Web.Api.Models;
@@ -44,6 +45,8 @@ global using ASC.Web.Studio.Utility;
 
 global using Autofac;
 global using Autofac.Extensions.DependencyInjection;
+
+global using AutoMapper;
 
 global using Microsoft.AspNetCore.Builder;
 global using Microsoft.AspNetCore.Authorization;

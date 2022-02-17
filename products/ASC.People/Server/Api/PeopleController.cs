@@ -149,13 +149,13 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Read]
-        public IQueryable<EmployeeWraper> GetAll()
+        public IQueryable<EmployeeDto> GetAll()
         {
             return GetByStatus(EmployeeStatus.Active);
         }
 
         [Read("status/{status}")]
-        public IQueryable<EmployeeWraper> GetByStatus(EmployeeStatus status)
+        public IQueryable<EmployeeDto> GetByStatus(EmployeeStatus status)
         {
             if (_coreBaseSettings.Personal)
             {
@@ -173,13 +173,13 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Read("@self")]
-        public EmployeeWraper Self()
+        public EmployeeDto Self()
         {
             return _employeeWraperFullHelper.GetFull(_userManager.GetUser(_securityContext.CurrentAccount.ID, EmployeeWraperFullHelper.GetExpression(_apiContext)));
         }
 
         [Read("email")]
-        public EmployeeWraperFull GetByEmail([FromQuery] string email)
+        public EmployeeFullDto GetByEmail([FromQuery] string email)
         {
             if (_coreBaseSettings.Personal && !_userManager.GetUsers(_securityContext.CurrentAccount.ID).IsOwner(Tenant))
             {
@@ -196,7 +196,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Read("{username}", order: int.MaxValue)]
-        public EmployeeWraperFull GetById(string username)
+        public EmployeeFullDto GetById(string username)
         {
             if (_coreBaseSettings.Personal)
             {
@@ -225,7 +225,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Read("@search/{query}")]
-        public IEnumerable<EmployeeWraperFull> GetSearch(string query)
+        public IEnumerable<EmployeeFullDto> GetSearch(string query)
         {
             if (_coreBaseSettings.Personal)
             {
@@ -251,13 +251,13 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Read("search")]
-        public IEnumerable<EmployeeWraperFull> GetPeopleSearch([FromQuery] string query)
+        public IEnumerable<EmployeeFullDto> GetPeopleSearch([FromQuery] string query)
         {
             return GetSearch(query);
         }
 
         [Read("status/{status}/search")]
-        public IEnumerable<EmployeeWraperFull> GetAdvanced(EmployeeStatus status, [FromQuery] string query)
+        public IEnumerable<EmployeeFullDto> GetAdvanced(EmployeeStatus status, [FromQuery] string query)
         {
             if (_coreBaseSettings.Personal)
             {
@@ -343,7 +343,7 @@ namespace ASC.Employee.Core.Controllers
 
 
         [Read("filter")]
-        public IQueryable<EmployeeWraperFull> GetFullByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
+        public IQueryable<EmployeeFullDto> GetFullByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
         {
             var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
 
@@ -351,7 +351,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Read("simple/filter")]
-        public IEnumerable<EmployeeWraper> GetSimpleByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
+        public IEnumerable<EmployeeDto> GetSimpleByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
         {
             var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
 
@@ -504,7 +504,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Create]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "LinkInvite,Everyone")]
-        public EmployeeWraperFull AddMemberFromBody([FromBody] MemberDto memberModel)
+        public EmployeeFullDto AddMemberFromBody([FromBody] MemberDto memberModel)
         {
             return AddMember(memberModel);
         }
@@ -512,12 +512,12 @@ namespace ASC.Employee.Core.Controllers
         [Create]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "LinkInvite,Everyone")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull AddMemberFromForm([FromForm] MemberDto memberModel)
+        public EmployeeFullDto AddMemberFromForm([FromForm] MemberDto memberModel)
         {
             return AddMember(memberModel);
         }
 
-        private EmployeeWraperFull AddMember(MemberDto memberModel)
+        private EmployeeFullDto AddMember(MemberDto memberModel)
         {
             _apiContext.AuthByClaim();
 
@@ -576,19 +576,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create("active")]
-        public EmployeeWraperFull AddMemberAsActivatedFromBody([FromBody] MemberDto memberModel)
+        public EmployeeFullDto AddMemberAsActivatedFromBody([FromBody] MemberDto memberModel)
         {
             return AddMemberAsActivated(memberModel);
         }
 
         [Create("active")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull AddMemberAsActivatedFromForm([FromForm] MemberDto memberModel)
+        public EmployeeFullDto AddMemberAsActivatedFromForm([FromForm] MemberDto memberModel)
         {
             return AddMemberAsActivated(memberModel);
         }
 
-        private EmployeeWraperFull AddMemberAsActivated(MemberDto memberModel)
+        private EmployeeFullDto AddMemberAsActivated(MemberDto memberModel)
         {
             _permissionContext.DemandPermissions(Constants.Action_AddRemoveUser);
 
@@ -644,19 +644,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("{userid}/culture")]
-        public EmployeeWraperFull UpdateMemberCultureFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
+        public EmployeeFullDto UpdateMemberCultureFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
         {
             return UpdateMemberCulture(userid, memberModel);
         }
 
         [Update("{userid}/culture")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull UpdateMemberCultureFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
+        public EmployeeFullDto UpdateMemberCultureFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
         {
             return UpdateMemberCulture(userid, memberModel);
         }
 
-        private EmployeeWraperFull UpdateMemberCulture(string userid, UpdateMemberModel memberModel)
+        private EmployeeFullDto UpdateMemberCulture(string userid, UpdateMemberModel memberModel)
         {
             var user = GetUserInfo(userid);
 
@@ -694,19 +694,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("{userid}")]
-        public EmployeeWraperFull UpdateMemberFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
+        public EmployeeFullDto UpdateMemberFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
         {
             return UpdateMember(userid, memberModel);
         }
 
         [Update("{userid}")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull UpdateMemberFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
+        public EmployeeFullDto UpdateMemberFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
         {
             return UpdateMember(userid, memberModel);
         }
 
-        private EmployeeWraperFull UpdateMember(string userid, UpdateMemberModel memberModel)
+        private EmployeeFullDto UpdateMember(string userid, UpdateMemberModel memberModel)
         {
             var user = GetUserInfo(userid);
 
@@ -819,7 +819,7 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Delete("{userid}")]
-        public EmployeeWraperFull DeleteMember(string userid)
+        public EmployeeFullDto DeleteMember(string userid)
         {
             _permissionContext.DemandPermissions(Constants.Action_AddRemoveUser);
 
@@ -850,7 +850,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Delete("@self")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "ProfileRemove")]
-        public EmployeeWraperFull DeleteProfile()
+        public EmployeeFullDto DeleteProfile()
         {
             _apiContext.AuthByClaim();
 
@@ -899,19 +899,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("{userid}/contacts")]
-        public EmployeeWraperFull UpdateMemberContactsFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
+        public EmployeeFullDto UpdateMemberContactsFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
         {
             return UpdateMemberContacts(userid, memberModel);
         }
 
         [Update("{userid}/contacts")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull UpdateMemberContactsFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
+        public EmployeeFullDto UpdateMemberContactsFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
         {
             return UpdateMemberContacts(userid, memberModel);
         }
 
-        private EmployeeWraperFull UpdateMemberContacts(string userid, UpdateMemberModel memberModel)
+        private EmployeeFullDto UpdateMemberContacts(string userid, UpdateMemberModel memberModel)
         {
             var user = GetUserInfo(userid);
 
@@ -927,19 +927,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Create("{userid}/contacts")]
-        public EmployeeWraperFull SetMemberContactsFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
+        public EmployeeFullDto SetMemberContactsFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
         {
             return SetMemberContacts(userid, memberModel);
         }
 
         [Create("{userid}/contacts")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull SetMemberContactsFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
+        public EmployeeFullDto SetMemberContactsFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
         {
             return SetMemberContacts(userid, memberModel);
         }
 
-        private EmployeeWraperFull SetMemberContacts(string userid, UpdateMemberModel memberModel)
+        private EmployeeFullDto SetMemberContacts(string userid, UpdateMemberModel memberModel)
         {
             var user = GetUserInfo(userid);
 
@@ -956,19 +956,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Delete("{userid}/contacts")]
-        public EmployeeWraperFull DeleteMemberContactsFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
+        public EmployeeFullDto DeleteMemberContactsFromBody(string userid, [FromBody] UpdateMemberModel memberModel)
         {
             return DeleteMemberContacts(userid, memberModel);
         }
 
         [Delete("{userid}/contacts")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull DeleteMemberContactsFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
+        public EmployeeFullDto DeleteMemberContactsFromForm(string userid, [FromForm] UpdateMemberModel memberModel)
         {
             return DeleteMemberContacts(userid, memberModel);
         }
 
-        private EmployeeWraperFull DeleteMemberContacts(string userid, UpdateMemberModel memberModel)
+        private EmployeeFullDto DeleteMemberContacts(string userid, UpdateMemberModel memberModel)
         {
             var user = GetUserInfo(userid);
 
@@ -999,7 +999,7 @@ namespace ASC.Employee.Core.Controllers
         [Create("{userid}/photo")]
         public FileUploadResult UploadMemberPhoto(string userid, IFormCollection model)
         {
-            var result = new People.Models.FileUploadResult();
+            var result = new FileUploadResult();
             var autosave = bool.Parse(model["Autosave"]);
 
             try
@@ -1225,7 +1225,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Update("{userid}/password")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "PasswordChange,EmailChange,Activation,EmailActivation,Everyone")]
-        public EmployeeWraperFull ChangeUserPasswordFromBody(Guid userid, [FromBody] MemberDto memberModel)
+        public EmployeeFullDto ChangeUserPasswordFromBody(Guid userid, [FromBody] MemberDto memberModel)
         {
             return ChangeUserPassword(userid, memberModel);
         }
@@ -1233,12 +1233,12 @@ namespace ASC.Employee.Core.Controllers
         [Update("{userid}/password")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "PasswordChange,EmailChange,Activation,EmailActivation,Everyone")]
         [Consumes("application/x-www-form-urlencoded")]
-        public EmployeeWraperFull ChangeUserPasswordFromForm(Guid userid, [FromForm] MemberDto memberModel)
+        public EmployeeFullDto ChangeUserPasswordFromForm(Guid userid, [FromForm] MemberDto memberModel)
         {
             return ChangeUserPassword(userid, memberModel);
         }
 
-        private EmployeeWraperFull ChangeUserPassword(Guid userid, MemberDto memberModel)
+        private EmployeeFullDto ChangeUserPassword(Guid userid, MemberDto memberModel)
         {
             _apiContext.AuthByClaim();
             _permissionContext.DemandPermissions(new UserSecurityProvider(userid), Constants.Action_EditUser);
@@ -1389,7 +1389,7 @@ namespace ASC.Employee.Core.Controllers
 
         [Update("activationstatus/{activationstatus}")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "Activation,Everyone")]
-        public IEnumerable<EmployeeWraperFull> UpdateEmployeeActivationStatusFromBody(EmployeeActivationStatus activationstatus, [FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatusFromBody(EmployeeActivationStatus activationstatus, [FromBody] UpdateMembersDto model)
         {
             return UpdateEmployeeActivationStatus(activationstatus, model);
         }
@@ -1397,16 +1397,16 @@ namespace ASC.Employee.Core.Controllers
         [Update("activationstatus/{activationstatus}")]
         [Authorize(AuthenticationSchemes = "confirm", Roles = "Activation,Everyone")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeWraperFull> UpdateEmployeeActivationStatusFromForm(EmployeeActivationStatus activationstatus, [FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatusFromForm(EmployeeActivationStatus activationstatus, [FromForm] UpdateMembersDto model)
         {
             return UpdateEmployeeActivationStatus(activationstatus, model);
         }
 
-        private IEnumerable<EmployeeWraperFull> UpdateEmployeeActivationStatus(EmployeeActivationStatus activationstatus, UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> UpdateEmployeeActivationStatus(EmployeeActivationStatus activationstatus, UpdateMembersDto model)
         {
             _apiContext.AuthByClaim();
 
-            var retuls = new List<EmployeeWraperFull>();
+            var retuls = new List<EmployeeFullDto>();
             foreach (var id in model.UserIds.Where(userId => !_userManager.IsSystemUser(userId)))
             {
                 _permissionContext.DemandPermissions(new UserSecurityProvider(id), Constants.Action_EditUser);
@@ -1425,19 +1425,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("type/{type}")]
-        public IEnumerable<EmployeeWraperFull> UpdateUserTypeFromBody(EmployeeType type, [FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserTypeFromBody(EmployeeType type, [FromBody] UpdateMembersDto model)
         {
             return UpdateUserType(type, model);
         }
 
         [Update("type/{type}")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeWraperFull> UpdateUserTypeFromForm(EmployeeType type, [FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserTypeFromForm(EmployeeType type, [FromForm] UpdateMembersDto model)
         {
             return UpdateUserType(type, model);
         }
 
-        private IEnumerable<EmployeeWraperFull> UpdateUserType(EmployeeType type, UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> UpdateUserType(EmployeeType type, UpdateMembersDto model)
         {
             var users = model.UserIds
                 .Where(userId => !_userManager.IsSystemUser(userId))
@@ -1480,19 +1480,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("status/{status}")]
-        public IEnumerable<EmployeeWraperFull> UpdateUserStatusFromBody(EmployeeStatus status, [FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserStatusFromBody(EmployeeStatus status, [FromBody] UpdateMembersDto model)
         {
             return UpdateUserStatus(status, model);
         }
 
         [Update("status/{status}")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeWraperFull> UpdateUserStatusFromForm(EmployeeStatus status, [FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> UpdateUserStatusFromForm(EmployeeStatus status, [FromForm] UpdateMembersDto model)
         {
             return UpdateUserStatus(status, model);
         }
 
-        private IEnumerable<EmployeeWraperFull> UpdateUserStatus(EmployeeStatus status, UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> UpdateUserStatus(EmployeeStatus status, UpdateMembersDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_EditUser);
 
@@ -1536,19 +1536,19 @@ namespace ASC.Employee.Core.Controllers
 
 
         [Update("invite")]
-        public IEnumerable<EmployeeWraperFull> ResendUserInvitesFromBody([FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> ResendUserInvitesFromBody([FromBody] UpdateMembersDto model)
         {
             return ResendUserInvites(model);
         }
 
         [Update("invite")]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeWraperFull> ResendUserInvitesFromForm([FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> ResendUserInvitesFromForm([FromForm] UpdateMembersDto model)
         {
             return ResendUserInvites(model);
         }
 
-        private IEnumerable<EmployeeWraperFull> ResendUserInvites(UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> ResendUserInvites(UpdateMembersDto model)
         {
             var users = model.UserIds
                 .Where(userId => !_userManager.IsSystemUser(userId))
@@ -1605,19 +1605,19 @@ namespace ASC.Employee.Core.Controllers
         }
 
         [Update("delete", Order = -1)]
-        public IEnumerable<EmployeeWraperFull> RemoveUsersFromBody([FromBody] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> RemoveUsersFromBody([FromBody] UpdateMembersDto model)
         {
             return RemoveUsers(model);
         }
 
         [Update("delete", Order = -1)]
         [Consumes("application/x-www-form-urlencoded")]
-        public IEnumerable<EmployeeWraperFull> RemoveUsersFromForm([FromForm] UpdateMembersDto model)
+        public IEnumerable<EmployeeFullDto> RemoveUsersFromForm([FromForm] UpdateMembersDto model)
         {
             return RemoveUsers(model);
         }
 
-        private IEnumerable<EmployeeWraperFull> RemoveUsers(UpdateMembersDto model)
+        private IEnumerable<EmployeeFullDto> RemoveUsers(UpdateMembersDto model)
         {
             _permissionContext.DemandPermissions(Constants.Action_AddRemoveUser);
 
@@ -1679,7 +1679,10 @@ namespace ASC.Employee.Core.Controllers
 
             foreach (var provider in ProviderManager.AuthProviders.Where(provider => string.IsNullOrEmpty(fromOnly) || fromOnly == provider || (provider == "google" && fromOnly == "openid")))
             {
-                if (inviteView && provider.Equals("twitter", StringComparison.OrdinalIgnoreCase)) continue;
+                if (inviteView && provider.Equals("twitter", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
 
                 var loginProvider = _providerManager.GetLoginProvider(provider);
                 if (loginProvider != null && loginProvider.IsEnabled)
