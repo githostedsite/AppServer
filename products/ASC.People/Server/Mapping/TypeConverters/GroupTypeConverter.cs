@@ -1,4 +1,4 @@
-﻿namespace ASC.People.Mapping;
+﻿namespace ASC.People.Mapping.TypeConverters;
 
 [Scope]
 public class GroupTypeConverter : ITypeConverter<GroupInfo, GroupFullDto>, ITypeConverter<GroupInfo, GroupSimpleDto>

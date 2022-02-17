@@ -12,7 +12,14 @@
         {
             base.ConfigureServices(services);
 
-            DIHelper.TryAdd<PeopleController>();
+            DIHelper.TryAdd<UserController>();
+            DIHelper.TryAdd<ContactsController>();
+            DIHelper.TryAdd<ReassignController>();
+            DIHelper.TryAdd<PhotosController>();
+            DIHelper.TryAdd<RemoveUserDataController>();
+            DIHelper.TryAdd<ThirdpartyController>();
+            DIHelper.TryAdd<NotificationController>();
+            DIHelper.TryAdd<InfoController>();
             DIHelper.TryAdd<GroupController>();
             DIHelper.TryAdd<GroupSummaryTypeConverter>();
             DIHelper.TryAdd<GroupTypeConverter>();
