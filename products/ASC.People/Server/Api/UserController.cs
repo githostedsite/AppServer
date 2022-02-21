@@ -1,17 +1,27 @@
 ﻿using SecurityContext = ASC.Core.SecurityContext;
+using Module = ASC.Api.Core.Module;
 
 namespace ASC.People.Api;
 
-public class UserController : BaseApiController
+public class UserController : BasePeopleController
 {
     private readonly Constants _constants;
+    private readonly CookiesManager _cookiesManager;
+    private readonly CoreBaseSettings _coreBaseSettings;
     private readonly CustomNamingPeople _customNamingPeople;
+    private readonly EmployeeWraperFullHelper _employeeWraperFullHelper;
     private readonly EmployeeWraperHelper _employeeWraperHelper;
+    private readonly ILog _logger;
     private readonly PasswordHasher _passwordHasher;
+    private readonly QueueWorkerReassign _queueWorkerReassign;
+    private readonly QueueWorkerRemove _queueWorkerRemove;
     private readonly Recaptcha _recaptcha;
+    private readonly TenantExtra _tenantExtra;
     private readonly TenantStatisticsProvider _tenantStatisticsProvider;
     private readonly TenantUtil _tenantUtil;
     private readonly UserFormatter _userFormatter;
+    private readonly UserManagerWrapper _userManagerWrapper;
+    private readonly UserPhotoManager _userPhotoManager;
     private readonly WebItemManager _webItemManager;
     private readonly WebItemSecurity _webItemSecurity;
     private readonly WebItemSecurityCache _webItemSecurityCache;
@@ -22,67 +32,69 @@ public class UserController : BaseApiController
         ApiContext apiContext,
         PermissionContext permissionContext,
         SecurityContext securityContext,
-        DisplayUserSettingsHelper displayUserSettingsHelper,
-        QueueWorkerReassign queueWorkerReassign,
-        QueueWorkerRemove queueWorkerRemove,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        UserPhotoManager userPhotoManager,
-        SettingsManager settingsManager,
         MessageService messageService,
         MessageTarget messageTarget,
-        IHttpClientFactory httpClientFactory,
-        SetupInfo setupInfo,
-        IOptionsMonitor<ILog> option,
         StudioNotifyService studioNotifyService,
-        TenantExtra tenantExtra,
-        CoreBaseSettings coreBaseSettings,
-        CookiesManager cookiesManager,
-        UserManagerWrapper userManagerWrapper,
         Constants constants,
+        CookiesManager cookiesManager,
+        CoreBaseSettings coreBaseSettings,
         CustomNamingPeople customNamingPeople,
+        EmployeeWraperFullHelper employeeWraperFullHelper,
         EmployeeWraperHelper employeeWraperHelper,
+        ILog logger,
         PasswordHasher passwordHasher,
+        QueueWorkerReassign queueWorkerReassign,
+        QueueWorkerRemove queueWorkerRemove,
         Recaptcha recaptcha,
+        TenantExtra tenantExtra,
         TenantStatisticsProvider tenantStatisticsProvider,
         TenantUtil tenantUtil,
         UserFormatter userFormatter,
+        UserManagerWrapper userManagerWrapper,
+        UserPhotoManager userPhotoManager,
         WebItemManager webItemManager,
         WebItemSecurity webItemSecurity,
-        WebItemSecurityCache webItemSecurityCache) 
+        WebItemSecurityCache webItemSecurityCache
+        ) 
         : base(
             userManager,
             authContext,
             apiContext,
             permissionContext,
             securityContext,
-            displayUserSettingsHelper,
-            queueWorkerReassign,
-            queueWorkerRemove,
-            employeeWraperFullHelper,
-            userPhotoManager,
-            settingsManager,
             messageService,
             messageTarget,
-            httpClientFactory,
-            setupInfo,
-            option,
-            studioNotifyService,
-            tenantExtra,
-            coreBaseSettings,
-            cookiesManager,
-            userManagerWrapper)
+            studioNotifyService)
     {
         _constants = constants;
+        _cookiesManager = cookiesManager;
+        _coreBaseSettings = coreBaseSettings;
         _customNamingPeople = customNamingPeople;
+        _employeeWraperFullHelper = employeeWraperFullHelper;
         _employeeWraperHelper = employeeWraperHelper;
+        _logger = logger;
         _passwordHasher = passwordHasher;
+        _queueWorkerReassign = queueWorkerReassign;
+        _queueWorkerRemove = queueWorkerRemove;
         _recaptcha = recaptcha;
+        _tenantExtra = tenantExtra;
         _tenantStatisticsProvider = tenantStatisticsProvider;
         _tenantUtil = tenantUtil;
         _userFormatter = userFormatter;
+        _userManagerWrapper = userManagerWrapper;
+        _userPhotoManager = userPhotoManager;
         _webItemManager = webItemManager;
         _webItemSecurity = webItemSecurity;
         _webItemSecurityCache = webItemSecurityCache;
+    }
+
+    [Read("info")]
+    public Module GetModule()
+    {
+        var product = new PeopleProduct();
+        product.Init();
+
+        return new Module(product);
     }
 
     [Create("active")]
@@ -148,13 +160,13 @@ public class UserController : BaseApiController
         CheckReassignProccess(new[] { user.ID });
 
         var userName = user.DisplayUserName(false, DisplayUserSettingsHelper);
-        UserPhotoManager.RemovePhoto(user.ID);
+        _userPhotoManager.RemovePhoto(user.ID);
         UserManager.DeleteUser(user.ID);
-        QueueWorkerRemove.Start(Tenant.TenantId, user, SecurityContext.CurrentAccount.ID, false);
+        _queueWorkerRemove.Start(Tenant.TenantId, user, SecurityContext.CurrentAccount.ID, false);
 
         MessageService.Send(MessageAction.UserDeleted, MessageTarget.Create(user.ID), userName);
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     [Delete("@self")]
@@ -187,12 +199,12 @@ public class UserController : BaseApiController
         var userName = user.DisplayUserName(false, DisplayUserSettingsHelper);
         MessageService.Send(MessageAction.UsersUpdatedStatus, MessageTarget.Create(user.ID), userName);
 
-        CookiesManager.ResetUserCookie(user.ID);
+        _cookiesManager.ResetUserCookie(user.ID);
         MessageService.Send(MessageAction.CookieSettingsUpdated);
 
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
-            UserPhotoManager.RemovePhoto(user.ID);
+            _userPhotoManager.RemovePhoto(user.ID);
             UserManager.DeleteUser(user.ID);
             MessageService.Send(MessageAction.UserDeleted, MessageTarget.Create(user.ID), userName);
         }
@@ -202,12 +214,12 @@ public class UserController : BaseApiController
             //StudioNotifyService.SendMsgProfileDeletion(Tenant.TenantId, user);
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
     [Read("status/{status}/search")]
     public IEnumerable<EmployeeFullDto> GetAdvanced(EmployeeStatus status, [FromQuery] string query)
     {
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
             throw new MethodAccessException("Method not available");
         }
@@ -226,11 +238,11 @@ public class UserController : BaseApiController
             list = list.Where(x => x.FirstName != null && x.FirstName.IndexOf(query, StringComparison.OrdinalIgnoreCase) > -1 || (x.LastName != null && x.LastName.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1) ||
                                    (x.UserName != null && x.UserName.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1) || (x.Email != null && x.Email.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1) || (x.ContactsList != null && x.ContactsList.Any(y => y.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1)));
 
-            return list.Select(EmployeeWraperFullHelper.GetFull);
+            return list.Select(_employeeWraperFullHelper.GetFull);
         }
         catch (Exception error)
         {
-            Logger.Error(error);
+            _logger.Error(error);
         }
 
         return null;
@@ -245,7 +257,7 @@ public class UserController : BaseApiController
     [Read("email")]
     public EmployeeFullDto GetByEmail([FromQuery] string email)
     {
-        if (CoreBaseSettings.Personal && !UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOwner(Tenant))
+        if (_coreBaseSettings.Personal && !UserManager.GetUsers(SecurityContext.CurrentAccount.ID).IsOwner(Tenant))
         {
             throw new MethodAccessException("Method not available");
         }
@@ -256,13 +268,13 @@ public class UserController : BaseApiController
             throw new ItemNotFoundException("User not found");
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     [Read("{username}", order: int.MaxValue)]
     public EmployeeFullDto GetById(string username)
     {
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
             throw new MethodAccessException("Method not available");
         }
@@ -276,7 +288,7 @@ public class UserController : BaseApiController
             }
             else
             {
-                Logger.Error(string.Format("Account {0} сould not get user by name {1}", SecurityContext.CurrentAccount.ID, username));
+                _logger.Error(string.Format("Account {0} сould not get user by name {1}", SecurityContext.CurrentAccount.ID, username));
             }
         }
 
@@ -285,13 +297,13 @@ public class UserController : BaseApiController
             throw new ItemNotFoundException("User not found");
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     [Read("status/{status}")]
     public IQueryable<EmployeeDto> GetByStatus(EmployeeStatus status)
     {
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
             throw new Exception("Method not available");
         }
@@ -311,7 +323,7 @@ public class UserController : BaseApiController
     {
         var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
 
-        return users.Select(r => EmployeeWraperFullHelper.GetFull(r));
+        return users.Select(r => _employeeWraperFullHelper.GetFull(r));
     }
 
     [Read("search")]
@@ -323,7 +335,7 @@ public class UserController : BaseApiController
     [Read("@search/{query}")]
     public IEnumerable<EmployeeFullDto> GetSearch(string query)
     {
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
             throw new MethodAccessException("Method not available");
         }
@@ -336,11 +348,11 @@ public class UserController : BaseApiController
                 groupId = new Guid(ApiContext.FilterValue);
             }
 
-            return UserManager.Search(query, EmployeeStatus.Active, groupId).Select(EmployeeWraperFullHelper.GetFull);
+            return UserManager.Search(query, EmployeeStatus.Active, groupId).Select(_employeeWraperFullHelper.GetFull);
         }
         catch (Exception error)
         {
-            Logger.Error(error);
+            _logger.Error(error);
         }
 
         return null;
@@ -358,14 +370,14 @@ public class UserController : BaseApiController
     [Create(@"register")]
     public string RegisterUserOnPersonal(RegisterPersonalUserRequestDto model)
     {
-        if (!CoreBaseSettings.Personal)
+        if (!_coreBaseSettings.Personal)
         {
             throw new MethodAccessException("Method is only available on personal.onlyoffice.com");
         }
 
         try
         {
-            if (CoreBaseSettings.CustomMode)
+            if (_coreBaseSettings.CustomMode)
             {
                 model.Lang = "ru-RU";
             }
@@ -433,7 +445,7 @@ public class UserController : BaseApiController
                 }
                 catch (Exception ex)
                 {
-                    Logger.Debug($"ERROR write to template_unsubscribe {ex.Message}, email:{model.Email.ToLowerInvariant()}");
+                    _logger.Debug($"ERROR write to template_unsubscribe {ex.Message}, email:{model.Email.ToLowerInvariant()}");
                 }
             }
 
@@ -476,7 +488,7 @@ public class UserController : BaseApiController
     [Read("@self")]
     public EmployeeDto Self()
     {
-        return EmployeeWraperFullHelper.GetFull(UserManager.GetUser(SecurityContext.CurrentAccount.ID, EmployeeWraperFullHelper.GetExpression(ApiContext)));
+        return _employeeWraperFullHelper.GetFull(UserManager.GetUser(SecurityContext.CurrentAccount.ID, EmployeeWraperFullHelper.GetExpression(ApiContext)));
     }
 
     [Create("email", false)]
@@ -591,7 +603,7 @@ public class UserController : BaseApiController
             }
             else
             {
-                UserManagerWrapper.CheckPasswordPolicy(memberModel.Password);
+                _userManagerWrapper.CheckPasswordPolicy(memberModel.Password);
             }
             memberModel.PasswordHash = _passwordHasher.GetClientPassword(memberModel.Password);
         }
@@ -616,19 +628,19 @@ public class UserController : BaseApiController
 
         UpdateContacts(memberModel.Contacts, user);
 
-        user = UserManagerWrapper.AddUser(user, memberModel.PasswordHash, memberModel.FromInviteLink, true, memberModel.IsVisitor, memberModel.FromInviteLink);
+        user = _userManagerWrapper.AddUser(user, memberModel.PasswordHash, memberModel.FromInviteLink, true, memberModel.IsVisitor, memberModel.FromInviteLink);
 
         var messageAction = memberModel.IsVisitor ? MessageAction.GuestCreated : MessageAction.UserCreated;
         MessageService.Send(messageAction, MessageTarget.Create(user.ID), user.DisplayUserName(false, DisplayUserSettingsHelper));
 
         UpdateDepartments(memberModel.Department, user);
 
-        if (memberModel.Files != UserPhotoManager.GetDefaultPhotoAbsoluteWebPath())
+        if (memberModel.Files != _userPhotoManager.GetDefaultPhotoAbsoluteWebPath())
         {
             UpdatePhotoUrl(memberModel.Files, user);
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     private EmployeeFullDto AddMemberAsActivated(MemberRequestDto memberModel)
@@ -648,7 +660,7 @@ public class UserController : BaseApiController
             }
             else
             {
-                UserManagerWrapper.CheckPasswordPolicy(memberModel.Password);
+                _userManagerWrapper.CheckPasswordPolicy(memberModel.Password);
             }
 
             memberModel.PasswordHash = _passwordHasher.GetClientPassword(memberModel.Password);
@@ -672,18 +684,18 @@ public class UserController : BaseApiController
 
         UpdateContacts(memberModel.Contacts, user);
 
-        user = UserManagerWrapper.AddUser(user, memberModel.PasswordHash, false, false, memberModel.IsVisitor);
+        user = _userManagerWrapper.AddUser(user, memberModel.PasswordHash, false, false, memberModel.IsVisitor);
 
         user.ActivationStatus = EmployeeActivationStatus.Activated;
 
         UpdateDepartments(memberModel.Department, user);
 
-        if (memberModel.Files != UserPhotoManager.GetDefaultPhotoAbsoluteWebPath())
+        if (memberModel.Files != _userPhotoManager.GetDefaultPhotoAbsoluteWebPath())
         {
             UpdatePhotoUrl(memberModel.Files, user);
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     private EmployeeFullDto ChangeUserPassword(Guid userid, MemberRequestDto memberModel)
@@ -730,16 +742,16 @@ public class UserController : BaseApiController
             SecurityContext.SetUserPasswordHash(userid, memberModel.PasswordHash);
             MessageService.Send(MessageAction.UserUpdatedPassword);
 
-            CookiesManager.ResetUserCookie(userid);
+            _cookiesManager.ResetUserCookie(userid);
             MessageService.Send(MessageAction.CookieSettingsUpdated);
         }
 
-        return EmployeeWraperFullHelper.GetFull(GetUserInfo(userid.ToString()));
+        return _employeeWraperFullHelper.GetFull(GetUserInfo(userid.ToString()));
     }
 
     private IQueryable<UserInfo> GetByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
     {
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
             throw new MethodAccessException("Method not available");
         }
@@ -806,14 +818,14 @@ public class UserController : BaseApiController
                 continue;
             }
 
-            UserPhotoManager.RemovePhoto(user.ID);
+            _userPhotoManager.RemovePhoto(user.ID);
             UserManager.DeleteUser(user.ID);
-            QueueWorkerRemove.Start(Tenant.TenantId, user, SecurityContext.CurrentAccount.ID, false);
+            _queueWorkerRemove.Start(Tenant.TenantId, user, SecurityContext.CurrentAccount.ID, false);
         }
 
         MessageService.Send(MessageAction.UsersDeleted, MessageTarget.Create(users.Select(x => x.ID)), userNames);
 
-        return users.Select(EmployeeWraperFullHelper.GetFull);
+        return users.Select(_employeeWraperFullHelper.GetFull);
     }
 
     private IEnumerable<EmployeeFullDto> ResendUserInvites(UpdateMembersRequestDto model)
@@ -870,7 +882,7 @@ public class UserController : BaseApiController
 
         MessageService.Send(MessageAction.UsersSentActivationInstructions, MessageTarget.Create(users.Select(x => x.ID)), users.Select(x => x.DisplayUserName(false, DisplayUserSettingsHelper)));
 
-        return users.Select(EmployeeWraperFullHelper.GetFull);
+        return users.Select(_employeeWraperFullHelper.GetFull);
     }
 
     private object SendEmailChangeInstructions(UpdateMemberModel model)
@@ -938,10 +950,10 @@ public class UserController : BaseApiController
 
     private object SendUserPassword(MemberRequestDto memberModel)
     {
-        string error = UserManagerWrapper.SendUserPassword(memberModel.Email);
+        string error = _userManagerWrapper.SendUserPassword(memberModel.Email);
         if (!string.IsNullOrEmpty(error))
         {
-            Logger.ErrorFormat("Password recovery ({0}): {1}", memberModel.Email, error);
+            _logger.ErrorFormat("Password recovery ({0}): {1}", memberModel.Email, error);
         }
 
         return string.Format(Resource.MessageYourPasswordSendedToEmail, memberModel.Email);
@@ -1001,7 +1013,7 @@ public class UserController : BaseApiController
 
             u.ActivationStatus = activationstatus;
             UserManager.SaveUserInfo(u);
-            retuls.Add(EmployeeWraperFullHelper.GetFull(u));
+            retuls.Add(_employeeWraperFullHelper.GetFull(u));
         }
 
         return retuls;
@@ -1068,7 +1080,7 @@ public class UserController : BaseApiController
         UpdateContacts(memberModel.Contacts, user);
         UpdateDepartments(memberModel.Department, user);
 
-        if (memberModel.Files != UserPhotoManager.GetPhotoAbsoluteWebPath(user.ID))
+        if (memberModel.Files != _userPhotoManager.GetPhotoAbsoluteWebPath(user.ID))
         {
             UpdatePhotoUrl(memberModel.Files, user);
         }
@@ -1093,7 +1105,7 @@ public class UserController : BaseApiController
 
         if (!self && !memberModel.IsVisitor && user.IsVisitor(UserManager))
         {
-            var usersQuota = TenantExtra.GetTenantQuota().ActiveUsers;
+            var usersQuota = _tenantExtra.GetTenantQuota().ActiveUsers;
             if (_tenantStatisticsProvider.GetUsersCount() < usersQuota)
             {
                 UserManager.RemoveUserFromGroup(user.ID, Constants.GroupVisitor.ID);
@@ -1110,11 +1122,11 @@ public class UserController : BaseApiController
 
         if (memberModel.Disable.HasValue && memberModel.Disable.Value)
         {
-            CookiesManager.ResetUserCookie(user.ID);
+            _cookiesManager.ResetUserCookie(user.ID);
             MessageService.Send(MessageAction.CookieSettingsUpdated);
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
     private EmployeeFullDto UpdateMemberCulture(string userid, UpdateMemberModel memberModel)
     {
@@ -1150,7 +1162,7 @@ public class UserController : BaseApiController
             }
         }
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
     private IEnumerable<EmployeeFullDto> UpdateUserStatus(EmployeeStatus status, UpdateMembersRequestDto model)
     {
@@ -1172,7 +1184,7 @@ public class UserController : BaseApiController
                 case EmployeeStatus.Active:
                     if (user.Status == EmployeeStatus.Terminated)
                     {
-                        if (_tenantStatisticsProvider.GetUsersCount() < TenantExtra.GetTenantQuota().ActiveUsers || user.IsVisitor(UserManager))
+                        if (_tenantStatisticsProvider.GetUsersCount() < _tenantExtra.GetTenantQuota().ActiveUsers || user.IsVisitor(UserManager))
                         {
                             user.Status = EmployeeStatus.Active;
                             UserManager.SaveUserInfo(user);
@@ -1183,7 +1195,7 @@ public class UserController : BaseApiController
                     user.Status = EmployeeStatus.Terminated;
                     UserManager.SaveUserInfo(user);
 
-                    CookiesManager.ResetUserCookie(user.ID);
+                    _cookiesManager.ResetUserCookie(user.ID);
                     MessageService.Send(MessageAction.CookieSettingsUpdated);
                     break;
             }
@@ -1191,7 +1203,7 @@ public class UserController : BaseApiController
 
         MessageService.Send(MessageAction.UsersUpdatedStatus, MessageTarget.Create(users.Select(x => x.ID)), users.Select(x => x.DisplayUserName(false, DisplayUserSettingsHelper)));
 
-        return users.Select(EmployeeWraperFullHelper.GetFull);
+        return users.Select(_employeeWraperFullHelper.GetFull);
     }
 
     private IEnumerable<EmployeeFullDto> UpdateUserType(EmployeeType type, UpdateMembersRequestDto model)
@@ -1214,7 +1226,7 @@ public class UserController : BaseApiController
                 case EmployeeType.User:
                     if (user.IsVisitor(UserManager))
                     {
-                        if (_tenantStatisticsProvider.GetUsersCount() < TenantExtra.GetTenantQuota().ActiveUsers)
+                        if (_tenantStatisticsProvider.GetUsersCount() < _tenantExtra.GetTenantQuota().ActiveUsers)
                         {
                             UserManager.RemoveUserFromGroup(user.ID, Constants.GroupVisitor.ID);
                             _webItemSecurityCache.ClearCache(Tenant.TenantId);
@@ -1222,7 +1234,7 @@ public class UserController : BaseApiController
                     }
                     break;
                 case EmployeeType.Visitor:
-                    if (CoreBaseSettings.Standalone || _tenantStatisticsProvider.GetVisitorsCount() < TenantExtra.GetTenantQuota().ActiveUsers * _constants.CoefficientOfVisitors)
+                    if (_coreBaseSettings.Standalone || _tenantStatisticsProvider.GetVisitorsCount() < _tenantExtra.GetTenantQuota().ActiveUsers * _constants.CoefficientOfVisitors)
                     {
                         UserManager.AddUserIntoGroup(user.ID, Constants.GroupVisitor.ID);
                         _webItemSecurityCache.ClearCache(Tenant.TenantId);
@@ -1233,7 +1245,23 @@ public class UserController : BaseApiController
 
         MessageService.Send(MessageAction.UsersUpdatedType, MessageTarget.Create(users.Select(x => x.ID)), users.Select(x => x.DisplayUserName(false, DisplayUserSettingsHelper)));
 
-        return users.Select(EmployeeWraperFullHelper.GetFull);
+        return users.Select(_employeeWraperFullHelper.GetFull);
+    }
+
+    private void CheckReassignProccess(IEnumerable<Guid> userIds)
+    {
+        foreach (var userId in userIds)
+        {
+            var reassignStatus = _queueWorkerReassign.GetProgressItemStatus(Tenant.TenantId, userId);
+            if (reassignStatus == null || reassignStatus.IsCompleted)
+            {
+                continue;
+            }
+
+            var userName = UserManager.GetUsers(userId).DisplayUserName(DisplayUserSettingsHelper);
+
+            throw new Exception(string.Format(Resource.ReassignDataRemoveUserError, userName));
+        }
     }
 
     ///// <summary>

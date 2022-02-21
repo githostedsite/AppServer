@@ -2,9 +2,10 @@
 
 namespace ASC.People.Api;
 
-public class PhotosController : BaseApiController
+public class PhotosController : BasePeopleController
 {
     private readonly FileSizeComment _fileSizeComment;
+    private readonly SettingsManager _settingsManager;
 
     public PhotosController(
         UserManager userManager,
@@ -12,47 +13,23 @@ public class PhotosController : BaseApiController
         ApiContext apiContext,
         PermissionContext permissionContext,
         SecurityContext securityContext,
-        DisplayUserSettingsHelper displayUserSettingsHelper,
-        QueueWorkerReassign queueWorkerReassign,
-        QueueWorkerRemove queueWorkerRemove,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        UserPhotoManager userPhotoManager,
-        SettingsManager settingsManager,
         MessageService messageService,
         MessageTarget messageTarget,
-        IHttpClientFactory httpClientFactory,
-        SetupInfo setupInfo,
-        IOptionsMonitor<ILog> option,
         StudioNotifyService studioNotifyService,
-        TenantExtra tenantExtra,
-        CoreBaseSettings coreBaseSettings,
-        CookiesManager cookiesManager,
-        UserManagerWrapper userManagerWrapper,
-        FileSizeComment fileSizeComment) 
+        FileSizeComment fileSizeComment,
+        SettingsManager settingsManager) 
         : base(
             userManager,
             authContext,
             apiContext,
             permissionContext,
             securityContext,
-            displayUserSettingsHelper,
-            queueWorkerReassign,
-            queueWorkerRemove,
-            employeeWraperFullHelper,
-            userPhotoManager,
-            settingsManager,
             messageService,
             messageTarget,
-            httpClientFactory,
-            setupInfo,
-            option,
-            studioNotifyService,
-            tenantExtra,
-            coreBaseSettings,
-            cookiesManager,
-            userManagerWrapper)
+            studioNotifyService)
     {
         _fileSizeComment = fileSizeComment;
+        _settingsManager = settingsManager;
     }
 
     [Create("{userid}/photo/thumbnails")]
@@ -253,14 +230,14 @@ public class PhotosController : BaseApiController
             var data = UserPhotoManager.GetTempPhotoData(fileName);
 
             var settings = new UserPhotoThumbnailSettings(thumbnailsModel.X, thumbnailsModel.Y, thumbnailsModel.Width, thumbnailsModel.Height);
-            SettingsManager.SaveForUser(settings, user.ID);
+            _settingsManager.SaveForUser(settings, user.ID);
             UserPhotoManager.RemovePhoto(user.ID);
             UserPhotoManager.SaveOrUpdatePhoto(user.ID, data);
             UserPhotoManager.RemoveTempPhoto(fileName);
         }
         else
         {
-            UserPhotoThumbnailManager.SaveThumbnails(UserPhotoManager, SettingsManager, thumbnailsModel.X, thumbnailsModel.Y, thumbnailsModel.Width, thumbnailsModel.Height, user.ID);
+            UserPhotoThumbnailManager.SaveThumbnails(UserPhotoManager, _settingsManager, thumbnailsModel.X, thumbnailsModel.Y, thumbnailsModel.Width, thumbnailsModel.Height, user.ID);
         }
 
         UserManager.SaveUserInfo(user);

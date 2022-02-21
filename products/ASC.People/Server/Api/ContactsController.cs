@@ -2,52 +2,31 @@
 
 namespace ASC.People.Api;
 
-public class ContactsController : BaseApiController
+public class ContactsController : BasePeopleController
 {
+    private readonly EmployeeWraperFullHelper _employeeWraperFullHelper;
+
     public ContactsController(
         UserManager userManager,
         AuthContext authContext,
         ApiContext apiContext,
         PermissionContext permissionContext,
         SecurityContext securityContext,
-        DisplayUserSettingsHelper displayUserSettingsHelper,
-        QueueWorkerReassign queueWorkerReassign,
-        QueueWorkerRemove queueWorkerRemove,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        UserPhotoManager userPhotoManager,
-        SettingsManager settingsManager,
         MessageService messageService,
         MessageTarget messageTarget,
-        IHttpClientFactory httpClientFactory,
-        SetupInfo setupInfo,
-        IOptionsMonitor<ILog> option,
         StudioNotifyService studioNotifyService,
-        TenantExtra tenantExtra,
-        CoreBaseSettings coreBaseSettings,
-        CookiesManager cookiesManager,
-        UserManagerWrapper userManagerWrapper) 
-        : base(userManager,
-               authContext,
-               apiContext,
-               permissionContext,
-               securityContext,
-               displayUserSettingsHelper,
-               queueWorkerReassign,
-               queueWorkerRemove,
-               employeeWraperFullHelper,
-               userPhotoManager,
-               settingsManager,
-               messageService,
-               messageTarget,
-               httpClientFactory,
-               setupInfo,
-               option,
-               studioNotifyService,
-               tenantExtra,
-               coreBaseSettings,
-               cookiesManager,
-               userManagerWrapper)
+        EmployeeWraperFullHelper employeeWraperFullHelper) 
+        : base(
+            userManager,
+            authContext,
+            apiContext,
+            permissionContext,
+            securityContext,
+            messageService,
+            messageTarget,
+            studioNotifyService)
     {
+        _employeeWraperFullHelper = employeeWraperFullHelper;
     }
 
     [Delete("{userid}/contacts")]
@@ -125,7 +104,7 @@ public class ContactsController : BaseApiController
         DeleteContacts(memberModel.Contacts, user);
         UserManager.SaveUserInfo(user);
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     private EmployeeFullDto SetMemberContacts(string userid, UpdateMemberModel memberModel)
@@ -141,7 +120,7 @@ public class ContactsController : BaseApiController
         UpdateContacts(memberModel.Contacts, user);
         UserManager.SaveUserInfo(user);
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 
     private EmployeeFullDto UpdateMemberContacts(string userid, UpdateMemberModel memberModel)
@@ -156,6 +135,6 @@ public class ContactsController : BaseApiController
         UpdateContacts(memberModel.Contacts, user);
         UserManager.SaveUserInfo(user);
 
-        return EmployeeWraperFullHelper.GetFull(user);
+        return _employeeWraperFullHelper.GetFull(user);
     }
 }

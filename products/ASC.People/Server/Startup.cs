@@ -19,7 +19,6 @@ public class Startup : BaseStartup
         DIHelper.TryAdd<RemoveUserDataController>();
         DIHelper.TryAdd<ThirdpartyController>();
         DIHelper.TryAdd<NotificationController>();
-        DIHelper.TryAdd<InfoController>();
         DIHelper.TryAdd<GroupController>();
         DIHelper.TryAdd<GroupSummaryTypeConverter>();
         DIHelper.TryAdd<GroupTypeConverter>();

@@ -4,51 +4,29 @@ namespace ASC.People.Api;
 
 public class ReassignController : BaseApiController
 {
+    private readonly QueueWorkerReassign _queueWorkerReassign;
+
     public ReassignController(
         UserManager userManager,
         AuthContext authContext,
         ApiContext apiContext,
         PermissionContext permissionContext,
         SecurityContext securityContext,
-        DisplayUserSettingsHelper displayUserSettingsHelper,
-        QueueWorkerReassign queueWorkerReassign,
-        QueueWorkerRemove queueWorkerRemove,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        UserPhotoManager userPhotoManager,
-        SettingsManager settingsManager,
         MessageService messageService,
         MessageTarget messageTarget,
-        IHttpClientFactory httpClientFactory,
-        SetupInfo setupInfo,
-        IOptionsMonitor<ILog> option,
         StudioNotifyService studioNotifyService,
-        TenantExtra tenantExtra,
-        CoreBaseSettings coreBaseSettings,
-        CookiesManager cookiesManager,
-        UserManagerWrapper userManagerWrapper) 
+        QueueWorkerReassign queueWorkerReassign) 
         : base(
             userManager,
             authContext,
             apiContext,
             permissionContext,
             securityContext,
-            displayUserSettingsHelper,
-            queueWorkerReassign,
-            queueWorkerRemove,
-            employeeWraperFullHelper,
-            userPhotoManager,
-            settingsManager,
             messageService,
             messageTarget,
-            httpClientFactory,
-            setupInfo,
-            option,
-            studioNotifyService,
-            tenantExtra,
-            coreBaseSettings,
-            cookiesManager,
-            userManagerWrapper)
+            studioNotifyService)
     {
+        _queueWorkerReassign = queueWorkerReassign;
     }
 
     [Read(@"reassign/progress")]
@@ -56,7 +34,7 @@ public class ReassignController : BaseApiController
     {
         PermissionContext.DemandPermissions(Constants.Action_EditUser);
 
-        return QueueWorkerReassign.GetProgressItemStatus(Tenant.TenantId, userId);
+        return _queueWorkerReassign.GetProgressItemStatus(Tenant.TenantId, userId);
     }
 
     [Create(@"reassign/start")]
@@ -77,7 +55,7 @@ public class ReassignController : BaseApiController
     {
         PermissionContext.DemandPermissions(Constants.Action_EditUser);
 
-        QueueWorkerReassign.Terminate(Tenant.TenantId, model.UserId);
+        _queueWorkerReassign.Terminate(Tenant.TenantId, model.UserId);
     }
 
     [Update(@"reassign/terminate")]
@@ -86,7 +64,7 @@ public class ReassignController : BaseApiController
     {
         PermissionContext.DemandPermissions(Constants.Action_EditUser);
 
-        QueueWorkerReassign.Terminate(Tenant.TenantId, model.UserId);
+        _queueWorkerReassign.Terminate(Tenant.TenantId, model.UserId);
     }
 
     private ReassignProgressItem StartReassign(StartReassignRequestDto model)
@@ -117,6 +95,6 @@ public class ReassignController : BaseApiController
             throw new ArgumentException("Can not reassign data to user with id = " + model.ToUserId);
         }
 
-        return QueueWorkerReassign.Start(Tenant.TenantId, model.FromUserId, model.ToUserId, SecurityContext.CurrentAccount.ID, model.DeleteProfile);
+        return _queueWorkerReassign.Start(Tenant.TenantId, model.FromUserId, model.ToUserId, SecurityContext.CurrentAccount.ID, model.DeleteProfile);
     }
 }

@@ -4,49 +4,28 @@ namespace ASC.People.Api;
 
 public class RemoveUserDataController : BaseApiController
 {
-    public RemoveUserDataController(UserManager userManager,
+    private readonly QueueWorkerRemove _queueWorkerRemove;
+
+    public RemoveUserDataController(
+        UserManager userManager,
         AuthContext authContext,
         ApiContext apiContext,
         PermissionContext permissionContext,
         SecurityContext securityContext,
-        DisplayUserSettingsHelper displayUserSettingsHelper,
-        QueueWorkerReassign queueWorkerReassign,
-        QueueWorkerRemove queueWorkerRemove,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        UserPhotoManager userPhotoManager,
-        SettingsManager settingsManager,
         MessageService messageService,
         MessageTarget messageTarget,
-        IHttpClientFactory httpClientFactory,
-        SetupInfo setupInfo,
-        IOptionsMonitor<ILog> option,
         StudioNotifyService studioNotifyService,
-        TenantExtra tenantExtra,
-        CoreBaseSettings coreBaseSettings,
-        CookiesManager cookiesManager,
-        UserManagerWrapper userManagerWrapper) 
+        QueueWorkerRemove queueWorkerRemove) 
         : base(userManager,
                authContext,
                apiContext,
                permissionContext,
                securityContext,
-               displayUserSettingsHelper,
-               queueWorkerReassign,
-               queueWorkerRemove,
-               employeeWraperFullHelper,
-               userPhotoManager,
-               settingsManager,
                messageService,
                messageTarget,
-               httpClientFactory,
-               setupInfo,
-               option,
-               studioNotifyService,
-               tenantExtra,
-               coreBaseSettings,
-               cookiesManager,
-               userManagerWrapper)
+               studioNotifyService)
     {
+        _queueWorkerRemove = queueWorkerRemove;
     }
 
     [Read(@"remove/progress")]
@@ -54,7 +33,23 @@ public class RemoveUserDataController : BaseApiController
     {
         PermissionContext.DemandPermissions(Constants.Action_EditUser);
 
-        return QueueWorkerRemove.GetProgressItemStatus(Tenant.TenantId, userId);
+        return _queueWorkerRemove.GetProgressItemStatus(Tenant.TenantId, userId);
+    }
+
+    [Update("self/delete")]
+    public object SendInstructionsToDelete()
+    {
+        var user = UserManager.GetUsers(SecurityContext.CurrentAccount.ID);
+
+        if (user.IsLDAP())
+        {
+            throw new SecurityException();
+        }
+
+        StudioNotifyService.SendMsgProfileDeletion(user);
+        MessageService.Send(MessageAction.UserSentDeleteInstructions);
+
+        return string.Format(Resource.SuccessfullySentNotificationDeleteUserInfoMessage, "<b>" + user.Email + "</b>");
     }
 
     [Create(@"remove/start")]
@@ -72,10 +67,10 @@ public class RemoveUserDataController : BaseApiController
 
     [Update(@"remove/terminate")]
     public void TerminateRemoveFromBody([FromBody] TerminateRequestDto model)
-{
+    {
         PermissionContext.DemandPermissions(Constants.Action_EditUser);
 
-        QueueWorkerRemove.Terminate(Tenant.TenantId, model.UserId);
+        _queueWorkerRemove.Terminate(Tenant.TenantId, model.UserId);
     }
 
     [Update(@"remove/terminate")]
@@ -84,7 +79,7 @@ public class RemoveUserDataController : BaseApiController
     {
         PermissionContext.DemandPermissions(Constants.Action_EditUser);
 
-        QueueWorkerRemove.Terminate(Tenant.TenantId, model.UserId);
+        _queueWorkerRemove.Terminate(Tenant.TenantId, model.UserId);
     }
 
     private RemoveProgressItem StartRemove(TerminateRequestDto model)
@@ -103,6 +98,6 @@ public class RemoveUserDataController : BaseApiController
             throw new ArgumentException("Can not delete user with id = " + model.UserId);
         }
 
-        return QueueWorkerRemove.Start(Tenant.TenantId, user, SecurityContext.CurrentAccount.ID, true);
+        return _queueWorkerRemove.Start(Tenant.TenantId, user, SecurityContext.CurrentAccount.ID, true);
     }
 }

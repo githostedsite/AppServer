@@ -5,12 +5,19 @@ namespace ASC.People.Api;
 public class ThirdpartyController : BaseApiController
 {
     private readonly IOptionsSnapshot<AccountLinker> _accountLinker;
+    private readonly CookiesManager _cookiesManager;
+    private readonly CoreBaseSettings _coreBaseSettings;
+    private readonly DisplayUserSettingsHelper _displayUserSettingsHelper;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly InstanceCrypto _instanceCrypto;
     private readonly MobileDetector _mobileDetector;
     private readonly PersonalSettingsHelper _personalSettingsHelper;
     private readonly ProviderManager _providerManager;
     private readonly Signature _signature;
+    private readonly TenantExtra _tenantExtra;
     private readonly UserHelpTourHelper _userHelpTourHelper;
+    private readonly UserManagerWrapper _userManagerWrapper;
+    private readonly UserPhotoManager _userPhotoManager;
 
     public ThirdpartyController(
         UserManager userManager,
@@ -18,59 +25,48 @@ public class ThirdpartyController : BaseApiController
         ApiContext apiContext,
         PermissionContext permissionContext,
         SecurityContext securityContext,
-        DisplayUserSettingsHelper displayUserSettingsHelper,
-        QueueWorkerReassign queueWorkerReassign,
-        QueueWorkerRemove queueWorkerRemove,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        UserPhotoManager userPhotoManager,
-        SettingsManager settingsManager,
         MessageService messageService,
         MessageTarget messageTarget,
-        IHttpClientFactory httpClientFactory,
-        SetupInfo setupInfo,
-        IOptionsMonitor<ILog> option,
         StudioNotifyService studioNotifyService,
-        TenantExtra tenantExtra,
-        CoreBaseSettings coreBaseSettings,
-        CookiesManager cookiesManager,
-        UserManagerWrapper userManagerWrapper,
         IOptionsSnapshot<AccountLinker> optionsSnapshot,
-        ProviderManager providerManager,
-        MobileDetector mobileDetector,
-        Signature signature,
+        CookiesManager cookiesManager,
+        CoreBaseSettings coreBaseSettings,
+        DisplayUserSettingsHelper displayUserSettingsHelper,
+        IHttpClientFactory httpClientFactory,
         InstanceCrypto instanceCrypto,
+        MobileDetector mobileDetector,
         PersonalSettingsHelper personalSettingsHelper,
-        UserHelpTourHelper userHelpTourHelper) 
+        ProviderManager providerManager,
+        Signature signature,
+        TenantExtra tenantExtra,
+        UserHelpTourHelper userHelpTourHelper,
+        UserManagerWrapper userManagerWrapper,
+        UserPhotoManager userPhotoManager
+        ) 
         : base(
             userManager,
             authContext,
-            apiContext,
+            apiContext, 
             permissionContext,
             securityContext,
-            displayUserSettingsHelper,
-            queueWorkerReassign,
-            queueWorkerRemove,
-            employeeWraperFullHelper,
-            userPhotoManager,
-            settingsManager,
             messageService,
             messageTarget,
-            httpClientFactory,
-            setupInfo,
-            option,
-            studioNotifyService,
-            tenantExtra,
-            coreBaseSettings,
-            cookiesManager,
-            userManagerWrapper)
+            studioNotifyService)
     {
         _accountLinker = optionsSnapshot;
-        _providerManager = providerManager;
-        _mobileDetector = mobileDetector;
-        _signature = signature;
+        _cookiesManager = cookiesManager;
+        _coreBaseSettings = coreBaseSettings;
+        _displayUserSettingsHelper = displayUserSettingsHelper;
+        _httpClientFactory = httpClientFactory;
         _instanceCrypto = instanceCrypto;
+        _mobileDetector = mobileDetector;
         _personalSettingsHelper = personalSettingsHelper;
+        _providerManager = providerManager;
+        _signature = signature;
+        _tenantExtra = tenantExtra;
         _userHelpTourHelper = userHelpTourHelper;
+        _userManagerWrapper = userManagerWrapper;
+        _userPhotoManager = userPhotoManager;
     }
 
     [AllowAnonymous]
@@ -114,31 +110,6 @@ public class ThirdpartyController : BaseApiController
         return infos;
     }
 
-
-    public void LinkAccount(LinkAccountRequestDto model)
-    {
-        var profile = new LoginProfile(_signature, _instanceCrypto, model.SerializedProfile);
-
-        if (!(CoreBaseSettings.Standalone || TenantExtra.GetTenantQuota().Oauth))
-        {
-            throw new Exception("ErrorNotAllowedOption");
-        }
-
-        if (string.IsNullOrEmpty(profile.AuthorizationError))
-        {
-            GetLinker().AddLink(SecurityContext.CurrentAccount.ID.ToString(), profile);
-            MessageService.Send(MessageAction.UserLinkedSocialAccount, GetMeaningfulProviderName(profile.Provider));
-        }
-        else
-        {
-            // ignore cancellation
-            if (profile.AuthorizationError != "Canceled at provider")
-            {
-                throw new Exception(profile.AuthorizationError);
-            }
-        }
-    }
-
     [Update("thirdparty/linkaccount")]
     public void LinkAccountFromBody([FromBody] LinkAccountRequestDto model)
     {
@@ -150,72 +121,6 @@ public class ThirdpartyController : BaseApiController
     public void LinkAccountFromForm([FromForm] LinkAccountRequestDto model)
     {
         LinkAccount(model);
-    }
-
-    public void SignupAccount(SignupAccountModel model)
-    {
-        var employeeType = model.EmplType ?? EmployeeType.User;
-        var passwordHash = model.PasswordHash;
-        var mustChangePassword = false;
-        if (string.IsNullOrEmpty(passwordHash))
-        {
-            passwordHash = UserManagerWrapper.GeneratePassword();
-            mustChangePassword = true;
-        }
-
-        var thirdPartyProfile = new LoginProfile(_signature, _instanceCrypto, model.SerializedProfile);
-        if (!string.IsNullOrEmpty(thirdPartyProfile.AuthorizationError))
-        {
-            // ignore cancellation
-            if (thirdPartyProfile.AuthorizationError != "Canceled at provider")
-            {
-                throw new Exception(thirdPartyProfile.AuthorizationError);
-            }
-
-            return;
-        }
-
-        if (string.IsNullOrEmpty(thirdPartyProfile.EMail))
-        {
-            throw new Exception(Resource.ErrorNotCorrectEmail);
-        }
-
-        var userID = Guid.Empty;
-        try
-        {
-            SecurityContext.AuthenticateMeWithoutCookie(ASC.Core.Configuration.Constants.CoreSystem);
-            var newUser = CreateNewUser(GetFirstName(model, thirdPartyProfile), GetLastName(model, thirdPartyProfile), GetEmailAddress(model, thirdPartyProfile), passwordHash, employeeType, false);
-            var messageAction = employeeType == EmployeeType.User ? MessageAction.UserCreatedViaInvite : MessageAction.GuestCreatedViaInvite;
-            MessageService.Send(MessageInitiator.System, messageAction, MessageTarget.Create(newUser.ID), newUser.DisplayUserName(false, DisplayUserSettingsHelper));
-            userID = newUser.ID;
-            if (!string.IsNullOrEmpty(thirdPartyProfile.Avatar))
-            {
-                SaveContactImage(userID, thirdPartyProfile.Avatar);
-            }
-
-            GetLinker().AddLink(userID.ToString(), thirdPartyProfile);
-        }
-        finally
-        {
-            SecurityContext.Logout();
-        }
-
-        var user = UserManager.GetUsers(userID);
-        var cookiesKey = SecurityContext.AuthenticateMe(user.Email, passwordHash);
-        CookiesManager.SetCookies(CookiesType.AuthKey, cookiesKey);
-        MessageService.Send(MessageAction.LoginSuccess);
-        StudioNotifyService.UserHasJoin();
-
-        if (mustChangePassword)
-        {
-            StudioNotifyService.UserPasswordChange(user);
-        }
-
-        _userHelpTourHelper.IsNewUser = true;
-        if (CoreBaseSettings.Personal)
-        {
-            _personalSettingsHelper.IsNewUser = true;
-        }
     }
 
     [AllowAnonymous]
@@ -238,28 +143,6 @@ public class ThirdpartyController : BaseApiController
     {
         GetLinker().RemoveProvider(SecurityContext.CurrentAccount.ID.ToString(), provider);
         MessageService.Send(MessageAction.UserUnlinkedSocialAccount, GetMeaningfulProviderName(provider));
-    }
-
-    protected string GetFirstName(SignupAccountModel model)
-    {
-        var value = string.Empty;
-        if (!string.IsNullOrEmpty(model.FirstName))
-        {
-            value = model.FirstName.Trim();
-        }
-
-        return HtmlUtil.GetText(value);
-    }
-
-    protected string GetLastName(SignupAccountModel model)
-    {
-        var value = string.Empty;
-        if (!string.IsNullOrEmpty(model.LastName))
-        {
-            value = model.LastName.Trim();
-        }
-
-        return HtmlUtil.GetText(value);
     }
 
     private static string GetMeaningfulProviderName(string providerName)
@@ -296,13 +179,13 @@ public class ThirdpartyController : BaseApiController
             Email = email,
         };
 
-        if (CoreBaseSettings.Personal)
+        if (_coreBaseSettings.Personal)
         {
             userInfo.ActivationStatus = EmployeeActivationStatus.Activated;
-            userInfo.CultureName = CoreBaseSettings.CustomMode ? "ru-RU" : Thread.CurrentThread.CurrentUICulture.Name;
+            userInfo.CultureName = _coreBaseSettings.CustomMode ? "ru-RU" : Thread.CurrentThread.CurrentUICulture.Name;
         }
 
-        return UserManagerWrapper.AddUser(userInfo, passwordHash, true, true, isVisitor, fromInviteLink);
+        return _userManagerWrapper.AddUser(userInfo, passwordHash, true, true, isVisitor, fromInviteLink);
     }
 
     private string GetEmailAddress(SignupAccountModel model)
@@ -322,11 +205,33 @@ public class ThirdpartyController : BaseApiController
         return string.IsNullOrEmpty(value) ? account.EMail : value;
     }
 
+    private string GetFirstName(SignupAccountModel model)
+    {
+        var value = string.Empty;
+        if (!string.IsNullOrEmpty(model.FirstName))
+        {
+            value = model.FirstName.Trim();
+        }
+
+        return HtmlUtil.GetText(value);
+    }
+
     private string GetFirstName(SignupAccountModel model, LoginProfile account)
     {
         var value = GetFirstName(model);
 
         return string.IsNullOrEmpty(value) ? account.FirstName : value;
+    }
+
+    private string GetLastName(SignupAccountModel model)
+    {
+        var value = string.Empty;
+        if (!string.IsNullOrEmpty(model.LastName))
+        {
+            value = model.LastName.Trim();
+        }
+
+        return HtmlUtil.GetText(value);
     }
 
     private string GetLastName(SignupAccountModel model, LoginProfile account)
@@ -340,6 +245,31 @@ public class ThirdpartyController : BaseApiController
     {
         return _accountLinker.Get("webstudio");
     }
+
+    private void LinkAccount(LinkAccountRequestDto model)
+    {
+        var profile = new LoginProfile(_signature, _instanceCrypto, model.SerializedProfile);
+
+        if (!(_coreBaseSettings.Standalone || _tenantExtra.GetTenantQuota().Oauth))
+        {
+            throw new Exception("ErrorNotAllowedOption");
+        }
+
+        if (string.IsNullOrEmpty(profile.AuthorizationError))
+        {
+            GetLinker().AddLink(SecurityContext.CurrentAccount.ID.ToString(), profile);
+            MessageService.Send(MessageAction.UserLinkedSocialAccount, GetMeaningfulProviderName(profile.Provider));
+        }
+        else
+        {
+            // ignore cancellation
+            if (profile.AuthorizationError != "Canceled at provider")
+            {
+                throw new Exception(profile.AuthorizationError);
+            }
+        }
+    }
+
     private void SaveContactImage(Guid userID, string url)
     {
         using (var memstream = new MemoryStream())
@@ -347,7 +277,7 @@ public class ThirdpartyController : BaseApiController
             var request = new HttpRequestMessage();
             request.RequestUri = new Uri(url);
 
-            var httpClient = HttpClientFactory.CreateClient();
+            var httpClient = _httpClientFactory.CreateClient();
             using (var response = httpClient.Send(request))
             using (var stream = response.Content.ReadAsStream())
             {
@@ -360,8 +290,74 @@ public class ThirdpartyController : BaseApiController
 
                 var bytes = memstream.ToArray();
 
-                UserPhotoManager.SaveOrUpdatePhoto(userID, bytes);
+                _userPhotoManager.SaveOrUpdatePhoto(userID, bytes);
             }
+        }
+    }
+
+    private void SignupAccount(SignupAccountModel model)
+    {
+        var employeeType = model.EmplType ?? EmployeeType.User;
+        var passwordHash = model.PasswordHash;
+        var mustChangePassword = false;
+        if (string.IsNullOrEmpty(passwordHash))
+        {
+            passwordHash = UserManagerWrapper.GeneratePassword();
+            mustChangePassword = true;
+        }
+
+        var thirdPartyProfile = new LoginProfile(_signature, _instanceCrypto, model.SerializedProfile);
+        if (!string.IsNullOrEmpty(thirdPartyProfile.AuthorizationError))
+        {
+            // ignore cancellation
+            if (thirdPartyProfile.AuthorizationError != "Canceled at provider")
+            {
+                throw new Exception(thirdPartyProfile.AuthorizationError);
+            }
+
+            return;
+        }
+
+        if (string.IsNullOrEmpty(thirdPartyProfile.EMail))
+        {
+            throw new Exception(Resource.ErrorNotCorrectEmail);
+        }
+
+        var userID = Guid.Empty;
+        try
+        {
+            SecurityContext.AuthenticateMeWithoutCookie(ASC.Core.Configuration.Constants.CoreSystem);
+            var newUser = CreateNewUser(GetFirstName(model, thirdPartyProfile), GetLastName(model, thirdPartyProfile), GetEmailAddress(model, thirdPartyProfile), passwordHash, employeeType, false);
+            var messageAction = employeeType == EmployeeType.User ? MessageAction.UserCreatedViaInvite : MessageAction.GuestCreatedViaInvite;
+            MessageService.Send(MessageInitiator.System, messageAction, MessageTarget.Create(newUser.ID), newUser.DisplayUserName(false, _displayUserSettingsHelper));
+            userID = newUser.ID;
+            if (!string.IsNullOrEmpty(thirdPartyProfile.Avatar))
+            {
+                SaveContactImage(userID, thirdPartyProfile.Avatar);
+            }
+
+            GetLinker().AddLink(userID.ToString(), thirdPartyProfile);
+        }
+        finally
+        {
+            SecurityContext.Logout();
+        }
+
+        var user = UserManager.GetUsers(userID);
+        var cookiesKey = SecurityContext.AuthenticateMe(user.Email, passwordHash);
+        _cookiesManager.SetCookies(CookiesType.AuthKey, cookiesKey);
+        MessageService.Send(MessageAction.LoginSuccess);
+        StudioNotifyService.UserHasJoin();
+
+        if (mustChangePassword)
+        {
+            StudioNotifyService.UserPasswordChange(user);
+        }
+
+        _userHelpTourHelper.IsNewUser = true;
+        if (_coreBaseSettings.Personal)
+        {
+            _personalSettingsHelper.IsNewUser = true;
         }
     }
 }
