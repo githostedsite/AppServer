@@ -17,7 +17,8 @@ public class PhotosController : BasePeopleController
         MessageTarget messageTarget,
         StudioNotifyService studioNotifyService,
         FileSizeComment fileSizeComment,
-        SettingsManager settingsManager) 
+        SettingsManager settingsManager,
+        IMapper mapper) 
         : base(
             userManager,
             authContext,
@@ -26,7 +27,8 @@ public class PhotosController : BasePeopleController
             securityContext,
             messageService,
             messageTarget,
-            studioNotifyService)
+            studioNotifyService,
+            mapper)
     {
         _fileSizeComment = fileSizeComment;
         _settingsManager = settingsManager;

@@ -6,6 +6,7 @@ public abstract class BasePeopleController : BaseApiController
     protected readonly IHttpClientFactory HttpClientFactory;
     protected readonly DisplayUserSettingsHelper DisplayUserSettingsHelper;
     protected readonly SetupInfo SetupInfo;
+    protected readonly IMapper Mapper;
 
     protected BasePeopleController(
         UserManager userManager,
@@ -15,7 +16,8 @@ public abstract class BasePeopleController : BaseApiController
         Core.SecurityContext securityContext,
         MessageService messageService,
         MessageTarget messageTarget,
-        StudioNotifyService studioNotifyService) 
+        StudioNotifyService studioNotifyService,
+        IMapper mapper) 
         : base(
             userManager,
             authContext,
@@ -26,6 +28,7 @@ public abstract class BasePeopleController : BaseApiController
             messageTarget,
             studioNotifyService)
     {
+        Mapper = mapper;
     }
 
     protected UserInfo GetUserInfo(string userNameOrId)

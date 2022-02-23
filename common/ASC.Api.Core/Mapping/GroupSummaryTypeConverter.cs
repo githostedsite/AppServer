@@ -1,5 +1,7 @@
 ﻿using GroupInfo = ASC.Core.Users.GroupInfo;
 
+namespace ASC.Api.Core.Mapping;
+
 [Scope]
 public class GroupSummaryTypeConverter : ITypeConverter<GroupInfo, GroupSummaryDto>
 {

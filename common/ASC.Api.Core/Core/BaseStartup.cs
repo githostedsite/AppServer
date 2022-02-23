@@ -71,6 +71,9 @@ public abstract class BaseStartup
             DIHelper.TryAdd<CookieAuthHandler>();
             DIHelper.TryAdd<WebhooksGlobalFilterAttribute>();
 
+            DIHelper.TryAdd<EmployeeTypeConverter>();
+            DIHelper.TryAdd<GroupSummaryTypeConverter>();
+
             var redisConfiguration = Configuration.GetSection("Redis").Get<RedisConfiguration>();
             var kafkaConfiguration = Configuration.GetSection("kafka").Get<KafkaSettings>();
 

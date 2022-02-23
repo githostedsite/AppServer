@@ -4,8 +4,6 @@ namespace ASC.People.Api;
 
 public class ContactsController : BasePeopleController
 {
-    private readonly EmployeeWraperFullHelper _employeeWraperFullHelper;
-
     public ContactsController(
         UserManager userManager,
         AuthContext authContext,
@@ -15,7 +13,7 @@ public class ContactsController : BasePeopleController
         MessageService messageService,
         MessageTarget messageTarget,
         StudioNotifyService studioNotifyService,
-        EmployeeWraperFullHelper employeeWraperFullHelper) 
+        IMapper mapper) 
         : base(
             userManager,
             authContext,
@@ -24,9 +22,9 @@ public class ContactsController : BasePeopleController
             securityContext,
             messageService,
             messageTarget,
-            studioNotifyService)
+            studioNotifyService,
+            mapper)
     {
-        _employeeWraperFullHelper = employeeWraperFullHelper;
     }
 
     [Delete("{userid}/contacts")]
@@ -104,7 +102,7 @@ public class ContactsController : BasePeopleController
         DeleteContacts(memberModel.Contacts, user);
         UserManager.SaveUserInfo(user);
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     private EmployeeFullDto SetMemberContacts(string userid, UpdateMemberModel memberModel)
@@ -120,7 +118,7 @@ public class ContactsController : BasePeopleController
         UpdateContacts(memberModel.Contacts, user);
         UserManager.SaveUserInfo(user);
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     private EmployeeFullDto UpdateMemberContacts(string userid, UpdateMemberModel memberModel)
@@ -135,6 +133,6 @@ public class ContactsController : BasePeopleController
         UpdateContacts(memberModel.Contacts, user);
         UserManager.SaveUserInfo(user);
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 }

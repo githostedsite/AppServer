@@ -25,7 +25,7 @@
 
 namespace ASC.Web.Api.Models;
 
-public class EmployeeDto
+public class EmployeeDto : IMapFrom<UserInfo>
 {
     public Guid Id { get; set; }
     public string DisplayName { get; set; }
@@ -42,6 +42,12 @@ public class EmployeeDto
             Title = "Manager",
             AvatarSmall = "url to small avatar",
         };
+    }
+
+    public void Mapping(Profile profile)
+    {
+        profile.CreateMap<UserInfo, EmployeeDto>()
+            .ConvertUsing<EmployeeTypeConverter>();
     }
 }
 

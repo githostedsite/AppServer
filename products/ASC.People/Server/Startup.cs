@@ -20,7 +20,6 @@ public class Startup : BaseStartup
         DIHelper.TryAdd<ThirdpartyController>();
         DIHelper.TryAdd<NotificationController>();
         DIHelper.TryAdd<GroupController>();
-        DIHelper.TryAdd<GroupSummaryTypeConverter>();
         DIHelper.TryAdd<GroupTypeConverter>();
     }
 }

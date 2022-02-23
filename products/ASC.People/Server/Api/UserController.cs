@@ -9,8 +9,6 @@ public class UserController : BasePeopleController
     private readonly CookiesManager _cookiesManager;
     private readonly CoreBaseSettings _coreBaseSettings;
     private readonly CustomNamingPeople _customNamingPeople;
-    private readonly EmployeeWraperFullHelper _employeeWraperFullHelper;
-    private readonly EmployeeWraperHelper _employeeWraperHelper;
     private readonly ILog _logger;
     private readonly PasswordHasher _passwordHasher;
     private readonly QueueWorkerReassign _queueWorkerReassign;
@@ -39,8 +37,6 @@ public class UserController : BasePeopleController
         CookiesManager cookiesManager,
         CoreBaseSettings coreBaseSettings,
         CustomNamingPeople customNamingPeople,
-        EmployeeWraperFullHelper employeeWraperFullHelper,
-        EmployeeWraperHelper employeeWraperHelper,
         ILog logger,
         PasswordHasher passwordHasher,
         QueueWorkerReassign queueWorkerReassign,
@@ -54,7 +50,8 @@ public class UserController : BasePeopleController
         UserPhotoManager userPhotoManager,
         WebItemManager webItemManager,
         WebItemSecurity webItemSecurity,
-        WebItemSecurityCache webItemSecurityCache
+        WebItemSecurityCache webItemSecurityCache,
+        IMapper mapper
         ) 
         : base(
             userManager,
@@ -64,14 +61,13 @@ public class UserController : BasePeopleController
             securityContext,
             messageService,
             messageTarget,
-            studioNotifyService)
+            studioNotifyService,
+            mapper)
     {
         _constants = constants;
         _cookiesManager = cookiesManager;
         _coreBaseSettings = coreBaseSettings;
         _customNamingPeople = customNamingPeople;
-        _employeeWraperFullHelper = employeeWraperFullHelper;
-        _employeeWraperHelper = employeeWraperHelper;
         _logger = logger;
         _passwordHasher = passwordHasher;
         _queueWorkerReassign = queueWorkerReassign;
@@ -166,7 +162,7 @@ public class UserController : BasePeopleController
 
         MessageService.Send(MessageAction.UserDeleted, MessageTarget.Create(user.ID), userName);
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     [Delete("@self")]
@@ -214,8 +210,9 @@ public class UserController : BasePeopleController
             //StudioNotifyService.SendMsgProfileDeletion(Tenant.TenantId, user);
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
+
     [Read("status/{status}/search")]
     public IEnumerable<EmployeeFullDto> GetAdvanced(EmployeeStatus status, [FromQuery] string query)
     {
@@ -238,7 +235,7 @@ public class UserController : BasePeopleController
             list = list.Where(x => x.FirstName != null && x.FirstName.IndexOf(query, StringComparison.OrdinalIgnoreCase) > -1 || (x.LastName != null && x.LastName.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1) ||
                                    (x.UserName != null && x.UserName.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1) || (x.Email != null && x.Email.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1) || (x.ContactsList != null && x.ContactsList.Any(y => y.IndexOf(query, StringComparison.OrdinalIgnoreCase) != -1)));
 
-            return list.Select(_employeeWraperFullHelper.GetFull);
+            return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(list);
         }
         catch (Exception error)
         {
@@ -249,7 +246,7 @@ public class UserController : BasePeopleController
     }
 
     [Read]
-    public IQueryable<EmployeeDto> GetAll()
+    public IEnumerable<EmployeeDto> GetAll()
     {
         return GetByStatus(EmployeeStatus.Active);
     }
@@ -268,7 +265,7 @@ public class UserController : BasePeopleController
             throw new ItemNotFoundException("User not found");
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     [Read("{username}", order: int.MaxValue)]
@@ -297,11 +294,11 @@ public class UserController : BasePeopleController
             throw new ItemNotFoundException("User not found");
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     [Read("status/{status}")]
-    public IQueryable<EmployeeDto> GetByStatus(EmployeeStatus status)
+    public IEnumerable<EmployeeDto> GetByStatus(EmployeeStatus status)
     {
         if (_coreBaseSettings.Personal)
         {
@@ -319,11 +316,11 @@ public class UserController : BasePeopleController
     }
 
     [Read("filter")]
-    public IQueryable<EmployeeFullDto> GetFullByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
+    public IEnumerable<EmployeeFullDto> GetFullByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
     {
-        var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
+        var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator).AsEnumerable();
 
-        return users.Select(r => _employeeWraperFullHelper.GetFull(r));
+        return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(users);
     }
 
     [Read("search")]
@@ -348,7 +345,9 @@ public class UserController : BasePeopleController
                 groupId = new Guid(ApiContext.FilterValue);
             }
 
-            return UserManager.Search(query, EmployeeStatus.Active, groupId).Select(_employeeWraperFullHelper.GetFull);
+            var users = UserManager.Search(query, EmployeeStatus.Active, groupId);
+
+            return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(users);
         }
         catch (Exception error)
         {
@@ -363,7 +362,7 @@ public class UserController : BasePeopleController
     {
         var users = GetByFilter(employeeStatus, groupId, activationStatus, employeeType, isAdministrator);
 
-        return users.Select(_employeeWraperHelper.Get);
+        return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeDto>>(users);
     }
 
     [AllowAnonymous]
@@ -488,7 +487,9 @@ public class UserController : BasePeopleController
     [Read("@self")]
     public EmployeeDto Self()
     {
-        return _employeeWraperFullHelper.GetFull(UserManager.GetUser(SecurityContext.CurrentAccount.ID, EmployeeWraperFullHelper.GetExpression(ApiContext)));
+        var user = UserManager.GetUser(SecurityContext.CurrentAccount.ID, EmployeeWraperFullHelper.GetExpression(ApiContext));
+
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     [Create("email", false)]
@@ -640,7 +641,7 @@ public class UserController : BasePeopleController
             UpdatePhotoUrl(memberModel.Files, user);
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     private EmployeeFullDto AddMemberAsActivated(MemberRequestDto memberModel)
@@ -695,7 +696,7 @@ public class UserController : BasePeopleController
             UpdatePhotoUrl(memberModel.Files, user);
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
 
     private EmployeeFullDto ChangeUserPassword(Guid userid, MemberRequestDto memberModel)
@@ -746,7 +747,7 @@ public class UserController : BasePeopleController
             MessageService.Send(MessageAction.CookieSettingsUpdated);
         }
 
-        return _employeeWraperFullHelper.GetFull(GetUserInfo(userid.ToString()));
+        return Mapper.Map<UserInfo, EmployeeFullDto>(GetUserInfo(userid.ToString()));
     }
 
     private IQueryable<UserInfo> GetByFilter(EmployeeStatus? employeeStatus, Guid? groupId, EmployeeActivationStatus? activationStatus, EmployeeType? employeeType, bool? isAdministrator)
@@ -825,7 +826,7 @@ public class UserController : BasePeopleController
 
         MessageService.Send(MessageAction.UsersDeleted, MessageTarget.Create(users.Select(x => x.ID)), userNames);
 
-        return users.Select(_employeeWraperFullHelper.GetFull);
+        return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(users);
     }
 
     private IEnumerable<EmployeeFullDto> ResendUserInvites(UpdateMembersRequestDto model)
@@ -882,7 +883,7 @@ public class UserController : BasePeopleController
 
         MessageService.Send(MessageAction.UsersSentActivationInstructions, MessageTarget.Create(users.Select(x => x.ID)), users.Select(x => x.DisplayUserName(false, DisplayUserSettingsHelper)));
 
-        return users.Select(_employeeWraperFullHelper.GetFull);
+        return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(users);
     }
 
     private object SendEmailChangeInstructions(UpdateMemberModel model)
@@ -1013,7 +1014,7 @@ public class UserController : BasePeopleController
 
             u.ActivationStatus = activationstatus;
             UserManager.SaveUserInfo(u);
-            retuls.Add(_employeeWraperFullHelper.GetFull(u));
+            retuls.Add(Mapper.Map<UserInfo, EmployeeFullDto>(u));
         }
 
         return retuls;
@@ -1126,7 +1127,7 @@ public class UserController : BasePeopleController
             MessageService.Send(MessageAction.CookieSettingsUpdated);
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
     private EmployeeFullDto UpdateMemberCulture(string userid, UpdateMemberModel memberModel)
     {
@@ -1162,7 +1163,7 @@ public class UserController : BasePeopleController
             }
         }
 
-        return _employeeWraperFullHelper.GetFull(user);
+        return Mapper.Map<UserInfo, EmployeeFullDto>(user);
     }
     private IEnumerable<EmployeeFullDto> UpdateUserStatus(EmployeeStatus status, UpdateMembersRequestDto model)
     {
@@ -1203,7 +1204,7 @@ public class UserController : BasePeopleController
 
         MessageService.Send(MessageAction.UsersUpdatedStatus, MessageTarget.Create(users.Select(x => x.ID)), users.Select(x => x.DisplayUserName(false, DisplayUserSettingsHelper)));
 
-        return users.Select(_employeeWraperFullHelper.GetFull);
+        return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(users);
     }
 
     private IEnumerable<EmployeeFullDto> UpdateUserType(EmployeeType type, UpdateMembersRequestDto model)
@@ -1245,7 +1246,7 @@ public class UserController : BasePeopleController
 
         MessageService.Send(MessageAction.UsersUpdatedType, MessageTarget.Create(users.Select(x => x.ID)), users.Select(x => x.DisplayUserName(false, DisplayUserSettingsHelper)));
 
-        return users.Select(_employeeWraperFullHelper.GetFull);
+        return Mapper.Map<IEnumerable<UserInfo>, IEnumerable<EmployeeFullDto>>(users);
     }
 
     private void CheckReassignProccess(IEnumerable<Guid> userIds)

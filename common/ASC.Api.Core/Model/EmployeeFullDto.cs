@@ -25,7 +25,7 @@
 
 namespace ASC.Web.Api.Models;
 
-public class EmployeeFullDto : EmployeeDto
+public class EmployeeFullDto : EmployeeDto, IMapFrom<UserInfo>
 {
     public string FirstName { get; set; }
     public string LastName { get; set; }
@@ -85,6 +85,13 @@ public class EmployeeFullDto : EmployeeDto
             IsLDAP = false,
             IsSSO = false
         };
+    }
+
+    public new void Mapping(Profile profile)
+    {
+        profile.CreateMap<UserInfo, EmployeeFullDto>()
+            .IncludeBase<UserInfo, EmployeeDto>()
+            .ConvertUsing<EmployeeTypeConverter>();
     }
 }
 
