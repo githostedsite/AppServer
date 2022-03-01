@@ -68,6 +68,8 @@ class SettingsStore {
 
   personal = false;
 
+  roomsMode = false;
+
   isHeaderVisible = false;
   isTabletView = false;
   isArticlePinned =
