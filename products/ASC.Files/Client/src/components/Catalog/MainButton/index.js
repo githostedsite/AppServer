@@ -83,7 +83,22 @@ class CatalogMainButtonContent extends React.Component {
       firstLoad,
       isPrivacy,
       sectionWidth,
+      roomsMode,
     } = this.props;
+
+    const roomsActions = roomsMode
+      ? [
+          {
+            className: "main-button_drop-down",
+            icon: "images/actions.rooms.react.svg",
+            label: t("NewRoom"),
+            onClick: () => console.log("Create room"),
+            action: "room",
+            key: "room",
+          },
+        ]
+      : [];
+
     const folderUpload = !isMobile
       ? [
           {
@@ -142,6 +157,7 @@ class CatalogMainButtonContent extends React.Component {
         ];
 
     const actions = [
+      ...roomsActions,
       {
         className: "main-button_drop-down",
         icon: "images/actions.documents.react.svg",
@@ -263,6 +279,7 @@ export default inject(
       setSelectFileDialogVisible,
 
       toggleShowText: auth.settingsStore.toggleShowText,
+      roomsMode: auth.settingsStore.roomsMode,
     };
   }
 )(
