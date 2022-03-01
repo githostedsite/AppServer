@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Tile, TopPanel, BottomPanel } from "./styled-room-tile";
 import Avatar from "../avatar";
-import Text from "../text";
+import Link from "../link";
 import ContextMenuButton from "../context-menu-button";
 import Badge from "../badge";
 import IconButton from "../icon-button";
@@ -11,7 +11,7 @@ const RoomTile = (props) => {
   const { roomName, badgeLabel, onClick, onBadgeClick, onShareClick } = props;
 
   return (
-    <Tile onClick={onClick}>
+    <Tile>
       <TopPanel>
         <Badge
           className="button"
@@ -30,9 +30,9 @@ const RoomTile = (props) => {
       <Avatar className="tile-icon" role="user" userName={roomName} />
       <BottomPanel>
         <Avatar className="panel-icon" role="user" userName={roomName} />
-        <Text fontSize="13px" fontWeight="600">
+        <Link fontSize="13px" fontWeight="600" onClick={onClick}>
           {roomName}
-        </Text>
+        </Link>
         <ContextMenuButton className="panel-btn" />
       </BottomPanel>
     </Tile>
