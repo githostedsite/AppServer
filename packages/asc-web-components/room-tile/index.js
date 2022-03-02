@@ -13,12 +13,14 @@ const RoomTile = (props) => {
   return (
     <Tile>
       <TopPanel>
-        <Badge
-          className="button"
-          label={badgeLabel}
-          noHover={true}
-          onClick={onBadgeClick}
-        />
+        {badgeLabel && (
+          <Badge
+            className="button"
+            label={badgeLabel}
+            noHover={true}
+            onClick={onBadgeClick}
+          />
+        )}
 
         <IconButton
           className="button sharing-btn"
