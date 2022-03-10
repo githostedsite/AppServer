@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import PropTypes from "prop-types";
 import { StyledTableRow } from "./StyledTableContainer";
 import TableCell from "./TableCell";
-import NewContextMenu from "../new-context-menu";
+import ContextMenu from "../context-menu";
 import ContextMenuButton from "../context-menu-button";
 
 const TableRow = (props) => {
@@ -15,6 +15,7 @@ const TableRow = (props) => {
     style,
     selectionProp,
     title,
+    contextMenuData,
     ...rest
   } = props;
 
@@ -30,8 +31,10 @@ const TableRow = (props) => {
   };
 
   const renderContext =
-    Object.prototype.hasOwnProperty.call(props, "contextOptions") &&
-    contextOptions.length > 0;
+    Object.prototype.hasOwnProperty.call(
+      contextMenuData ? contextMenuData.item : props,
+      "contextOptions"
+    ) && contextOptions.length > 0;
 
   const getOptions = () => {
     fileContextClick && fileContextClick();
@@ -52,11 +55,13 @@ const TableRow = (props) => {
           forwardedRef={row}
           className={`${selectionProp?.className} table-container_row-context-menu-wrapper`}
         >
-          <NewContextMenu
+          <ContextMenu
             onHide={onHideContextMenu}
             ref={cm}
             model={contextOptions}
-          ></NewContextMenu>
+            contextMenuData={contextMenuData}
+            withBackdrop={true}
+          ></ContextMenu>
           {renderContext ? (
             <ContextMenuButton
               className="expandButton"
@@ -84,6 +89,7 @@ TableRow.propTypes = {
   className: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
   style: PropTypes.object,
   title: PropTypes.string,
+  contextMenuData: PropTypes.object,
 };
 
 export default TableRow;

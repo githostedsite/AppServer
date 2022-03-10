@@ -4,7 +4,6 @@ import withContent from "../../../../../HOCs/withContent";
 import withBadges from "../../../../../HOCs/withBadges";
 import withQuickButtons from "../../../../../HOCs/withQuickButtons";
 import withFileActions from "../../../../../HOCs/withFileActions";
-import withContextOptions from "../../../../../HOCs/withContextOptions";
 import ItemIcon from "../../../../../components/ItemIcon";
 import { withTranslation } from "react-i18next";
 import TableRow from "@appserver/components/table-container/TableRow";
@@ -19,8 +18,6 @@ import globalColors from "@appserver/components/utils/globalColors";
 import styled, { css } from "styled-components";
 import Base from "@appserver/components/themes/base";
 import { isSafari } from "react-device-detect";
-const sideColor = globalColors.gray;
-const { acceptBackground, background } = Base.dragAndDrop;
 
 const rowCheckboxDraggingStyle = css`
   border-image-source: ${(props) =>
@@ -104,11 +101,8 @@ const StyledTableRow = styled(TableRow)`
       css`
         border-image-slice: 1;
         border-bottom: 1px solid;
-        border-image-source: linear-gradient(
-          to right,
-          #ffffff 17px,
-          #eceef1 31px
-        );
+        border-image-source: ${(props) =>
+          props.theme.filesSection.tableView.row.borderImageRight};
       `};
 
     border-top: 0;
@@ -133,11 +127,8 @@ const StyledTableRow = styled(TableRow)`
       css`
         border-bottom: 1px solid;
         border-image-slice: 1;
-        border-image-source: linear-gradient(
-          to left,
-          #ffffff 17px,
-          #eceef1 31px
-        );
+        border-image-source: ${(props) =>
+          props.theme.filesSection.tableView.row.borderImageLeft};
       `};
 
     border-top: 0;
@@ -234,7 +225,6 @@ StyledQuickButtonsContainer.defaultProps = { theme: Base };
 const FilesTableRow = (props) => {
   const {
     t,
-    contextOptionsProps,
     fileContextClick,
     item,
     onContentFileSelect,
@@ -256,8 +246,11 @@ const FilesTableRow = (props) => {
     setFirsElemChecked,
     theme,
     quickButtonsComponent,
+    getModel,
   } = props;
   const { acceptBackground, background } = theme.dragAndDrop;
+
+  const contextMenuData = { getModel, t, item };
 
   const element = (
     <ItemIcon id={item.id} icon={item.icon} fileExst={item.fileExst} />
@@ -320,7 +313,6 @@ const FilesTableRow = (props) => {
         key={item.id}
         fileContextClick={fileContextClick}
         onClick={onMouseClick}
-        {...contextOptionsProps}
         isActive={isActive}
         inProgress={inProgress}
         isFolder={item.isFolder}
@@ -328,6 +320,8 @@ const FilesTableRow = (props) => {
         isThirdPartyFolder={item.isThirdPartyFolder}
         onDoubleClick={onFilesClick}
         checked={checkedProps}
+        contextOptions={item.contextOptions}
+        contextMenuData={contextMenuData}
         title={
           item.isFolder
             ? t("Translations:TitleShowFolderActions")
@@ -396,10 +390,6 @@ const FilesTableRow = (props) => {
 
 export default withTranslation(["Home", "Common", "VersionBadge"])(
   withFileActions(
-    withRouter(
-      withContextOptions(
-        withContent(withQuickButtons(withBadges(FilesTableRow)))
-      )
-    )
+    withRouter(withContent(withQuickButtons(withBadges(FilesTableRow))))
   )
 );
