@@ -39,7 +39,7 @@ public class MessagesRepository : IDisposable
     private readonly IMapper _mapper;
     private readonly ILog _logger;
     private readonly Timer _timer;
-    private Parser _parser; 
+    private Parser _parser;
 
     public MessagesRepository(IServiceScopeFactory serviceScopeFactory, IOptionsMonitor<ILog> options, IMapper mapper)
     {
@@ -81,7 +81,6 @@ public class MessagesRepository : IDisposable
                 _timerStarted = true;
             }
         }
-
     }
 
     private void FlushCache(object state)
@@ -197,5 +196,6 @@ public static class MessagesRepositoryExtension
     public static void Register(DIHelper services)
     {
         services.TryAdd<DbContextManager<MessagesContext>>();
+        services.TryAdd<EventTypeConverter>();
     }
 }
