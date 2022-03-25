@@ -1,7 +1,7 @@
 %package        backup
 Summary:        backup
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release 
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    backup
@@ -14,7 +14,7 @@ Group:          Applications/Internet
 %package        files-services
 Summary:        files-services
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    files-services
@@ -22,7 +22,7 @@ AutoReqProv:    no
 %package        notify
 Summary:        notify
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    notify
@@ -30,7 +30,7 @@ AutoReqProv:    no
 %package        files
 Summary:        files
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    files
@@ -38,7 +38,7 @@ AutoReqProv:    no
 %package        api-system
 Summary:        api-system
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    api-system
@@ -46,7 +46,7 @@ AutoReqProv:    no
 %package        proxy
 Summary:        proxy
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       nginx >= 1.9.5
 Requires:       mysql-community-client >= 5.7.0
 AutoReqProv:    no
@@ -55,7 +55,7 @@ AutoReqProv:    no
 %package        studio-notify
 Summary:        studio-notify
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    studio-notify
@@ -63,7 +63,7 @@ AutoReqProv:    no
 %package        people-server
 Summary:        people-server
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    people-server
@@ -71,7 +71,7 @@ AutoReqProv:    no
 %package        urlshortener
 Summary:        urlshortener
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
@@ -80,7 +80,7 @@ AutoReqProv:    no
 %package        socket
 Summary:        socket
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
@@ -89,7 +89,7 @@ AutoReqProv:    no
 %package        thumbnails
 Summary:        thumbnails
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
@@ -98,7 +98,7 @@ AutoReqProv:    no
 %package        studio
 Summary:        studio
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    studio
@@ -106,7 +106,7 @@ AutoReqProv:    no
 %package        crm
 Summary:        crm
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    crm
@@ -114,7 +114,7 @@ AutoReqProv:    no
 %package        api
 Summary:        api
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    api
@@ -122,7 +122,7 @@ AutoReqProv:    no
 %package        storage-encryption
 Summary:        storage-encryption
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    storage-encryption
@@ -130,7 +130,7 @@ AutoReqProv:    no
 %package        storage-migration
 Summary:        storage-migration
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    storage-migration
@@ -138,7 +138,7 @@ AutoReqProv:    no
 %package        projects-server
 Summary:        projects-server
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    projects-server
@@ -146,7 +146,7 @@ AutoReqProv:    no
 %package        telegram-service
 Summary:        telegram-service
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    telegram-service
@@ -154,7 +154,7 @@ AutoReqProv:    no
 %package        calendar
 Summary:        calendar
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    calendar
@@ -162,7 +162,7 @@ AutoReqProv:    no
 %package        mail
 Summary:        mail
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    mail
@@ -170,7 +170,7 @@ AutoReqProv:    no
 %package        ssoauth
 Summary:        ssoauth
 Group:          Applications/Internet
-Requires:       %name-common
+Requires:       %name-common  = %version-%release
 Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
