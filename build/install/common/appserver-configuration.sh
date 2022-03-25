@@ -242,10 +242,27 @@ input_db_params(){
     local def_DB_NAME=$(echo $user_connectionString | grep -oP 'Database=\K.*' | grep -o '^[^;]*')
     local def_DB_USER=$(echo $user_connectionString | grep -oP 'User ID=\K.*' | grep -o '^[^;]*')
 
-	if [ -z $def_DB_HOST ] && [ -z $DB_HOST ]; then read -e -p "Database host: " -i "$DB_HOST" DB_HOST; fi
-	if [ -z $def_DB_NAME ] && [ -z $DB_NAME ]; then read -e -p "Database name: " -i "$DB_NAME" DB_NAME; fi
-	if [ -z $def_DB_USER ] && [ -z $DB_USER ]; then read -e -p "Database user: " -i "$DB_USER" DB_USER; fi
-	if [ -z $DB_PWD ]; then read -e -p "Database password: " -i "$DB_PWD" DB_PWD; fi
+	if [ -z $def_DB_HOST ] && [ -z $DB_HOST ]; then 
+		read -e -p "Database host: " -i "$DB_HOST" DB_HOST;
+	else
+		DB_HOST=${DB_HOST:-$def_DB_HOST}
+	fi
+
+	if [ -z $def_DB_NAME ] && [ -z $DB_NAME ]; then 
+		read -e -p "Database name: " -i "$DB_NAME" DB_NAME; 
+	else
+		DB_NAME=${DB_NAME:-$def_DB_NAME}
+	fi
+
+	if [ -z $def_DB_USER ] && [ -z $DB_USER ]; then 
+		read -e -p "Database user: " -i "$DB_USER" DB_USER; 
+	else
+		DB_USER=${DB_USER:-$def_DB_USER}
+	fi
+
+	if [ -z $DB_PWD ]; then 
+		read -e -p "Database password: " -i "$DB_PWD" -s DB_PWD; 
+	fi
 }
 
 establish_mysql_conn(){
