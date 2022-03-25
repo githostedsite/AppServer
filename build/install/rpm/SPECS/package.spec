@@ -2,7 +2,7 @@
 Summary:        backup
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    backup
 
@@ -15,7 +15,7 @@ Group:          Applications/Internet
 Summary:        files-services
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    files-services
 
@@ -23,7 +23,7 @@ AutoReqProv:    no
 Summary:        notify
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    notify
 
@@ -31,7 +31,7 @@ AutoReqProv:    no
 Summary:        files
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    files
 
@@ -39,7 +39,7 @@ AutoReqProv:    no
 Summary:        api-system
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    api-system
 
@@ -56,7 +56,7 @@ AutoReqProv:    no
 Summary:        studio-notify
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    studio-notify
 
@@ -64,7 +64,7 @@ AutoReqProv:    no
 Summary:        people-server
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    people-server
 
@@ -72,7 +72,7 @@ AutoReqProv:    no
 Summary:        urlshortener
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
 %description    urlshortener
@@ -81,7 +81,7 @@ AutoReqProv:    no
 Summary:        socket
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
 %description    socket
@@ -90,7 +90,7 @@ AutoReqProv:    no
 Summary:        thumbnails
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
 %description    thumbnails
@@ -99,7 +99,7 @@ AutoReqProv:    no
 Summary:        studio
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    studio
 
@@ -107,7 +107,7 @@ AutoReqProv:    no
 Summary:        crm
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    crm
 
@@ -115,7 +115,7 @@ AutoReqProv:    no
 Summary:        api
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    api
 
@@ -123,7 +123,7 @@ AutoReqProv:    no
 Summary:        storage-encryption
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    storage-encryption
 
@@ -131,7 +131,7 @@ AutoReqProv:    no
 Summary:        storage-migration
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    storage-migration
 
@@ -139,7 +139,7 @@ AutoReqProv:    no
 Summary:        projects-server
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    projects-server
 
@@ -147,7 +147,7 @@ AutoReqProv:    no
 Summary:        telegram-service
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    telegram-service
 
@@ -155,7 +155,7 @@ AutoReqProv:    no
 Summary:        calendar
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    calendar
 
@@ -163,7 +163,7 @@ AutoReqProv:    no
 Summary:        mail
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 AutoReqProv:    no
 %description    mail
 
@@ -171,7 +171,7 @@ AutoReqProv:    no
 Summary:        ssoauth
 Group:          Applications/Internet
 Requires:       %name-common
-Requires:       dotnet-sdk-5.0
+Requires:       dotnet-sdk-6.0
 Requires:       nodejs >= 12.0
 AutoReqProv:    no
 %description    ssoauth
