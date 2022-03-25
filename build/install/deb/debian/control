@@ -32,7 +32,7 @@ Depends: appserver-api-system (= {{package_header_tag_version}}),
          appserver-proxy (= {{package_header_tag_version}})
 Description: Description
 
-Package: appserver-common (= {{package_header_tag_version}})
+Package: appserver-common
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Description
