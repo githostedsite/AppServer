@@ -228,7 +228,7 @@ restart_services() {
 	${PRODUCT}-socket ${PRODUCT}-studio-notify ${PRODUCT}-notify ${PRODUCT}-people-server ${PRODUCT}-files \
 	${PRODUCT}-files-services ${PRODUCT}-studio ${PRODUCT}-backup ${PRODUCT}-storage-encryption \
 	${PRODUCT}-storage-migration ${PRODUCT}-projects-server ${PRODUCT}-telegram-service ${PRODUCT}-crm \
-	${PRODUCT}-calendar ${PRODUCT}-mail elasticsearch kafka zookeeper
+	${PRODUCT}-calendar ${PRODUCT}-mail elasticsearch $KAFKA_SERVICE $ZOOKEEPER_SERVICE
 	do
 		systemctl enable $SVC.service >/dev/null 2>&1
 		systemctl restart $SVC.service
@@ -583,7 +583,8 @@ setup_elasticsearch() {
 
 setup_kafka() {
 
-	KAFKA_SERVICE=$(systemctl list-units --no-legend "*kafka*" | cut -f1 -d' ')
+	KAFKA_SERVICE=$(systemctl list-unit-files --no-legend "*kafka*" | grep -oE '[^ ]+.service')
+	ZOOKEEPER_SERVICE=$(systemctl list-unit-files --no-legend "*zookeeper*" | grep -oE '[^ ]+.service')
 
 	if [ -n ${KAFKA_SERVICE} ]; then
 

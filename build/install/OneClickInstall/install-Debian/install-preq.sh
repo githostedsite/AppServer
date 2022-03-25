@@ -83,7 +83,6 @@ Restart=on-abnormal
 [Install]
 WantedBy=multi-user.target
 END
-systemctl start zookeeper
 fi
 
 if [ ! -e /lib/systemd/system/kafka.service ]; then
@@ -100,7 +99,6 @@ Restart=on-abnormal
 [Install]
 WantedBy=multi-user.target
 END
-systemctl start kafka
 fi
 
 if ! dpkg -l | grep -q "mysql-server"; then
