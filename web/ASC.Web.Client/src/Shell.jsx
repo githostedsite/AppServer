@@ -37,7 +37,6 @@ const WIZARD_URL = combineUrl(PROXY_HOMEPAGE_URL, "/wizard");
 const ABOUT_URL = combineUrl(PROXY_HOMEPAGE_URL, "/about");
 const LOGIN_URLS = [
   combineUrl(PROXY_HOMEPAGE_URL, "/login"),
-  combineUrl(PROXY_HOMEPAGE_URL, "/login/error=:error"),
   combineUrl(PROXY_HOMEPAGE_URL, "/login/confirmed-email=:confirmedEmail"),
 ];
 const CONFIRM_URL = combineUrl(PROXY_HOMEPAGE_URL, "/confirm");
@@ -46,6 +45,12 @@ const PAYMENTS_URL = combineUrl(PROXY_HOMEPAGE_URL, "/payments");
 const SETTINGS_URL = combineUrl(PROXY_HOMEPAGE_URL, "/settings");
 const ERROR_401_URL = combineUrl(PROXY_HOMEPAGE_URL, "/error401");
 const PROFILE_MY_URL = combineUrl(PROXY_HOMEPAGE_URL, "/my");
+const ENTER_CODE_URL = combineUrl(PROXY_HOMEPAGE_URL, "/code");
+const INVALID_URL = combineUrl(PROXY_HOMEPAGE_URL, "/login/error=:error");
+const PREPARATION_PORTAL = combineUrl(
+  PROXY_HOMEPAGE_URL,
+  "/preparation-portal"
+);
 
 const Payments = React.lazy(() => import("./components/pages/Payments"));
 const Error404 = React.lazy(() => import("studio/Error404"));
@@ -58,6 +63,13 @@ const Settings = React.lazy(() => import("./components/pages/Settings"));
 const ComingSoon = React.lazy(() => import("./components/pages/ComingSoon"));
 const Confirm = React.lazy(() => import("./components/pages/Confirm"));
 const MyProfile = React.lazy(() => import("people/MyProfile"));
+const EnterCode = React.lazy(() => import("login/codeLogin"));
+const InvalidError = React.lazy(() =>
+  import("./components/pages/Errors/Invalid")
+);
+const PreparationPortal = React.lazy(() =>
+  import("./components/pages/PreparationPortal")
+);
 
 const SettingsRoute = (props) => (
   <React.Suspense fallback={<AppLoader />}>
@@ -105,6 +117,14 @@ const ConfirmRoute = (props) => (
   </React.Suspense>
 );
 
+const PreparationPortalRoute = (props) => (
+  <React.Suspense fallback={<AppLoader />}>
+    <ErrorBoundary>
+      <PreparationPortal {...props} />
+    </ErrorBoundary>
+  </React.Suspense>
+);
+
 const AboutRoute = (props) => (
   <React.Suspense fallback={<AppLoader />}>
     <ErrorBoundary>
@@ -137,6 +157,22 @@ const MyProfileRoute = (props) => (
   </React.Suspense>
 );
 
+const EnterCodeRoute = (props) => (
+  <React.Suspense fallback={<AppLoader />}>
+    <ErrorBoundary>
+      <EnterCode {...props} />
+    </ErrorBoundary>
+  </React.Suspense>
+);
+
+const InvalidRoute = (props) => (
+  <React.Suspense fallback={<AppLoader />}>
+    <ErrorBoundary>
+      <InvalidError {...props} />
+    </ErrorBoundary>
+  </React.Suspense>
+);
+
 const RedirectToHome = () => <Redirect to={PROXY_HOMEPAGE_URL} />;
 
 const checkTheme = () => {
@@ -163,7 +199,10 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
     language,
     FirebaseHelper,
     personal,
+    socketHelper,
+    setPreparationPortalDialogVisible,
     setTheme,
+    roomsMode,
   } = rest;
 
   useEffect(() => {
@@ -190,6 +229,16 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
       toastr.error(err);
     }
   }, []);
+
+  useEffect(() => {
+    socketHelper.emit({
+      command: "subscribe",
+      data: "backup-restore",
+    });
+    socketHelper.on("restore-backup", () => {
+      setPreparationPortalDialogVisible(true);
+    });
+  }, [socketHelper]);
 
   const { t } = useTranslation("Common");
 
@@ -409,10 +458,17 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
   const loginRoutes = [];
 
   if (isLoaded && !personal) {
+    let module;
+    if (roomsMode) {
+      module = "./roomsLogin";
+    } else {
+      module = "./login";
+    }
+
     const loginSystem = {
       url: combineUrl(AppServerConfig.proxyURL, "/login/remoteEntry.js"),
       scope: "login",
-      module: "./app",
+      module: module,
     };
     loginRoutes.push(
       <PublicRoute
@@ -422,6 +478,14 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
         component={System}
         system={loginSystem}
       />
+    );
+  }
+
+  const roomsRoutes = [];
+
+  if (roomsMode) {
+    roomsRoutes.push(
+      <Route path={ENTER_CODE_URL} component={EnterCodeRoute} />
     );
   }
 
@@ -437,7 +501,9 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
               <PublicRoute exact path={WIZARD_URL} component={WizardRoute} />
               <PrivateRoute path={ABOUT_URL} component={AboutRoute} />
               {loginRoutes}
+              {roomsRoutes}
               <Route path={CONFIRM_URL} component={ConfirmRoute} />
+              <Route path={INVALID_URL} component={InvalidRoute} />
               <PrivateRoute
                 path={COMING_SOON_URLS}
                 component={ComingSoonRoute}
@@ -454,6 +520,10 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
                 path={PROFILE_MY_URL}
                 component={MyProfileRoute}
               />
+              <PrivateRoute
+                path={PREPARATION_PORTAL}
+                component={PreparationPortalRoute}
+              />
               {dynamicRoutes}
               <PrivateRoute path={ERROR_401_URL} component={Error401Route} />
               <PrivateRoute
@@ -467,19 +537,22 @@ const Shell = ({ items = [], page = "home", ...rest }) => {
   );
 };
 
-const ShellWrapper = inject(({ auth }) => {
+const ShellWrapper = inject(({ auth, backup }) => {
   const { init, isLoaded, settingsStore, setProductVersion, language } = auth;
   const {
     personal,
+    roomsMode,
     isDesktopClient,
     firebaseHelper,
     setModuleInfo,
+    socketHelper,
     setTheme,
   } = settingsStore;
-
+  const { setPreparationPortalDialogVisible } = backup;
   return {
-    loadBaseInfo: () => {
-      init();
+    loadBaseInfo: async () => {
+      await init();
+
       setModuleInfo(config.homepage, "home");
       setProductVersion(config.version);
 
@@ -493,7 +566,10 @@ const ShellWrapper = inject(({ auth }) => {
     isDesktop: isDesktopClient,
     FirebaseHelper: firebaseHelper,
     personal,
+    socketHelper,
+    setPreparationPortalDialogVisible,
     setTheme,
+    roomsMode,
   };
 })(observer(Shell));
 

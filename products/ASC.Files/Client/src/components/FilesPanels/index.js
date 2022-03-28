@@ -9,6 +9,7 @@ import {
   ChangeOwnerPanel,
   NewFilesPanel,
   SelectFileDialog,
+  HotkeyPanel,
 } from "../panels";
 import {
   ThirdPartyMoveDialog,
@@ -46,6 +47,7 @@ const Panels = (props) => {
     createMasterForm,
     selectFileDialogVisible,
     setSelectFileDialogVisible,
+    hotkeyPanelVisible,
     createFolderDialogVisible,
     convertPasswordDialogVisible,
     actionType,
@@ -112,6 +114,7 @@ const Panels = (props) => {
         withSubfolders={false}
       />
     ),
+    hotkeyPanelVisible && <HotkeyPanel key="hotkey-panel" />,
     createFolderDialogVisible && (
       <CreateFolderDialog key="create-folder-dialog" />
     ),
@@ -144,6 +147,7 @@ export default inject(
       createMasterForm,
       selectFileDialogVisible,
       setSelectFileDialogVisible,
+      hotkeyPanelVisible,
       createFolderDialogVisible,
       setCreateFolderDialogVisible,
     } = dialogsStore;
@@ -172,6 +176,7 @@ export default inject(
       selectFileDialogVisible,
       createMasterForm,
       setSelectFileDialogVisible,
+      hotkeyPanelVisible,
       createFolderDialogVisible,
       actionType: fileActionStore.type,
       setCreateFolderDialogVisible,

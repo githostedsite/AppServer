@@ -9,7 +9,7 @@ import Text from "@appserver/components/text";
 import PasswordInput from "@appserver/components/password-input";
 import toastr from "@appserver/components/toast/toastr";
 import Heading from "@appserver/components/heading";
-import PageLayout from "@appserver/common/components/PageLayout";
+import Section from "@appserver/common/components/Section";
 import { createPasswordHash, tryRedirectTo } from "@appserver/common/utils";
 import { PasswordLimitSpecialCharacters } from "@appserver/common/constants";
 import { inject, observer } from "mobx-react";
@@ -176,7 +176,7 @@ class Form extends React.PureComponent {
           id="button"
           className="password-button"
           primary
-          size="big"
+          size="normal"
           tabIndex={2}
           label={
             isLoading ? t("Common:LoadingProcessing") : t("Common:OKButton")
@@ -201,11 +201,11 @@ Form.defaultProps = {
 };
 
 const ChangePasswordForm = (props) => (
-  <PageLayout>
-    <PageLayout.SectionBody>
+  <Section>
+    <Section.SectionBody>
       <Form {...props} />
-    </PageLayout.SectionBody>
-  </PageLayout>
+    </Section.SectionBody>
+  </Section>
 );
 
 export default inject(({ auth, setup }) => {

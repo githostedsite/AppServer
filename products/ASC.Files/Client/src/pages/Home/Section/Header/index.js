@@ -258,11 +258,7 @@ class SectionHeaderContent extends React.Component {
     ];
   };
 
-  onBackToParentFolder = () => {
-    const { setIsLoading, parentId, filter, fetchFiles } = this.props;
-    setIsLoading(true);
-    fetchFiles(parentId, null, true, false).finally(() => setIsLoading(false));
-  };
+  onBackToParentFolder = () => this.props.backToParentFolder();
 
   onSelect = (e) => {
     const key = e.currentTarget.dataset.key;
@@ -405,20 +401,19 @@ export default inject(
       setSelected,
       setSelection,
       fileActionStore,
-      fetchFiles,
-      filter,
       canCreate,
       isHeaderVisible,
       isHeaderIndeterminate,
       isHeaderChecked,
       isThirdPartySelection,
-      setIsLoading,
       cbMenuItems,
       getCheckboxItemLabel,
       isEmptyFilesList,
       getFolderInfo,
       setBufferSelection,
       viewAs,
+      setIsLoading,
+      fetchFiles,
     } = filesStore;
     const { setAction } = fileActionStore;
     const {
@@ -433,7 +428,12 @@ export default inject(
     } = dialogsStore;
 
     const { isRecycleBinFolder, isPrivacyFolder } = treeFoldersStore;
-    const { deleteAction, downloadAction, getHeaderMenu } = filesActionsStore;
+    const {
+      deleteAction,
+      downloadAction,
+      getHeaderMenu,
+      backToParentFolder,
+    } = filesActionsStore;
 
     return {
       showText: auth.settingsStore.showText,
@@ -441,11 +441,9 @@ export default inject(
       isDesktop: auth.settingsStore.isDesktopClient,
       isRootFolder: selectedFolderStore.parentId === 0,
       title: selectedFolderStore.title,
-      parentId: selectedFolderStore.parentId,
       currentFolderId: selectedFolderStore.id,
       pathParts: selectedFolderStore.pathParts,
       navigationPath: selectedFolderStore.navigationPath,
-      filter,
       canCreate,
       isHeaderVisible,
       isHeaderIndeterminate,
@@ -461,8 +459,6 @@ export default inject(
       setSelected,
       setSelection,
       setAction,
-      setIsLoading,
-      fetchFiles,
       setSharingPanelVisible,
       setMoveToPanelVisible,
       setCopyPanelVisible,
@@ -472,6 +468,7 @@ export default inject(
       setDeleteDialogVisible,
       downloadAction,
       getHeaderMenu,
+      backToParentFolder,
       getCheckboxItemLabel,
       setSelectFileDialogVisible,
 
@@ -480,7 +477,9 @@ export default inject(
       isEmptyFilesList,
       isPrivacyFolder,
       viewAs,
-      //setCreateFolderDialogVisible,
+
+      setIsLoading,
+      fetchFiles,
     };
   }
 )(

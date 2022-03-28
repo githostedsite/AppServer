@@ -27,6 +27,7 @@ class DialogsStore {
 
   convertPasswordDialogVisible = false;
   isFolderActions = false;
+  hotkeyPanelVisible = false;
 
   removeItem = null;
   connectItem = null;
@@ -229,6 +230,31 @@ class DialogsStore {
       templateId: fileInfo.id,
     });
   };
+
+  setHotkeyPanelVisible = (hotkeyPanelVisible) => {
+    this.hotkeyPanelVisible = hotkeyPanelVisible;
+  };
+
+  get someDialogIsOpen() {
+    return (
+      this.sharingPanelVisible ||
+      this.ownerPanelVisible ||
+      this.moveToPanelVisible ||
+      this.copyPanelVisible ||
+      this.deleteThirdPartyDialogVisible ||
+      this.connectDialogVisible ||
+      this.thirdPartyMoveDialogVisible ||
+      this.deleteDialogVisible ||
+      this.downloadDialogVisible ||
+      this.emptyTrashDialogVisible ||
+      this.thirdPartyDialogVisible ||
+      this.newFilesPanelVisible ||
+      this.conflictResolveDialogVisible ||
+      this.convertDialogVisible ||
+      this.selectFileDialogVisible ||
+      this.hotkeyPanelVisible
+    );
+  }
 
   deselectActiveFiles = () => {
     this.filesStore.setSelected("none");

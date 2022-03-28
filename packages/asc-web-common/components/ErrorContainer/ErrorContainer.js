@@ -12,7 +12,14 @@ const theme = store.auth.settingsStore.theme;
 const ErrorContainer = (props) => {
   //console.log("ErrorContainer render");
 
-  const { headerText, bodyText, buttonText, buttonUrl, ...rest } = props;
+  const {
+    headerText,
+    bodyText,
+    buttonText,
+    buttonUrl,
+    children,
+    ...rest
+  } = props;
 
   return (
     <StyledErrorContainer {...rest}>
@@ -334,12 +341,13 @@ const ErrorContainer = (props) => {
           {headerText}
         </Headline>
       )}
+      {children}
       {bodyText && <Text id="text">{bodyText}</Text>}
       {buttonText && buttonUrl && (
         <div id="button-container">
           <Button
             id="button"
-            size="big"
+            size="normal"
             scale
             primary
             label={buttonText}
@@ -347,6 +355,7 @@ const ErrorContainer = (props) => {
           />
         </div>
       )}
+      {children}
     </StyledErrorContainer>
   );
 };
@@ -356,6 +365,7 @@ ErrorContainer.propTypes = {
   bodyText: PropTypes.string,
   buttonText: PropTypes.string,
   buttonUrl: PropTypes.string,
+  children: PropTypes.any,
 };
 
 export default ErrorContainer;

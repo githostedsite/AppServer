@@ -7,7 +7,7 @@ import { withTranslation } from "react-i18next";
 import { inject, observer } from "mobx-react";
 import Button from "@appserver/components/button";
 import Text from "@appserver/components/text";
-import PageLayout from "@appserver/common/components/PageLayout";
+import Section from "@appserver/common/components/Section";
 import { deleteSelf } from "@appserver/common/api/people"; //TODO: Move inside UserStore
 import withLoader from "../withLoader";
 
@@ -89,7 +89,7 @@ class ProfileRemove extends React.PureComponent {
               <Button
                 className="confirm-row"
                 primary
-                size="big"
+                size="normal"
                 label={t("DeleteProfileBtn")}
                 tabIndex={1}
                 isLoading={this.state.isLoading}
@@ -116,11 +116,11 @@ ProfileRemove.propTypes = {
   location: PropTypes.object.isRequired,
 };
 const ProfileRemoveForm = (props) => (
-  <PageLayout>
-    <PageLayout.SectionBody>
+  <Section>
+    <Section.SectionBody>
       <ProfileRemove {...props} />
-    </PageLayout.SectionBody>
-  </PageLayout>
+    </Section.SectionBody>
+  </Section>
 );
 
 export default inject(({ auth }) => ({

@@ -56,6 +56,8 @@ const Header = styled.header`
   }
 
   .header-logo-icon {
+    ${(props) =>
+      (props.isPersonal || props.isPreparationPortal) && `margin-left: 20px;`}
     height: 24px;
     position: relative;
     padding-right: 20px;
@@ -66,7 +68,7 @@ const Header = styled.header`
     cursor: pointer;
 
     @media ${tablet} {
-      margin-left: 16px;
+      padding-left: 16px;
     }
   }
   .mobile-short-logo {
@@ -108,7 +110,7 @@ const versionBadgeProps = {
 const StyledNavigationIconsWrapper = styled.div`
   height: 20px;
   position: absolute;
-  left: ${isMobile ? "254px" : "280px"};
+  left: ${isMobile ? "254px" : "275px"};
   display: ${isMobileOnly ? "none" : "flex"};
   justify-content: flex-start;
   align-items: center;
@@ -139,6 +141,7 @@ const HeaderComponent = ({
   isAdmin,
   backdropClick,
   isPersonal,
+  isPreparationPortal,
   theme,
   ...props
 }) => {
@@ -215,6 +218,7 @@ const HeaderComponent = ({
         module={currentProductName}
         isLoaded={isLoaded}
         isPersonal={isPersonal}
+        isPreparationPortal={isPreparationPortal}
         isAuthenticated={isAuthenticated}
         className="navMenuHeader hidingHeader"
         needNavMenu={needNavMenu}

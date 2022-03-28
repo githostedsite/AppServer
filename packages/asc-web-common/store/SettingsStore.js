@@ -1,6 +1,6 @@
 import { makeAutoObservable } from "mobx";
 import api from "../api";
-import { ARTICLE_PINNED_KEY, LANGUAGE } from "../constants";
+import { ARTICLE_PINNED_KEY, LANGUAGE, TenantStatus } from "../constants";
 import { combineUrl } from "../utils";
 import FirebaseHelper from "../utils/firebase";
 import { AppServerConfig } from "../constants";
@@ -69,18 +69,15 @@ class SettingsStore {
 
   personal = false;
 
+  roomsMode = false;
+
   isHeaderVisible = false;
   isTabletView = false;
-  isArticlePinned =
-    localStorage.getItem(ARTICLE_PINNED_KEY) === "true" || false;
-  isArticleVisible = false;
-  isBackdropVisible = false;
-  isArticleVisibleOnUnpin = false;
 
   showText = false;
-  catalogOpen = false;
-  userShowText = false;
-  showCatalog = true;
+  articleOpen = false;
+
+  folderPath = [];
 
   hashSettings = null;
   title = "";
@@ -112,10 +109,15 @@ class SettingsStore {
   userFormValidation = /^[\p{L}\p{M}'\-]+$/gu;
   folderFormValidation = new RegExp('[*+:"<>?|\\\\/]', "gim");
 
+  tenantStatus = null;
+
   constructor() {
     makeAutoObservable(this);
   }
 
+  setTenantStatus = (tenantStatus) => {
+    this.tenantStatus = tenantStatus;
+  };
   get urlAuthKeys() {
     const splitted = this.culture.split("-");
     const lang = splitted.length > 0 ? splitted[0] : "en";
@@ -133,18 +135,11 @@ class SettingsStore {
     return `https://helpcenter.onlyoffice.com/${lang}/administration/configuration.aspx#CustomizingPortal_block`;
   }
 
-  setIsArticleVisible = (visible) => {
-    this.isArticleVisible = this.isArticlePinned ? true : visible;
-  };
-
-  setIsBackdropVisible = (visible) => {
-    this.isBackdropVisible = visible;
-  };
-
-  hideArticle = () => {
-    this.setIsArticleVisible(false);
-    this.setIsBackdropVisible(false);
-  };
+  get helpUrlCreatingBackup() {
+    const splitted = this.culture.split("-");
+    const lang = splitted.length > 0 ? splitted[0] : "en";
+    return `https://helpcenter.onlyoffice.com/${lang}/administration/configuration.aspx#CreatingBackup_block`;
+  }
 
   setValue = (key, value) => {
     this[key] = value;
@@ -190,6 +185,10 @@ class SettingsStore {
     return newSettings;
   };
 
+  getFolderPath = async (id) => {
+    this.folderPath = await api.files.getFolderPath(id);
+  };
+
   getCurrentCustomSchema = async (id) => {
     this.customNames = await api.settings.getCurrentCustomSchema(id);
   };
@@ -201,18 +200,31 @@ class SettingsStore {
   getPortalSettings = async () => {
     const origSettings = await this.getSettings();
 
-    if (origSettings.nameSchemaId) {
+    if (
+      origSettings.nameSchemaId &&
+      this.tenantStatus !== TenantStatus.PortalRestore
+    ) {
       this.getCurrentCustomSchema(origSettings.nameSchemaId);
     }
   };
 
   init = async () => {
     this.setIsLoading(true);
+    const requests = [];
 
-    await Promise.all([this.getPortalSettings(), this.getBuildVersionInfo()]);
+    requests.push(this.getPortalSettings());
+
+    this.tenantStatus !== TenantStatus.PortalRestore &&
+      requests.push(this.getBuildVersionInfo());
+
+    await Promise.all(requests);
 
     this.setIsLoading(false);
     this.setIsLoaded(true);
+  };
+
+  setRoomsMode = (mode) => {
+    this.roomsMode = mode;
   };
 
   setIsLoading = (isLoading) => {
@@ -355,36 +367,20 @@ class SettingsStore {
     this.isTabletView = isTabletView;
   };
 
-  setArticlePinned = (isPinned) => {
-    isPinned
-      ? localStorage.setItem(ARTICLE_PINNED_KEY, isPinned)
-      : localStorage.removeItem(ARTICLE_PINNED_KEY);
-    this.isArticlePinned = isPinned;
-  };
-
-  setArticleVisibleOnUnpin = (visible) => {
-    this.isArticleVisibleOnUnpin = visible;
-  };
-
   setShowText = (showText) => {
     this.showText = showText;
   };
 
-  setCatalogOpen = (catalogOpen) => {
-    this.catalogOpen = catalogOpen;
-  };
-
-  setUserShowText = (userShowText) => {
-    this.userShowText = userShowText;
-  };
-
   toggleShowText = () => {
     this.showText = !this.showText;
-    this.userShowText = !this.userShowText;
   };
 
-  toggleCatalogOpen = () => {
-    this.catalogOpen = !this.catalogOpen;
+  setArticleOpen = (articleOpen) => {
+    this.articleOpen = articleOpen;
+  };
+
+  toggleArticleOpen = () => {
+    this.articleOpen = !this.articleOpen;
   };
 
   get firebaseHelper() {
