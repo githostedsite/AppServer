@@ -3,6 +3,7 @@
 SRC_PATH="/AppServer"
 BUILD_PATH="/publish"
 SELF_CONTAINED="false"
+RID=""
 ARGS=""
 
 
@@ -34,6 +35,12 @@ while [ "$1" != "" ]; do
             shift
           fi
     ;;
+        -ri | --rid )
+          if [ "$2" != "" ]; then
+            RID="-r $2"
+            shift
+          fi      
+    ;;
         -? | -h | --help )
             echo " Usage: bash publish-backend.sh [PARAMETER] [[PARAMETER], ...]"
             echo "    Parameters:"
@@ -64,7 +71,7 @@ for i in ${!servers_products_name_backend[@]}; do
   echo "== Publish ${servers_products_name_backend[$i]}.csproj project =="
   SERVICE_DIR="$(dirname "$(find ${SRC_PATH} -type f -name "${servers_products_name_backend[$i]}".csproj)")"
   cd ${SERVICE_DIR}
-  dotnet publish -c Release --self-contained ${SELF_CONTAINED} ${ARGS} -o ${BUILD_PATH}/products/${servers_products_name_backend[$i]}/server/
+  dotnet publish -c Release --self-contained ${SELF_CONTAINED} ${RID} ${ARGS} -o ${BUILD_PATH}/products/${servers_products_name_backend[$i]}/server/
 done
 
 # Array of names backend services

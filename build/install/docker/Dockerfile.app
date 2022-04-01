@@ -18,7 +18,7 @@ ARG BUILD_ARGS=build
 ARG DEPLOY_ARGS=deploy
 ARG DEBUG_INFO=true
 ARG SELF_CONTAINED=false
-ARG PUBLISH_ARGS
+ARG RID
 
 LABEL onlyoffice.appserver.release-date="${RELEASE_DATE}" \
       maintainer="Ascensio System SIA <support@onlyoffice.com>"
@@ -53,7 +53,7 @@ RUN cd ${SRC_PATH} && \
     cd ${SRC_PATH}/build/install/common/ && \
     bash build-frontend.sh -sp "${SRC_PATH}" -ba "${BUILD_ARGS}" -da "${DEPLOY_ARGS}" -di "${DEBUG_INFO}" && \
     bash build-backend.sh -sp "${SRC_PATH}"  && \
-    bash publish-backend.sh -sp "${SRC_PATH}" -bp "${BUILD_PATH}" -sc "${SELF_CONTAINED}" -ar "${PUBLISH_ARGS}"  && \
+    bash publish-backend.sh -sp "${SRC_PATH}" -bp "${BUILD_PATH}" -sc "${SELF_CONTAINED}" -ri "${RID}"  && \
     cp -rf ${SRC_PATH}/products/ASC.Files/Server/DocStore ${BUILD_PATH}/products/ASC.Files/server/ && \
     rm -rf ${SRC_PATH}/common/* && \
     rm -rf ${SRC_PATH}/web/ASC.Web.Core/* && \
