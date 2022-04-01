@@ -154,16 +154,23 @@ const Form = (props) => {
     }
   };
 
-  useEffect(async () => {
+  useEffect(() => {
     document.title = `${t("Authorization")} – ${organizationName}`; //TODO: implement the setDocumentTitle() utility in ASC.Web.Common
 
     error && setErrorText(error);
     confirmedEmail && setIdentifier(confirmedEmail);
 
-    Promise.all([setProviders(), getSso()]).then(() => {
-      setIsLoaded(true);
-      focusInput();
-    });
+    const loadInfo = async () =>
+      Promise.all([setProviders(), getSso()])
+        .then(() => {
+          setIsLoaded(true);
+          focusInput();
+        })
+        .catch((e) => {
+          console.error(e);
+        });
+
+    loadInfo();
 
     window.authCallback = authCallback;
 
@@ -175,9 +182,7 @@ const Form = (props) => {
   }, []);
 
   const focusInput = () => {
-    if (inputRef) {
-      inputRef.current.focus();
-    }
+    inputRef?.current?.focus();
   };
 
   const onChangeLogin = (e) => {
