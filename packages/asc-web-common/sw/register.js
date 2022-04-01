@@ -1,6 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
-
+import { createRoot } from "react-dom/client";
 import { Workbox } from "workbox-window";
 import SnackBar from "@appserver/components/snackbar";
 import i18n from "i18next";
@@ -85,14 +84,15 @@ export default function () {
       snackbarNode.id = "snackbar";
       document.body.appendChild(snackbarNode);
 
-      ReactDOM.render(
+      const container = document.getElementById("snackbar");
+      const root = createRoot(container);
+      root.render(
         <SnackBarWrapper
           onButtonClick={() => {
             snackbarNode.remove();
             refresh();
           }}
-        />,
-        document.getElementById("snackbar")
+        />
       );
 
       localStorage.setItem("sw_need_activation", true);

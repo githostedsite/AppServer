@@ -86,11 +86,11 @@
     "jest-styled-components": "^7.0.3",
     "postcss": "^7.0.35",
     "prettier": "2.1.2",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-json-pretty": "^2.2.0",
     "react-values": "^0.3.3",
-    "styled-components": "^5.3.1",
+    "styled-components": "^5.3.5",
     "svg-inline-loader": "^0.8.2"
   }
 }
