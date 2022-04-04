@@ -7,5 +7,6 @@ docker-compose -f build.yml build \
     --build-arg BUILD_NUMBER=$BUILD_NUMBER \
     --build-arg BUILD_ARGS=$BUILD_ARGS \
     --build-arg BUILD_ARGS=$SELF_CONTAINED \
+    --build-arg REPO_RUN_TAG=$REPO_RUN_TAG \
     --build-arg BUILD_ARGS=$PUBLISH_ARGS \
     --build-arg DEPLOY_ARGS=$DEPLOY_ARGS
