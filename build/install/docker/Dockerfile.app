@@ -4,7 +4,7 @@ ARG BUILD_PATH=/var/www
 ARG REPO_SDK=mcr.microsoft.com/dotnet/sdk
 ARG REPO_SDK_TAG=6.0
 ARG REPO_RUN=mcr.microsoft.com/dotnet/aspnet
-ARG REPO_RUN_TAG=6.0
+ARG REPO_RUN_TAG=6.0-focal
 
 FROM $REPO_SDK:$REPO_SDK_TAG AS base
 ARG RELEASE_DATE="2016-06-21"
